@@ -4002,6 +4002,7 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_full_database_export: { Args: never; Returns: string }
       generate_invitation_code: { Args: never; Returns: string }
       generate_lootbox_daily_plan: {
         Args: {

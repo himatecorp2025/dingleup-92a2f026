@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, DollarSign, TrendingUp, Search, AlertTriangle, Activity, Target, Zap, Map as MapIcon } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Search, AlertTriangle, Activity, Target, Zap, Map as MapIcon, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,55 @@ const AdminDashboard = () => {
     report: any;
   } | null>(null);
   const [actionType, setActionType] = useState<'reviewing' | 'resolved' | 'dismissed'>('reviewing');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleFullDatabaseExport = async () => {
+    try {
+      setIsExporting(true);
+      toast.info('Adatbázis export indítása...');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Nincs bejelentkezve');
+        setIsExporting(false);
+        return;
+      }
+
+      const response = await supabase.functions.invoke('export-full-database', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        console.error('Export error:', response.error);
+        toast.error('Export hiba: ' + response.error.message);
+        setIsExporting(false);
+        return;
+      }
+
+      // Create blob from response data
+      const sqlContent = response.data;
+      const blob = new Blob([sqlContent], { type: 'text/plain; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `dingleup_full_export_${new Date().toISOString().split('T')[0]}.sql`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Adatbázis sikeresen exportálva!');
+    } catch (error) {
+      console.error('Unexpected export error:', error);
+      toast.error('Váratlan hiba történt az export során');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Update activeTab when URL changes
   useEffect(() => {
@@ -300,6 +349,28 @@ const AdminDashboard = () => {
         {/* Content based on active tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-4 lg:space-y-6">
+            {/* Database Export Button */}
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-2">Teljes adatbázis export</h3>
+                  <p className="text-white/60 text-sm lg:text-base">
+                    Töltsd le a teljes adatbázist SQL formátumban (CREATE TABLE + INSERT statements)
+                  </p>
+                </div>
+                <Button
+                  onClick={handleFullDatabaseExport}
+                  disabled={isExporting}
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-white"
+                >
+                  <Database className="h-5 w-5" />
+                  {isExporting ? 'Export folyamatban...' : 'Export letöltése'}
+                </Button>
+              </div>
+            </div>
+
             <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-6 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
               <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-3 lg:mb-6">{t('admin.dashboard.welcome')}</h2>
               <p className="text-white/70 text-sm lg:text-base mb-3 lg:mb-4">
