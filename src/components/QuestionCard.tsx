@@ -4,9 +4,6 @@ import { MillionaireQuestion } from "./MillionaireQuestion";
 import { MillionaireAnswer } from "./MillionaireAnswer";
 import { Question, getSkipCost } from "@/types/game";
 import { ScreenshotProtection } from "./ScreenshotProtection";
-import { QuestionReactionsBar } from "./QuestionReactionsBar";
-import { DoubleTapLikeReaction } from "./DoubleTapLikeReaction";
-import { useQuestionReactions } from "@/hooks/useQuestionReactions";
 import { GameHeader } from "./game/GameHeader";
 import { GameTimer } from "./game/GameTimer";
 import { GameLifelines } from "./game/GameLifelines";
@@ -77,24 +74,9 @@ export const QuestionCard = ({
   const correctAnswerKey = answers.find(a => a.correct)?.key || "";
   const skipCost = getSkipCost(questionNumber - 1); // Convert to 0-indexed
 
-  // Double tap detection + shared reaction state for this question
-  const {
-    liked,
-    disliked,
-    likeCount,
-    dislikeCount,
-    toggleLike,
-    toggleDislike,
-    loading: reactionsLoading,
-  } = useQuestionReactions(question.id);
-
   return (
     <ScreenshotProtection enabled={true}>
-      {/* Wrap entire content in double-tap detector - covers full screen height */}
-      <DoubleTapLikeReaction 
-        onDoubleTap={toggleLike}
-        className="relative w-full min-h-screen"
-      >
+      <div className={`relative w-full min-h-screen`}>
         <div className={`relative w-full h-full flex flex-col pt-0 px-2 sm:px-3 md:px-4 pb-2 gap-0 ${className}`}>
         {/* Top section: Exit button, Lives, Coins */}
         <GameHeader
@@ -117,7 +99,7 @@ export const QuestionCard = ({
         {/* Timer */}
         <GameTimer timeLeft={timeLeft} maxTime={10} />
 
-        {/* Middle section: Question and Answers with Reaction Bar */}
+        {/* Middle section: Question and Answers */}
         <div className="relative flex">
           {/* Question and Answers */}
           <div className="flex-1 flex flex-col space-y-1 sm:space-y-2">
@@ -171,17 +153,6 @@ export const QuestionCard = ({
               <div className="h-4 sm:h-5 md:h-6" aria-hidden="true" />
             </div>
           </div>
-
-          {/* TikTok-style Reactions Bar - Right side with LIKE + DISLIKE */}
-          <QuestionReactionsBar
-            liked={liked}
-            disliked={disliked}
-            likeCount={likeCount}
-            dislikeCount={dislikeCount}
-            loading={reactionsLoading}
-            onToggleLike={toggleLike}
-            onToggleDislike={toggleDislike}
-          />
         </div>
 
         {/* Bottom section: Help buttons - below answers with spacing */}
@@ -204,7 +175,7 @@ export const QuestionCard = ({
         </div>
         </div>
       </div>
-      </DoubleTapLikeReaction>
+      </div>
     </ScreenshotProtection>
   );
 };

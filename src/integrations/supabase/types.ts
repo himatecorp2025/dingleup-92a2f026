@@ -2169,92 +2169,6 @@ export type Database = {
         }
         Relationships: []
       }
-      question_dislikes: {
-        Row: {
-          created_at: string
-          id: number
-          question_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-          question_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: number
-          question_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "question_dislikes_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_dislikes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_dislikes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      question_likes: {
-        Row: {
-          created_at: string
-          id: string
-          question_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          question_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          question_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "question_likes_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       question_pools: {
         Row: {
           created_at: string | null
@@ -2381,9 +2295,7 @@ export type Database = {
           audience: Json
           correct_answer: string | null
           created_at: string | null
-          dislike_count: number
           id: string
-          like_count: number
           question: string
           source_category: string
           third: string
@@ -2394,9 +2306,7 @@ export type Database = {
           audience: Json
           correct_answer?: string | null
           created_at?: string | null
-          dislike_count?: number
           id: string
-          like_count?: number
           question: string
           source_category: string
           third: string
@@ -2407,9 +2317,7 @@ export type Database = {
           audience?: Json
           correct_answer?: string | null
           created_at?: string | null
-          dislike_count?: number
           id?: string
-          like_count?: number
           question?: string
           source_category?: string
           third?: string
@@ -3177,33 +3085,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_like_prompt_tracking: {
-        Row: {
-          created_at: string
-          day_date: string
-          prompt_count: number
-          shown_sessions: Json | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          day_date?: string
-          prompt_count?: number
-          shown_sessions?: Json | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          day_date?: string
-          prompt_count?: number
-          shown_sessions?: Json | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_premium_booster_state: {
         Row: {
           created_at: string
@@ -3922,9 +3803,7 @@ export type Database = {
           audience: Json
           correct_answer: string | null
           created_at: string | null
-          dislike_count: number
           id: string
-          like_count: number
           question: string
           source_category: string
           third: string

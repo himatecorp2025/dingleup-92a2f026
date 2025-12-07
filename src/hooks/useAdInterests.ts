@@ -151,23 +151,6 @@ export const useAdInterests = () => {
   const enableRealtime = (onUpdate: () => void) => {
     if (realtimeEnabled) return;
 
-    const likesChannel = supabase
-      .channel('admin-ad-interests-likes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_likes'
-      }, onUpdate)
-      .subscribe();
-
-    const dislikesChannel = supabase
-      .channel('admin-ad-interests-dislikes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_dislikes'
-      }, onUpdate)
-      .subscribe();
 
     const analyticsChannel = supabase
       .channel('admin-ad-interests-analytics')
@@ -181,8 +164,6 @@ export const useAdInterests = () => {
     setRealtimeEnabled(true);
 
     return () => {
-      supabase.removeChannel(likesChannel);
-      supabase.removeChannel(dislikesChannel);
       supabase.removeChannel(analyticsChannel);
     };
   };

@@ -71,36 +71,6 @@ export function useAdminGameProfilesQuery() {
         {
           event: '*',
           schema: 'public',
-          table: 'question_likes',
-        },
-        (payload) => {
-          console.log('[useAdminGameProfilesQuery] Question likes update received:', payload);
-          queryClient.refetchQueries({
-            queryKey: [ADMIN_GAME_PROFILES_KEY],
-            exact: true,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'question_dislikes',
-        },
-        (payload) => {
-          console.log('[useAdminGameProfilesQuery] Question dislikes update received:', payload);
-          queryClient.refetchQueries({
-            queryKey: [ADMIN_GAME_PROFILES_KEY],
-            exact: true,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
           table: 'game_question_analytics',
         },
         (payload) => {

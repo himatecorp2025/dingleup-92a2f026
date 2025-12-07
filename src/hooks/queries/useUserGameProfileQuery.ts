@@ -86,38 +86,6 @@ export function useUserGameProfileQuery(userId: string | undefined) {
           });
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'question_likes',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          console.log('[useUserGameProfileQuery] Question likes update received:', payload);
-          queryClient.refetchQueries({
-            queryKey: USER_GAME_PROFILE_KEY(userId),
-            exact: true,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'question_dislikes',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          console.log('[useUserGameProfileQuery] Question dislikes update received:', payload);
-          queryClient.refetchQueries({
-            queryKey: USER_GAME_PROFILE_KEY(userId),
-            exact: true,
-          });
-        }
-      )
       .subscribe((status) => {
         console.log('[useUserGameProfileQuery] Subscription status:', status);
       });

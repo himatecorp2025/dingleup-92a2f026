@@ -67,27 +67,6 @@ export function useAdminGameProfiles() {
       })
       .subscribe();
 
-    const likesChannel = supabase
-      .channel('admin-game-profiles-likes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_likes'
-      }, () => {
-        fetchProfiles();
-      })
-      .subscribe();
-
-    const dislikesChannel = supabase
-      .channel('admin-game-profiles-dislikes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_dislikes'
-      }, () => {
-        fetchProfiles();
-      })
-      .subscribe();
 
     const analyticsChannel = supabase
       .channel('admin-game-profiles-analytics')
@@ -102,8 +81,6 @@ export function useAdminGameProfiles() {
 
     return () => {
       supabase.removeChannel(gameResultsChannel);
-      supabase.removeChannel(likesChannel);
-      supabase.removeChannel(dislikesChannel);
       supabase.removeChannel(analyticsChannel);
     };
   }, [fetchProfiles]);
@@ -173,31 +150,6 @@ export function useAdminGameProfileDetail(userId: string | undefined) {
       })
       .subscribe();
 
-    const likesChannel = supabase
-      .channel(`admin-profile-detail-likes-${userId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_likes'
-      }, (payload) => {
-        if (payload.new && (payload.new as any).user_id === userId) {
-          fetchProfile();
-        }
-      })
-      .subscribe();
-
-    const dislikesChannel = supabase
-      .channel(`admin-profile-detail-dislikes-${userId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_dislikes'
-      }, (payload) => {
-        if (payload.new && (payload.new as any).user_id === userId) {
-          fetchProfile();
-        }
-      })
-      .subscribe();
 
     const analyticsChannel = supabase
       .channel(`admin-profile-detail-analytics-${userId}`)
@@ -214,8 +166,6 @@ export function useAdminGameProfileDetail(userId: string | undefined) {
 
     return () => {
       supabase.removeChannel(gameResultsChannel);
-      supabase.removeChannel(likesChannel);
-      supabase.removeChannel(dislikesChannel);
       supabase.removeChannel(analyticsChannel);
     };
   }, [fetchProfile, userId]);

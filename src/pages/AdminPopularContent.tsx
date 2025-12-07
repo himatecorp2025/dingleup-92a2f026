@@ -61,35 +61,7 @@ const AdminPopularContent = () => {
     checkAuth();
   }, [navigate]);
 
-  // Realtime subscriptions for automatic updates
-  useEffect(() => {
-    const likesChannel = supabase
-      .channel('admin-popular-content-likes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_likes'
-      }, () => {
-        fetchPopularityData();
-      })
-      .subscribe();
-
-    const dislikesChannel = supabase
-      .channel('admin-popular-content-dislikes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'question_dislikes'
-      }, () => {
-        fetchPopularityData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(likesChannel);
-      supabase.removeChannel(dislikesChannel);
-    };
-  }, []);
+  // Realtime subscriptions removed - question_likes/dislikes tables no longer exist
 
   const fetchPopularityData = async () => {
     setLoading(true);
