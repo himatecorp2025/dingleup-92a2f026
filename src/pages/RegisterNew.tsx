@@ -180,11 +180,10 @@ const RegisterNew = () => {
 
   return (
     <div 
-      className="h-screen w-screen fixed inset-0 overflow-hidden bg-gradient-to-br from-[#1a0033] via-[#2d1b69] to-[#0f0033] flex items-center justify-center animate-fade-in"
+      className="min-h-screen min-h-dvh w-screen fixed inset-0 overflow-hidden bg-gradient-to-br from-[#1a0033] via-[#2d1b69] to-[#0f0033] flex items-center justify-center animate-fade-in"
       style={{
         paddingTop: isStandalone ? 'env(safe-area-inset-top)' : '0',
-        paddingBottom: isStandalone ? 'env(safe-area-inset-bottom)' : '0',
-        padding: '0'
+        paddingBottom: isStandalone ? 'env(safe-area-inset-bottom)' : '0'
       }}
     >
       {/* Background image with 75% opacity - optimized for mobile performance */}
@@ -199,10 +198,11 @@ const RegisterNew = () => {
         }}
       />
 
-      <div className="w-[90vw] max-w-[500px] relative z-10" style={{ height: isStandalone ? 'calc(90vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))' : '90vh' }}>
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 relative w-full h-full flex flex-col"
+      <div className="w-[90vw] max-w-[500px] relative z-10 flex items-center justify-center" style={{ maxHeight: '90vh' }}>
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 relative w-full flex flex-col"
           style={{
-            padding: 'clamp(1rem, 2vh, 2rem)'
+            padding: 'clamp(1rem, 2vh, 2rem)',
+            maxHeight: '90vh'
           }}
         >
           <button 
