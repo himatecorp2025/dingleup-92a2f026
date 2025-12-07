@@ -169,7 +169,7 @@ const Invitation = () => {
         </button>
       </div>
 
-      <div className="h-full w-full overflow-y-auto overflow-x-hidden relative z-10" style={{ paddingBottom: 'calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + clamp(100px, 20vh, 150px))' }}>
+      <div className="h-full w-full overflow-y-auto overflow-x-hidden relative z-10" style={{ paddingBottom: 'calc(var(--bottom-nav-h, 80px) + env(safe-area-inset-bottom) + 40px)' }}>
         <div className="mx-auto" style={{ width: 'clamp(320px, 90vw, 672px)', paddingTop: 'clamp(3rem, 8vh, 5rem)' }}>
         {/* Header */}
         <div className="text-center mb-[2vh]">
