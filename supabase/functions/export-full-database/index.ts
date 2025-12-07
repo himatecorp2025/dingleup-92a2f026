@@ -29,7 +29,7 @@ const TABLES = [
   'leaderboard_public_cache', 'daily_leaderboard_snapshot', 'weekly_leaderboard_snapshot',
   'daily_winner_awarded', 'weekly_winner_awarded', 'daily_winners_popup_views',
   'daily_winner_popup_shown', 'weekly_winner_popup_shown', 'weekly_login_state',
-  'lootbox_instances', 'lootbox_daily_plan', 'purchases', 'booster_purchases',
+  'purchases', 'booster_purchases',
   'question_likes', 'question_dislikes', 'question_reactions', 'like_prompt_tracking',
   'friend_request_rate_limit', 'admin_audit_log',
   

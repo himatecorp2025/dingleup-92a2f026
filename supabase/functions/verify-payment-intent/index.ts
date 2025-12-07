@@ -58,30 +58,50 @@ serve(async (req) => {
 
     const productType = paymentIntent.metadata.product_type;
 
-    // Idempotencia: ellenőrizzük, hogy már jóváírtuk-e
-    const { data: existingPurchase } = await supabaseClient
-      .from('booster_purchases')
-      .select('id')
-      .eq('iap_transaction_id', paymentIntentId)
-      .single();
+    // Idempotencia: ellenőrizzük, hogy már jóváírtuk-e (coins esetén wallet_ledger-ben)
+    if (productType === 'coins') {
+      const { data: existingLedger } = await supabaseClient
+        .from('wallet_ledger')
+        .select('id')
+        .eq('idempotency_key', `coin_purchase_${paymentIntentId}`)
+        .single();
 
-    if (existingPurchase) {
-      console.log(`[verify-payment-intent] Already processed: ${paymentIntentId}`);
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Already processed',
-        alreadyProcessed: true 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      if (existingLedger) {
+        console.log(`[verify-payment-intent] Already processed: ${paymentIntentId}`);
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Already processed',
+          alreadyProcessed: true 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    } else {
+      // Booster típusok esetén booster_purchases-ben ellenőrzünk
+      const { data: existingPurchase } = await supabaseClient
+        .from('booster_purchases')
+        .select('id')
+        .eq('iap_transaction_id', paymentIntentId)
+        .single();
+
+      if (existingPurchase) {
+        console.log(`[verify-payment-intent] Already processed: ${paymentIntentId}`);
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Already processed',
+          alreadyProcessed: true 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
 
     // Jutalom jóváírása terméktípus alapján
     let goldGranted = 0;
     let livesGranted = 0;
     let speedTokensGranted = 0;
-    let lootboxesGranted = 0;
 
     switch (productType) {
       case 'coins': {
@@ -94,6 +114,7 @@ serve(async (req) => {
         const { error: creditError } = await supabaseClient.rpc('credit_wallet', {
           p_user_id: user.id,
           p_delta_coins: coinQuantity,
+          p_delta_lives: 0,
           p_source: 'coin_purchase',
           p_idempotency_key: `coin_purchase_${paymentIntentId}`,
           p_metadata: { 
@@ -104,26 +125,6 @@ serve(async (req) => {
 
         if (creditError) throw creditError;
         console.log(`[verify-payment-intent] Credited ${coinQuantity} coins to user ${user.id}`);
-        break;
-      }
-
-      case 'lootbox': {
-        const boxes = parseInt(paymentIntent.metadata.boxes || '1');
-        lootboxesGranted = boxes;
-        
-        // Lootbox instances létrehozása
-        const lootboxInserts = Array.from({ length: boxes }, () => ({
-          user_id: user.id,
-          status: 'stored',
-          source: 'purchase',
-          cost_gold: 0,
-        }));
-
-        const { error: lootboxError } = await supabaseClient
-          .from('lootbox_instances')
-          .insert(lootboxInserts);
-
-        if (lootboxError) throw lootboxError;
         break;
       }
 
@@ -254,13 +255,12 @@ serve(async (req) => {
         throw new Error(`Unknown product type: ${productType}`);
     }
 
-    // Purchase log rögzítése (csak ha nem coins típus, mert azt wallet_ledger-ben tároljuk)
+    // Purchase log rögzítése (csak booster típusok esetén, mert coins-t wallet_ledger-ben tároljuk)
     if (productType !== 'coins') {
       const { data: boosterTypeForLog } = await supabaseClient
         .from('booster_types')
         .select('id')
-        .eq('code', productType === 'lootbox' ? 'LOOTBOX' : 
-                     productType === 'speed_booster' ? 'SPEED_BOOST' : 
+        .eq('code', productType === 'speed_booster' ? 'SPEED_BOOST' : 
                      productType === 'premium_booster' ? 'PREMIUM' : 'INSTANT_RESCUE')
         .single();
 
@@ -285,7 +285,6 @@ serve(async (req) => {
       goldGranted,
       livesGranted,
       speedTokensGranted,
-      lootboxesGranted,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

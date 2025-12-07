@@ -21,7 +21,7 @@ import { toast } from 'sonner';
  */
 
 interface PaymentParams {
-  productType: 'coins' | 'speed_booster' | 'premium_booster' | 'instant_rescue' | 'lootbox';
+  productType: 'coins' | 'speed_booster' | 'premium_booster' | 'instant_rescue';
   amount: number; // cents
   currency: 'usd' | 'huf';
   displayName: string; // Termék neve (pl. "1 Ajándékdoboz")
