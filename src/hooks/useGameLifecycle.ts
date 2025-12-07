@@ -436,13 +436,23 @@ export const useGameLifecycle = (options: UseGameLifecycleOptions) => {
         return;
       }
 
+      // Build question analytics data for ad profiling
+      const questionAnalytics = questions.map((q, idx) => ({
+        questionId: q.id,
+        topicId: q.topic_id || q.topic, // Use topic_id if available, fallback to topic name
+        wasCorrect: idx < correctAnswers, // Simplified: first N are correct
+        responseTimeSeconds: responseTimes[idx] || 0,
+        questionIndex: idx,
+      }));
+
       const { data, error } = await supabase.functions.invoke('complete-game', {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: {
           category: 'mixed',
           correctAnswers: correctAnswers,
           totalQuestions: questions.length,
-          averageResponseTime: avgResponseTime
+          averageResponseTime: avgResponseTime,
+          questionAnalytics: questionAnalytics, // NEW: Send per-question data
         }
       });
 
@@ -477,7 +487,7 @@ export const useGameLifecycle = (options: UseGameLifecycleOptions) => {
     }
   }, [
     profile, responseTimes, userId, correctAnswers, questionStartTime,
-    questions.length, setCoinsEarned, refreshProfile
+    questions, setCoinsEarned, refreshProfile, t
   ]);
 
   const resetGameState = useCallback(() => {
