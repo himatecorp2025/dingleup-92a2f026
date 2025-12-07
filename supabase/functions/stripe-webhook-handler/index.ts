@@ -12,43 +12,6 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
-// ============= LOOTBOX HANDLER =============
-async function handleLootboxWebhook(sessionId: string, session: Stripe.Checkout.Session, correlationId: string) {
-  const ctx = startMetrics({ functionName: 'webhook-lootbox', userId: session.metadata?.user_id });
-  ctx.extra['correlation_id'] = correlationId;
-  ctx.extra['session_id'] = sessionId;
-
-  const userId = session.metadata?.user_id;
-  const boxes = parseInt(session.metadata?.boxes || '0');
-
-  if (!userId || !boxes) {
-    logError(ctx, new Error('MISSING_METADATA'), { sessionId });
-    return;
-  }
-
-  // Call atomic RPC function (idempotent, bulk insert)
-  const { data: result, error } = await measureStage(ctx, 'rpc_apply', async () => {
-    incDbQuery(ctx);
-    return await supabaseAdmin
-      .rpc('apply_lootbox_purchase_from_stripe', {
-        p_user_id: userId,
-        p_session_id: sessionId,
-        p_boxes: boxes
-      });
-  });
-
-  if (error) {
-    logError(ctx, error, { sessionId, boxes });
-    throw error;
-  }
-
-  logSuccess(ctx, { 
-    sessionId, 
-    boxes_credited: result?.boxes_credited || boxes,
-    already_processed: result?.already_processed || false 
-  });
-}
-
 // ============= SPEED BOOSTER HANDLER =============
 async function handleSpeedBoosterWebhook(sessionId: string, session: Stripe.Checkout.Session, correlationId: string) {
   const ctx = startMetrics({ functionName: 'webhook-speed', userId: session.metadata?.user_id });
@@ -250,9 +213,6 @@ serve(async (req) => {
     try {
       await measureStage(ctx, 'handler_execution', async () => {
         switch (productType) {
-          case "lootbox":
-            await handleLootboxWebhook(sessionId, session, correlationId);
-            break;
           case "speed_booster":
             await handleSpeedBoosterWebhook(sessionId, session, correlationId);
             break;
