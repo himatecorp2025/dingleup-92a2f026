@@ -13,6 +13,7 @@ export interface Question {
   audience?: { A: number; B: number; C: number };
   third?: string;
   topic: string;
+  topic_id?: string; // Topic ID for analytics
 }
 
 export interface ShuffledQuestion extends Question {

@@ -4,11 +4,20 @@ import { checkRateLimit, rateLimitExceeded, RATE_LIMITS } from '../_shared/rateL
 import { validateInteger, validateEnum, validateString } from '../_shared/validation.ts';
 import { startMetrics, measureStage, incDbQuery, logSuccess, logError, shouldSampleSuccessLog } from '../_shared/metrics.ts';
 
+interface QuestionAnalytic {
+  questionId: string;
+  topicId: string;
+  wasCorrect: boolean;
+  responseTimeSeconds: number;
+  questionIndex: number;
+}
+
 interface GameCompletion {
   category: string;
   correctAnswers: number;
   totalQuestions: number;
   averageResponseTime: number;
+  questionAnalytics?: QuestionAnalytic[];
 }
 
 Deno.serve(async (req) => {
@@ -160,6 +169,9 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Generate session ID for this game
+    const sessionId = crypto.randomUUID();
+
     // Insert game result using ADMIN client (bypasses RLS) - TRANSACTION START
     const { data: gameResult, error: insertError } = await measureStage(ctx, 'insert_result', async () => {
       incDbQuery(ctx);
@@ -182,6 +194,96 @@ Deno.serve(async (req) => {
     if (insertError) {
       logError(ctx, insertError, { correlation_id: correlationId, stage: 'insert_result' });
       throw new Error('Failed to save game result');
+    }
+
+    // NEW: Save question analytics for ad profiling (game_question_analytics)
+    if (body.questionAnalytics && Array.isArray(body.questionAnalytics) && body.questionAnalytics.length > 0) {
+      await measureStage(ctx, 'question_analytics', async () => {
+        try {
+          const analyticsRows = body.questionAnalytics!.map((qa) => ({
+            user_id: user.id,
+            session_id: sessionId,
+            question_id: qa.questionId || null,
+            category: body.category,
+            question_index: qa.questionIndex,
+            was_correct: qa.wasCorrect,
+            response_time_seconds: qa.responseTimeSeconds,
+            game_result_id: gameResult?.id || null,
+          }));
+
+          incDbQuery(ctx);
+          const { error: analyticsError } = await supabaseAdmin
+            .from('game_question_analytics')
+            .insert(analyticsRows);
+
+          if (analyticsError) {
+            console.error('[complete-game] Question analytics insert error:', analyticsError);
+          } else {
+            console.log(`[complete-game] Saved ${analyticsRows.length} question analytics records`);
+          }
+        } catch (analyticsErr) {
+          console.error('[complete-game] Question analytics exception:', analyticsErr);
+        }
+      });
+
+      // NEW: Update user_topic_stats for ad profiling
+      await measureStage(ctx, 'topic_stats', async () => {
+        try {
+          // Group analytics by topic
+          const topicStats: Record<string, { correct: number; total: number }> = {};
+          
+          for (const qa of body.questionAnalytics!) {
+            const topicId = qa.topicId;
+            if (!topicId) continue;
+            
+            if (!topicStats[topicId]) {
+              topicStats[topicId] = { correct: 0, total: 0 };
+            }
+            topicStats[topicId].total++;
+            if (qa.wasCorrect) {
+              topicStats[topicId].correct++;
+            }
+          }
+
+          // Upsert topic stats for each topic
+          for (const [topicId, stats] of Object.entries(topicStats)) {
+            incDbQuery(ctx);
+            
+            // First, try to get existing stats
+            const { data: existing } = await supabaseAdmin
+              .from('user_topic_stats')
+              .select('answered_count, correct_count')
+              .eq('user_id', user.id)
+              .eq('topic_id', topicId)
+              .maybeSingle();
+
+            const newAnsweredCount = (existing?.answered_count || 0) + stats.total;
+            const newCorrectCount = (existing?.correct_count || 0) + stats.correct;
+
+            incDbQuery(ctx);
+            const { error: upsertError } = await supabaseAdmin
+              .from('user_topic_stats')
+              .upsert({
+                user_id: user.id,
+                topic_id: topicId,
+                answered_count: newAnsweredCount,
+                correct_count: newCorrectCount,
+                updated_at: new Date().toISOString(),
+              }, {
+                onConflict: 'user_id,topic_id',
+                ignoreDuplicates: false
+              });
+
+            if (upsertError) {
+              console.error(`[complete-game] Topic stats upsert error for ${topicId}:`, upsertError);
+            }
+          }
+
+          console.log(`[complete-game] Updated topic stats for ${Object.keys(topicStats).length} topics`);
+        } catch (topicErr) {
+          console.error('[complete-game] Topic stats exception:', topicErr);
+        }
+      });
     }
 
     // NOTE: Rewards were already credited after each correct answer
@@ -261,7 +363,8 @@ Deno.serve(async (req) => {
       logSuccess(ctx, { 
         correlation_id: correlationId,
         correct_answers: body.correctAnswers,
-        coins_earned: coinsEarned
+        coins_earned: coinsEarned,
+        question_analytics_count: body.questionAnalytics?.length || 0
       });
     }
 
