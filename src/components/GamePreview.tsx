@@ -27,9 +27,6 @@ import { useGameAnswers } from "@/hooks/useGameAnswers";
 import { useGameNavigation } from "@/hooks/useGameNavigation";
 import { useGameErrorHandling } from "@/hooks/useGameErrorHandling";
 import { useGameAnimation } from "@/hooks/useGameAnimation";
-import { useLikePrompt } from "@/hooks/useLikePrompt";
-import { QuestionLikePromptPopup } from "./QuestionLikePromptPopup";
-import { useQuestionLike } from "@/hooks/useQuestionLike";
 import { GameErrorBanner } from "./game/GameErrorBanner";
 import { GameQuestionContainer } from "./game/GameQuestionContainer";
 
@@ -100,24 +97,6 @@ const GamePreview = memo(() => {
   const [firstAttempt, setFirstAttempt] = useState<string | null>(null);
   const [secondAttempt, setSecondAttempt] = useState<string | null>(null);
 
-  // Like prompt system
-  const currentQuestionId = questions[currentQuestionIndex]?.id || null;
-  // Generate stable gameSessionId at component mount
-  const [gameSessionId] = useState(() => `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
-  
-  const {
-    isLikePromptOpen,
-    checkAndShowLikePrompt,
-    handleCloseLikePrompt,
-    handleLikeFromPrompt,
-  } = useLikePrompt({ 
-    currentQuestionIndex, 
-    questionId: currentQuestionId,
-    gameSessionId 
-  });
-
-  // Question like functionality
-  const { liked: isLiked, toggleLike: handleToggleLike } = useQuestionLike(currentQuestionId);
 
   const {
     isAnimating,
@@ -152,7 +131,6 @@ const GamePreview = memo(() => {
     addResponseTime,
     setSelectedAnswer,
     triggerHaptic,
-    onAnswerProcessed: checkAndShowLikePrompt,
   });
   
   const {
@@ -246,7 +224,7 @@ const GamePreview = memo(() => {
     setContinueType,
     setErrorBannerVisible,
     setErrorBannerMessage,
-    onAnswerProcessed: checkAndShowLikePrompt,
+    
   });
 
   const {
@@ -675,12 +653,6 @@ const GamePreview = memo(() => {
         </div>
 
         {/* Dialogs */}
-        <QuestionLikePromptPopup
-          isOpen={isLikePromptOpen}
-          onClose={handleCloseLikePrompt}
-          onLike={() => handleLikeFromPrompt(handleToggleLike)}
-          isLiked={isLiked}
-        />
         
         <ExitGameDialog
           open={showExitDialog}
