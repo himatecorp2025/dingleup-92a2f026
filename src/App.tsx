@@ -74,9 +74,9 @@ const AdminPlayerBehaviors = lazy(() => import("./pages/AdminPlayerBehaviors"));
 const AdminProfile = lazy(() => import("./pages/AdminProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Loading fallback component
+// Loading fallback component - uses fixed positioning to not affect layout
 const PageLoader = () => (
-  <div className="min-h-dvh min-h-svh bg-black flex items-center justify-center">
+  <div className="fixed inset-0 bg-black z-50">
     {/* Silent loading - no visible text or spinner for seamless transition */}
   </div>
 );
@@ -138,7 +138,6 @@ const AppCore = () => {
         <ScrollBehaviorManager />
         <AudioPolicyManager />
         <Suspense fallback={<PageLoader />}>
-          <div className="animate-fade-in">
             <AppRouteGuard>
             <Routes>
               {/* Public routes - no ErrorBoundary needed */}
@@ -198,7 +197,6 @@ const AppCore = () => {
               <Route path="*" element={<ErrorBoundary><NotFound /></ErrorBoundary>} />
             </Routes>
           </AppRouteGuard>
-          </div>
         </Suspense>
       </BrowserRouter>
     </>
