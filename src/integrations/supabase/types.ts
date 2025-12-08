@@ -3220,9 +3220,7 @@ export type Database = {
           avg_response_ms: number | null
           correct_count: number
           created_at: string
-          dislike_count: number
           last_answered_at: string | null
-          like_count: number
           score: number
           topic_id: number
           updated_at: string
@@ -3233,9 +3231,7 @@ export type Database = {
           avg_response_ms?: number | null
           correct_count?: number
           created_at?: string
-          dislike_count?: number
           last_answered_at?: string | null
-          like_count?: number
           score?: number
           topic_id: number
           updated_at?: string
@@ -3246,9 +3242,7 @@ export type Database = {
           avg_response_ms?: number | null
           correct_count?: number
           created_at?: string
-          dislike_count?: number
           last_answered_at?: string | null
-          like_count?: number
           score?: number
           topic_id?: number
           updated_at?: string
