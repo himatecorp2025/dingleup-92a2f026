@@ -171,10 +171,10 @@ const Creators = () => {
                   </div>
 
                   <div className="mt-4">
-                    <h3 className="text-[clamp(0.875rem,3vw,1rem)] font-semibold text-white mb-2 text-center md:text-left">
+                    <h3 className="text-[clamp(0.875rem,3vw,1rem)] font-semibold text-white mb-2 text-center">
                       {t(step.titleKey)}
                     </h3>
-                    <p className="text-[clamp(0.75rem,2.5vw,0.875rem)] text-white/70 text-center md:text-left leading-relaxed">
+                    <p className="text-[clamp(0.75rem,2.5vw,0.875rem)] text-white/70 text-center leading-relaxed">
                       {t(step.textKey)}
                     </p>
                   </div>
