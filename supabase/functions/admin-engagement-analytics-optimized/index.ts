@@ -82,12 +82,12 @@ Deno.serve(async (req) => {
       // Game results (only necessary columns)
       service
         .from('game_results')
-        .select('user_id, correct_answers, completed')
+        .select('user_id, correct_answers, completed, category')
         .eq('completed', true)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       
-      // Topics (only like counts)
-      service.from('topics').select('id, name, like_count, dislike_count')
+      // Topics (id and name only)
+      service.from('topics').select('id, name')
     ]);
 
     const engagementMetrics = engagementRes.data || [];
@@ -170,11 +170,17 @@ Deno.serve(async (req) => {
       ? Math.round((totalCorrectAnswers / gameResults.length) * 10) / 10
       : 0;
 
-    // Topic popularity (direct from topics table)
+    // Topic popularity (based on game play count from game_results categories)
+    const categoryPlayCounts = new Map<string, number>();
+    gameResults.forEach((g: any) => {
+      const category = g.category || 'unknown';
+      categoryPlayCounts.set(category, (categoryPlayCounts.get(category) || 0) + 1);
+    });
+    
     const mostPlayedCategories = topics
       .map((t: any) => ({
         category: t.name,
-        count: (t.like_count || 0) - (t.dislike_count || 0)
+        count: categoryPlayCounts.get(t.name) || 0
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);

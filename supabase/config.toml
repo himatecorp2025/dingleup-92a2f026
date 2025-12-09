@@ -71,22 +71,6 @@ verify_jwt = true
 [functions.submit-dob]
 verify_jwt = true
 
-# Lootbox Functions
-[functions.lootbox-active]
-verify_jwt = true
-
-[functions.lootbox-decide]
-verify_jwt = true
-
-[functions.lootbox-open-stored]
-verify_jwt = true
-
-[functions.lootbox-stored]
-verify_jwt = true
-
-[functions.lootbox-heartbeat]
-verify_jwt = true
-
 # Daily Gift & Winners Functions
 [functions.get-daily-gift-status]
 verify_jwt = true
@@ -126,9 +110,6 @@ verify_jwt = true
 verify_jwt = true
 
 # Payment Functions (Stripe)
-[functions.create-lootbox-payment]
-verify_jwt = true
-
 [functions.create-speed-boost-payment]
 verify_jwt = true
 
@@ -139,9 +120,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.create-payment-intent]
-verify_jwt = true
-
-[functions.verify-lootbox-payment]
 verify_jwt = true
 
 [functions.verify-speed-boost-payment]
@@ -228,27 +206,6 @@ verify_jwt = false
 [functions.get-topic-popularity]
 verify_jwt = false
 
-[functions.get-question-like-status]
-verify_jwt = true
-
-[functions.get-question-reaction-status]
-verify_jwt = true
-
-[functions.toggle-question-like]
-verify_jwt = true
-
-[functions.toggle-question-reaction]
-verify_jwt = true
-
-[functions.check-like-prompt-eligibility]
-verify_jwt = true
-
-[functions.record-like-prompt-view]
-verify_jwt = true
-
-[functions.credit-like-popup-reward]
-verify_jwt = true
-
 [functions.get-translations]
 verify_jwt = false
 
@@ -279,9 +236,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.admin-game-profile-detail]
-verify_jwt = true
-
-[functions.admin-lootbox-analytics]
 verify_jwt = true
 
 [functions.admin-monetization-analytics]
@@ -357,4 +311,3 @@ verify_jwt = false
 # Activity & Logging
 [functions.log-activity-ping]
 verify_jwt = true
-

@@ -3754,7 +3754,6 @@ export type Database = {
         Returns: Json
       }
       distribute_weekly_rewards: { Args: never; Returns: undefined }
-      expire_old_lootboxes: { Args: never; Returns: number }
       forgot_pin_atomic: {
         Args: {
           p_new_pin: string

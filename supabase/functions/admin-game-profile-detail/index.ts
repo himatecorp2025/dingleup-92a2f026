@@ -92,22 +92,16 @@ Deno.serve(async (req) => {
     // Calculate aggregated data
     let totalAnswered = 0;
     let totalCorrect = 0;
-    let totalLikes = 0;
-    let totalDislikes = 0;
 
     const allTopics = (topicStats || []).map(stat => {
       totalAnswered += stat.answered_count;
       totalCorrect += stat.correct_count;
-      totalLikes += stat.like_count;
-      totalDislikes += stat.dislike_count;
 
       return {
         topicId: String(stat.topic_id),
         topicName: topicMap.get(stat.topic_id) || `Topic ${stat.topic_id}`,
         answeredCount: stat.answered_count,
         correctCount: stat.correct_count,
-        likeCount: stat.like_count,
-        dislikeCount: stat.dislike_count,
         correctRatio: stat.answered_count > 0 ? stat.correct_count / stat.answered_count : 0,
         score: Number(stat.score),
         avgResponseMs: stat.avg_response_ms,
@@ -129,8 +123,6 @@ Deno.serve(async (req) => {
       totalAnswered,
       totalCorrect,
       overallCorrectRatio: totalAnswered > 0 ? totalCorrect / totalAnswered : 0,
-      totalLikes,
-      totalDislikes,
       topTopics,
       allTopics,
       aiPersonalizedQuestionsEnabled: aiEnabled,
@@ -141,7 +133,7 @@ Deno.serve(async (req) => {
         totalQuestions: 15,
         preferredTopicsPercent: 70,
         newQuestionsPercent: 20,
-        dislikedTopicsPercent: 10,
+        otherTopicsPercent: 10,
       },
     };
 

@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUserGameProfileQuery } from '@/hooks/queries/useUserGameProfileQuery';
-import { Brain, TrendingUp, Heart, ThumbsDown, Target, Info, ArrowLeft } from 'lucide-react';
+import { Brain, TrendingUp, Target, Info, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -133,7 +133,7 @@ export default function ProfileGame() {
         </Card>
 
         {/* Statisztikai kártyák */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
           <Card className="bg-white/5 border-white/10 backdrop-blur">
             <CardHeader className="pb-2">
               <CardDescription className="text-white/70">{t('profile_game.stats.total_answers')}</CardDescription>
@@ -159,19 +159,6 @@ export default function ProfileGame() {
             <CardContent>
               <p className="text-3xl font-bold text-blue-400">
                 {(profile.overallCorrectRatio * 100).toFixed(1)}%
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/5 border-white/10 backdrop-blur">
-            <CardHeader className="pb-2">
-              <CardDescription className="text-white/70 flex items-center gap-2">
-                <Heart className="h-4 w-4" /> / <ThumbsDown className="h-4 w-4" />
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-white">
-                {profile.totalLikes} / {profile.totalDislikes}
               </p>
             </CardContent>
           </Card>
@@ -203,9 +190,6 @@ export default function ProfileGame() {
                   </div>
                   <div className="text-right">
                     <p className="text-white font-semibold">{t('profile_game.table.score')}: {topic.score.toFixed(2)}</p>
-                    <p className="text-white/70 text-sm">
-                      <Heart className="inline h-3 w-3" /> {topic.likeCount} • <ThumbsDown className="inline h-3 w-3" /> {topic.dislikeCount}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -240,7 +224,7 @@ export default function ProfileGame() {
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-white/90">{t('profile_game.dislike_topics')}</span>
+                    <span className="text-white/90">{t('profile_game.other_topics')}</span>
                     <span className="text-white font-semibold">10%</span>
                   </div>
                   <Progress value={10} className="h-3" />
@@ -266,7 +250,6 @@ export default function ProfileGame() {
                     <th className="text-left py-2 px-4 text-white/90">{t('profile_game.table.topic')}</th>
                     <th className="text-right py-2 px-4 text-white/90">{t('profile_game.table.answers')}</th>
                     <th className="text-right py-2 px-4 text-white/90">{t('profile_game.table.correct_percent')}</th>
-                    <th className="text-right py-2 px-4 text-white/90">{t('profile_game.table.like_dislike')}</th>
                     <th className="text-right py-2 px-4 text-white/90">{t('profile_game.table.score')}</th>
                     <th className="text-center py-2 px-4 text-white/90">{t('profile_game.table.top3')}</th>
                   </tr>
@@ -278,9 +261,6 @@ export default function ProfileGame() {
                       <td className="text-right py-3 px-4 text-white">{topic.answeredCount}</td>
                       <td className="text-right py-3 px-4 text-white">
                         {(topic.correctRatio * 100).toFixed(1)}%
-                      </td>
-                      <td className="text-right py-3 px-4 text-white">
-                        {topic.likeCount} / {topic.dislikeCount}
                       </td>
                       <td className="text-right py-3 px-4 text-white">{topic.score.toFixed(2)}</td>
                       <td className="text-center py-3 px-4">
