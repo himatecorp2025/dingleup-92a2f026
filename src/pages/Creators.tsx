@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Eye, Users, MousePointerClick } from 'lucide-react';
+import { LogOut, Eye, Users, MousePointerClick, Hash } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import BottomNav from '@/components/BottomNav';
 import creatorsHeroBg from '@/assets/creators-hero-bg.png';
@@ -35,6 +35,7 @@ const Creators = () => {
 
   const benefits = [
     { icon: Eye, titleKey: 'creators.benefit1_title', textKey: 'creators.benefit1_text' },
+    { icon: Hash, titleKey: 'creators.benefit4_title', textKey: 'creators.benefit4_text' },
     { icon: Users, titleKey: 'creators.benefit2_title', textKey: 'creators.benefit2_text' },
     { icon: MousePointerClick, titleKey: 'creators.benefit3_title', textKey: 'creators.benefit3_text' },
   ];
@@ -221,7 +222,7 @@ const Creators = () => {
               {t('creators.benefits_title')}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {benefits.map((benefit, index) => (
                 <div
                   key={index}
