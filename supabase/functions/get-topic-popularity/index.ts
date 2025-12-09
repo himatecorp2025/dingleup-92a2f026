@@ -48,7 +48,7 @@ serve(async (req) => {
       );
     }
 
-    // Get all topics with their aggregated like counts
+    // Get all topics
     const { data: topics, error: topicsError } = await supabaseClient
       .from('topics')
       .select('id, name, description');
@@ -57,42 +57,37 @@ serve(async (req) => {
       throw topicsError;
     }
 
-    // Get all questions with their like counts and topic associations
-    const { data: questions, error: questionsError } = await supabaseClient
-      .from('questions')
-      .select('topic_id, like_count');
+    // Get game results to count plays by category
+    const { data: gameResults, error: gamesError } = await supabaseClient
+      .from('game_results')
+      .select('category')
+      .eq('completed', true);
 
-    if (questionsError) {
-      throw questionsError;
+    if (gamesError) {
+      throw gamesError;
     }
 
-    // Aggregate likes by topic
-    const topicLikesMap = new Map<number, { totalLikes: number; questionCount: number }>();
-
-    questions?.forEach((q) => {
-      if (q.topic_id) {
-        const current = topicLikesMap.get(q.topic_id) || { totalLikes: 0, questionCount: 0 };
-        topicLikesMap.set(q.topic_id, {
-          totalLikes: current.totalLikes + (q.like_count || 0),
-          questionCount: current.questionCount + 1,
-        });
+    // Aggregate play counts by category/topic
+    const topicPlayCounts = new Map<string, number>();
+    gameResults?.forEach((g) => {
+      if (g.category) {
+        topicPlayCounts.set(g.category, (topicPlayCounts.get(g.category) || 0) + 1);
       }
     });
 
     // Build response
     const popularityData = topics?.map((topic) => {
-      const stats = topicLikesMap.get(topic.id) || { totalLikes: 0, questionCount: 0 };
       return {
         topic_id: topic.id,
         topic_name: topic.name,
         topic_description: topic.description,
-        total_likes: stats.totalLikes,
-        question_count: stats.questionCount,
+        play_count: topicPlayCounts.get(topic.name) || 0,
+        question_count: 0, // Will be populated if needed
       };
     }) || [];
 
-    // Sort by total likes descending
-    popularityData.sort((a, b) => b.total_likes - a.total_likes);
+    // Sort by play count descending
+    popularityData.sort((a, b) => b.play_count - a.play_count);
 
     return new Response(
       JSON.stringify({

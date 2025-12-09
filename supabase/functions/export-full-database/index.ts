@@ -19,7 +19,7 @@ const TABLES = [
   'question_translations', 'wallet_ledger', 'wallet_ledger_archive',
   'lives_ledger', 'lives_ledger_archive', 'tutorial_progress', 'user_presence', 'speed_tokens',
   'user_sessions', 'user_game_settings', 'user_topic_stats', 'user_ad_interest_candidates',
-  'user_cohorts', 'user_engagement_scores', 'user_journey_analytics', 'user_like_prompt_tracking',
+  'user_cohorts', 'user_engagement_scores', 'user_journey_analytics',
   'user_premium_booster_state', 'user_purchase_settings', 'user_activity_daily', 'user_activity_pings',
   'question_seen_history', 'subscribers', 'welcome_bonus_attempts', 'typing_status',
   
@@ -30,7 +30,7 @@ const TABLES = [
   'daily_winner_awarded', 'weekly_winner_awarded', 'daily_winners_popup_views',
   'daily_winner_popup_shown', 'weekly_winner_popup_shown', 'weekly_login_state',
   'purchases', 'booster_purchases',
-  'question_likes', 'question_dislikes', 'question_reactions', 'like_prompt_tracking',
+  'question_reactions',
   'friend_request_rate_limit', 'admin_audit_log',
   
   // Level 4: Depends on Level 3

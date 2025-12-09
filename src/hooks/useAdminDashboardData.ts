@@ -15,9 +15,7 @@ export interface AdminDashboardData {
     };
     topTopics: Array<{
       topic_name: string;
-      net_likes: number;
-      like_count: number;
-      dislike_count: number;
+      play_count: number;
     }>;
   };
   retention: {

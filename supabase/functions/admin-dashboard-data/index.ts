@@ -175,15 +175,19 @@ serve(async (req) => {
       ? gameResults.reduce((sum: number, g: any) => sum + (g.correct_answers || 0), 0) / gameResults.length
       : 0;
 
-    // Topic popularity (net likes)
+    // Topic popularity (based on game play count)
+    const topicPlayCounts = new Map<string, number>();
+    gameResults.forEach((g: any) => {
+      const category = g.category || 'unknown';
+      topicPlayCounts.set(category, (topicPlayCounts.get(category) || 0) + 1);
+    });
+    
     const topTopics = topics
       .map((t: any) => ({
         topic_name: t.name,
-        net_likes: (t.like_count || 0) - (t.dislike_count || 0),
-        like_count: t.like_count || 0,
-        dislike_count: t.dislike_count || 0
+        play_count: topicPlayCounts.get(t.name) || 0
       }))
-      .sort((a, b) => b.net_likes - a.net_likes)
+      .sort((a, b) => b.play_count - a.play_count)
       .slice(0, 10);
 
     const engagementAnalytics = {
