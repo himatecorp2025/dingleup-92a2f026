@@ -16,25 +16,21 @@ schedule = "*/5 * * * *"
 function = "process-daily-winners"
 
 # CRITICAL OPTIMIZATION: Leaderboard cache refresh every 1 minute
-# Reduces leaderboard query time from 3,500ms to ~150ms (95% improvement)
 [[edge_runtime.cron]]
 schedule = "* * * * *"
 function = "refresh-leaderboard-cache"
 
 # PHASE 1 OPTIMIZATION: Daily rankings materialized view refresh every 5 minutes
-# Eliminates O(N log N) rank recalculation on every game completion
 [[edge_runtime.cron]]
 schedule = "*/5 * * * *"
 function = "refresh-daily-rankings-mv"
 
 # PHASE 2 OPTIMIZATION: Game sessions cleanup every hour
-# Prevents table bloat by removing old completed sessions
 [[edge_runtime.cron]]
 schedule = "0 * * * *"
 function = "cleanup-game-sessions"
 
 # PHASE 2 OPTIMIZATION: Ledger archival monthly (1st of month at 3 AM)
-# Archives wallet_ledger and lives_ledger entries older than 90 days
 [[edge_runtime.cron]]
 schedule = "0 3 1 * *"
 function = "archive-ledgers"
@@ -109,41 +105,11 @@ verify_jwt = true
 [functions.update-user-game-settings]
 verify_jwt = true
 
-# Payment Functions (Stripe)
-[functions.create-speed-boost-payment]
-verify_jwt = true
-
-[functions.create-premium-booster-payment]
-verify_jwt = true
-
-[functions.create-instant-rescue-payment]
-verify_jwt = true
-
-[functions.create-payment-intent]
-verify_jwt = true
-
-[functions.verify-speed-boost-payment]
-verify_jwt = true
-
-[functions.verify-premium-booster-payment]
-verify_jwt = true
-
-[functions.verify-instant-rescue-payment]
-verify_jwt = true
-
-[functions.verify-payment-intent]
-verify_jwt = true
-
-[functions.stripe-webhook-handler]
-verify_jwt = false
-
+# Booster Functions (Gold-only purchases)
 [functions.purchase-booster]
 verify_jwt = true
 
 [functions.activate-speed-token]
-verify_jwt = true
-
-[functions.activate-premium-speed]
 verify_jwt = true
 
 # Social Functions (Friends, DM, etc.)

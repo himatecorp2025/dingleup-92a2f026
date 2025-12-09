@@ -689,54 +689,32 @@ const Profile = () => {
               </svg>
               <p className="text-xs sm:text-sm text-white/90 mb-1 font-semibold drop-shadow-lg">{t('profile.free_booster')}</p>
               <p className="text-[10px] sm:text-xs text-white/70 leading-tight" dangerouslySetInnerHTML={{ __html: t('profile.free_booster_rewards') }} />
-              {boosterState.pendingSpeedTokensCount > 0 ? (
-                <button
-                  onClick={async () => {
-                    try {
-                      toast.loading(t('profile.speed_activating'), { id: 'speed-activate' });
-                      const { data, error } = await supabase.functions.invoke('activate-speed-token');
-                      if (error) throw error;
-                      if (data?.success) {
-                        toast.success(t('profile.speed_activated').replace('{minutes}', data.activeSpeedToken?.durationMinutes), { id: 'speed-activate' });
-                        refetchWallet();
-                        refreshProfile();
-                      }
-                    } catch (e) {
-                      toast.error(t('profile.purchase_error'), { id: 'speed-activate' });
+              <button
+                onClick={async () => {
+                  if ((walletData?.coinsCurrent || 0) < 900) {
+                    toast.error(t('profile.not_enough_gold'));
+                    return;
+                  }
+                  try {
+                    toast.loading(t('profile.purchasing'), { id: 'free-booster' });
+                    const { data, error } = await supabase.functions.invoke('purchase-booster', {
+                      body: { boosterCode: 'FREE' }
+                    });
+                    if (error) throw error;
+                    if (data?.success) {
+                      toast.success(t('profile.purchase_success').replace('{gold}', data.grantedRewards?.gold).replace('{lives}', data.grantedRewards?.lives), { id: 'free-booster' });
+                      refetchWallet();
+                      refreshProfile();
                     }
-                  }}
-                  className="w-full mt-2 px-2 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all shadow-lg"
-                >
-                  {t('profile.activate_speed')} ({boosterState.pendingSpeedTokensCount} {t('profile.speed_tokens')})
-                </button>
-              ) : (
-                <button
-                  onClick={async () => {
-                    if ((walletData?.coinsCurrent || 0) < 900) {
-                      toast.error(t('profile.not_enough_gold'));
-                      return;
-                    }
-                    try {
-                      toast.loading(t('profile.purchasing'), { id: 'free-booster' });
-                      const { data, error } = await supabase.functions.invoke('purchase-booster', {
-                        body: { boosterCode: 'FREE' }
-                      });
-                      if (error) throw error;
-                      if (data?.success) {
-                        toast.success(t('profile.purchase_success').replace('{gold}', data.grantedRewards?.gold).replace('{lives}', data.grantedRewards?.lives), { id: 'free-booster' });
-                        refetchWallet();
-                        refreshProfile();
-                      }
-                    } catch (e) {
-                      toast.error(t('profile.purchase_error'), { id: 'free-booster' });
-                    }
-                  }}
-                  disabled={(walletData?.coinsCurrent || 0) < 900}
-                  className="w-full mt-2 px-2 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
-                >
-                  {(walletData?.coinsCurrent || 0) < 900 ? t('profile.not_enough_gold') : t('profile.free_booster_price')}
-                </button>
-              )}
+                  } catch (e) {
+                    toast.error(t('profile.purchase_error'), { id: 'free-booster' });
+                  }
+                }}
+                disabled={(walletData?.coinsCurrent || 0) < 900}
+                className="w-full mt-2 px-2 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+              >
+                {(walletData?.coinsCurrent || 0) < 900 ? t('profile.not_enough_gold') : t('profile.free_booster_price')}
+              </button>
             </div>
           </div>
         </div>
