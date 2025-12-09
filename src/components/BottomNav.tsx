@@ -87,14 +87,6 @@ const BottomNav = () => {
       label: t('nav.dashboard'), 
       path: '/dashboard' 
     },
-    {
-      icon: () => (
-        <Zap style={{ width: 'clamp(18px, 3vh, 22px)', height: 'clamp(18px, 3vh, 22px)' }} />
-      ),
-      label: t('nav.creators'),
-      path: '/creators',
-      isGold: true
-    },
     { 
       icon: () => (
         <svg style={{ width: 'clamp(18px, 3vh, 22px)', height: 'clamp(18px, 3vh, 22px)' }} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -106,6 +98,14 @@ const BottomNav = () => {
       ),
       label: t('nav.share'), 
       path: '/invitation' 
+    },
+    {
+      icon: () => (
+        <Zap style={{ width: 'clamp(18px, 3vh, 22px)', height: 'clamp(18px, 3vh, 22px)' }} />
+      ),
+      label: t('nav.creators'),
+      path: '/creators',
+      isGold: true
     },
     { 
       icon: () => (
