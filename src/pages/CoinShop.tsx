@@ -167,10 +167,10 @@ const CoinShop = () => {
                     </span>
                   </div>
 
-                  {/* Plus sign between */}
+                  {/* Plus sign between - 50% larger */}
                   {pkg.lives > 0 && (
                     <span 
-                      className="font-bold text-[clamp(0.875rem,4vw,1.25rem)] leading-none"
+                      className="font-bold text-[clamp(1.3rem,6vw,1.875rem)] leading-none"
                       style={{
                         background: 'linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%)',
                         WebkitBackgroundClip: 'text',
@@ -195,7 +195,7 @@ const CoinShop = () => {
                           filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
                         }}
                       >
-                        +{pkg.lives}
+                        {pkg.lives}
                       </span>
                     </div>
                   )}
