@@ -149,39 +149,57 @@ const CoinShop = () => {
                   }}
                 />
 
-                {/* Coin and Life icons row - 3D SVG icons */}
-                <div className="relative z-10 flex items-center justify-center gap-[clamp(0.125rem,0.5vw,0.25rem)] mb-[clamp(0.125rem,0.5vh,0.25rem)]">
-                  <CoinIcon3D size={28} />
-                  {pkg.lives > 0 && <HeartIcon3D size={28} />}
+                {/* Icons with values below - coin on left, heart on right with + between */}
+                <div className="relative z-10 flex items-center justify-center gap-[clamp(0.25rem,1vw,0.5rem)]">
+                  {/* Coin column */}
+                  <div className="flex flex-col items-center">
+                    <CoinIcon3D size={28} />
+                    <span 
+                      className="font-bold text-[clamp(0.7rem,3vw,0.875rem)] leading-tight"
+                      style={{
+                        background: 'linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                      }}
+                    >
+                      {pkg.coins.toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* Plus sign between */}
+                  {pkg.lives > 0 && (
+                    <span 
+                      className="font-bold text-[clamp(0.875rem,4vw,1.25rem)] leading-none"
+                      style={{
+                        background: 'linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                      }}
+                    >
+                      +
+                    </span>
+                  )}
+
+                  {/* Heart column */}
+                  {pkg.lives > 0 && (
+                    <div className="flex flex-col items-center">
+                      <HeartIcon3D size={28} />
+                      <span 
+                        className="font-bold text-[clamp(0.7rem,3vw,0.875rem)] leading-tight"
+                        style={{
+                          background: 'linear-gradient(180deg, #f87171 0%, #ef4444 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                        }}
+                      >
+                        +{pkg.lives}
+                      </span>
+                    </div>
+                  )}
                 </div>
-
-                {/* Coin amount with 3D text effect */}
-                <span 
-                  className="relative z-10 font-bold text-[clamp(0.75rem,3.5vw,1rem)] leading-tight"
-                  style={{
-                    background: 'linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
-                  }}
-                >
-                  {pkg.coins.toLocaleString()}
-                </span>
-
-                {/* Lives amount with 3D text effect */}
-                {pkg.lives > 0 && (
-                  <span 
-                    className="relative z-10 font-bold text-[clamp(0.625rem,2.5vw,0.75rem)] leading-tight"
-                    style={{
-                      background: 'linear-gradient(180deg, #f87171 0%, #ef4444 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
-                    }}
-                  >
-                    +{pkg.lives} ❤️
-                  </span>
-                )}
 
                 {/* 3D Price Button */}
                 <div 
