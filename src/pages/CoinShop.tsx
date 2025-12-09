@@ -75,8 +75,8 @@ const CoinShop = () => {
                 {pkg.coins.toLocaleString()}
               </span>
 
-              {/* Price */}
-              <span className="relative z-10 text-white/90 font-semibold text-[clamp(0.625rem,2.5vw,0.75rem)] mt-[clamp(0.125rem,0.5vh,0.25rem)] bg-yellow-600/30 px-[clamp(0.375rem,1.5vw,0.5rem)] py-[clamp(0.0625rem,0.25vh,0.125rem)] rounded-full">
+              {/* Price - doubled size */}
+              <span className="relative z-10 text-white font-bold text-[clamp(1rem,5vw,1.5rem)] mt-[clamp(0.25rem,1vh,0.5rem)] bg-yellow-600/40 px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.125rem,0.5vh,0.25rem)] rounded-full border border-yellow-500/50">
                 ${pkg.price.toFixed(2)}
               </span>
             </button>
