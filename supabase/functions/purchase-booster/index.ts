@@ -7,8 +7,7 @@ const corsHeaders = {
 };
 
 interface BoosterPurchaseRequest {
-  boosterCode: 'FREE' | 'PREMIUM' | 'GOLD_SAVER' | 'INSTANT_RESCUE';
-  confirmInstantPurchase?: boolean;
+  boosterCode: 'FREE' | 'GOLD_SAVER';
 }
 
 interface BoosterPurchaseResponse {
@@ -25,8 +24,6 @@ interface BoosterPurchaseResponse {
     speedCount: number;
     speedDurationMinutes: number;
   };
-  instantPremiumBoosterEnabled?: boolean;
-  hasPendingPremiumBooster?: boolean;
 }
 
 serve(async (req) => {
@@ -61,7 +58,7 @@ serve(async (req) => {
 
     const userId = userData.user.id;
     const body: BoosterPurchaseRequest = await req.json();
-    const { boosterCode, confirmInstantPurchase } = body;
+    const { boosterCode } = body;
 
     console.log(`[purchase-booster] User ${userId} purchasing ${boosterCode}`);
 
@@ -81,17 +78,9 @@ serve(async (req) => {
     }
 
     if (boosterCode === 'FREE') {
-      // FREE BOOSTER LOGIC
       return await handleFreeBoosterPurchase(supabaseAdmin, userId, boosterType);
-    } else if (boosterCode === 'PREMIUM') {
-      // PREMIUM BOOSTER LOGIC
-      return await handlePremiumBoosterPurchase(supabaseAdmin, userId, boosterType, confirmInstantPurchase);
     } else if (boosterCode === 'GOLD_SAVER') {
-      // IN-GAME GOLD SAVER BOOSTER LOGIC
       return await handleGoldSaverPurchase(supabaseAdmin, userId, boosterType);
-    } else if (boosterCode === 'INSTANT_RESCUE') {
-      // IN-GAME INSTANT RESCUE BOOSTER LOGIC
-      return await handleInstantRescuePurchase(supabaseAdmin, userId, boosterType);
     }
 
     return new Response(
@@ -110,8 +99,6 @@ serve(async (req) => {
 });
 
 // FREE BOOSTER: Pay 900 gold → Net -600 gold, grant +300 gold, +15 lives, 4× 30min speed tokens
-// Total transaction: -900 + 300 = -600 net gold deduction
-// ALIGNED TO DOCUMENTATION: Uses credit_wallet() RPC for atomic, idempotent wallet operations
 async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boosterType: any) {
   const priceGold = boosterType.price_gold || 0;
   const rewardGold = boosterType.reward_gold || 0;
@@ -138,7 +125,6 @@ async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boo
   const currentGold = profile.coins || 0;
   const currentLives = profile.lives || 0;
 
-  // Check gold availability (validation before transaction)
   if (currentGold < priceGold) {
     return new Response(
       JSON.stringify({
@@ -150,22 +136,12 @@ async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boo
     );
   }
 
-  // CRITICAL: Use credit_wallet RPC for atomic, idempotent transaction
-  // Net change: -600 gold (because -900 + 300), +15 lives
-  // 
-  // IDEMPOTENCY KEY FORMAT: "free_booster:userId:timestamp"
-  // - userId ensures user isolation
-  // - timestamp provides uniqueness per request
-  // 
-  // ASSUMPTION: Users cannot click purchase button multiple times rapidly due to UI state management
-  // If rapid double-clicks become an issue, migrate to request-scoped idempotency key
-  // (e.g., passed from frontend as unique requestId parameter)
   const idempotencyKey = `free_booster:${userId}:${Date.now()}`;
   
   const { data: creditResult, error: creditError } = await supabaseAdmin.rpc('credit_wallet', {
     p_user_id: userId,
-    p_delta_coins: rewardGold - priceGold, // Net: +300 - 900 = -600
-    p_delta_lives: rewardLives, // +15
+    p_delta_coins: rewardGold - priceGold,
+    p_delta_lives: rewardLives,
     p_source: 'booster_purchase',
     p_idempotency_key: idempotencyKey,
     p_metadata: {
@@ -200,7 +176,7 @@ async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boo
   const newLives = creditResult.new_lives;
 
   // Log purchase
-  const { error: purchaseError } = await supabaseAdmin
+  await supabaseAdmin
     .from("booster_purchases")
     .insert({
       user_id: userId,
@@ -210,10 +186,6 @@ async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boo
       usd_cents_spent: 0,
       purchase_context: "PROFILE"
     });
-
-  if (purchaseError) {
-    console.error("[FREE] Purchase log error:", purchaseError);
-  }
 
   // Track purchase completion
   await supabaseAdmin
@@ -232,29 +204,19 @@ async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boo
       }
     });
 
-  // Create Speed tokens (but don't activate them yet - user must click "Aktiválom")
-  console.log(`[FREE] Creating ${rewardSpeedCount} Speed tokens of ${rewardSpeedDuration} minutes each`);
-  
-  const speedTokens = [];
-  for (let i = 0; i < rewardSpeedCount; i++) {
-    speedTokens.push({
-      user_id: userId,
-      duration_minutes: rewardSpeedDuration,
-      source: 'FREE_BOOSTER'
-      // used_at and expires_at are NULL - token is pending activation
-    });
-  }
-
-  if (speedTokens.length > 0) {
-    const { error: speedError } = await supabaseAdmin
-      .from("speed_tokens")
-      .insert(speedTokens);
-
-    if (speedError) {
-      console.error("[FREE] Speed tokens creation error:", speedError);
-    } else {
-      console.log(`[FREE] Successfully created ${rewardSpeedCount} speed tokens (pending activation)`);
+  // Create Speed tokens (pending activation)
+  if (rewardSpeedCount > 0) {
+    const speedTokens = [];
+    for (let i = 0; i < rewardSpeedCount; i++) {
+      speedTokens.push({
+        user_id: userId,
+        duration_minutes: rewardSpeedDuration,
+        source: 'FREE_BOOSTER'
+      });
     }
+
+    await supabaseAdmin.from("speed_tokens").insert(speedTokens);
+    console.log(`[FREE] Created ${rewardSpeedCount} speed tokens`);
   }
 
   const response: BoosterPurchaseResponse = {
@@ -278,224 +240,7 @@ async function handleFreeBoosterPurchase(supabaseAdmin: any, userId: string, boo
   );
 }
 
-async function handlePremiumBoosterPurchase(
-  supabaseAdmin: any,
-  userId: string,
-  boosterType: any,
-  confirmInstantPurchase?: boolean
-) {
-  const rewardGold = boosterType.reward_gold || 0;
-  const rewardLives = boosterType.reward_lives || 0;
-  const priceUsdCents = boosterType.price_usd_cents || 0;
-
-  console.log(`[PREMIUM] Rewards: gold=${rewardGold}, lives=${rewardLives}, price=$${(priceUsdCents / 100).toFixed(2)}`);
-
-  try {
-    // Get user purchase settings
-    const { data: settings } = await supabaseAdmin
-      .from("user_purchase_settings")
-      .select("instant_premium_booster_enabled")
-      .eq("user_id", userId)
-      .single();
-
-    const instantEnabled = settings?.instant_premium_booster_enabled || false;
-
-    // Get premium booster state
-    const { data: boosterState } = await supabaseAdmin
-      .from("user_premium_booster_state")
-      .select("has_pending_premium_booster")
-      .eq("user_id", userId)
-      .single();
-
-    const hasPending = boosterState?.has_pending_premium_booster || false;
-
-    // Check if pending premium exists
-    if (hasPending) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "PENDING_PREMIUM_EXISTS",
-          instantPremiumBoosterEnabled: instantEnabled,
-          hasPendingPremiumBooster: true
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check instant purchase confirmation
-    if (!instantEnabled && !confirmInstantPurchase) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "INSTANT_PURCHASE_NOT_CONFIRMED",
-          instantPremiumBoosterEnabled: false,
-          hasPendingPremiumBooster: false
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // If confirming instant purchase, enable it
-    if (!instantEnabled && confirmInstantPurchase) {
-      await supabaseAdmin
-        .from("user_purchase_settings")
-        .upsert({
-          user_id: userId,
-          instant_premium_booster_enabled: true,
-          updated_at: new Date().toISOString()
-        });
-    }
-
-    // **CRITICAL FIX - PRODUCTION BLOCKER**
-    // Premium boosters MUST use real Stripe payment via create-premium-booster-payment
-    // Simulated payment is REMOVED - this is a production security issue
-    
-    console.log('[PREMIUM] CRITICAL: Premium booster must use Stripe payment');
-    console.log('[PREMIUM] Blocking simulated payment - redirect to create-premium-booster-payment');
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "STRIPE_PAYMENT_REQUIRED",
-        message: "Premium booster purchases must use Stripe. Call create-premium-booster-payment endpoint.",
-        requiresStripeCheckout: true,
-        boosterTypeId: boosterType.id,
-        instantPremiumBoosterEnabled: instantEnabled || confirmInstantPurchase,
-        hasPendingPremiumBooster: false
-      }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
-    // ========== REMOVED SIMULATED PAYMENT CODE ==========
-    // All code below this point is unreachable and will be removed in future cleanup
-    // Real payment must go through create-premium-booster-payment + verify-premium-booster-payment
-    // ====================================================
-
-    // Get current balance
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("coins, lives")
-      .eq("id", userId)
-      .single();
-
-    const currentGold = profile?.coins || 0;
-    const currentLives = profile?.lives || 0;
-
-    // Grant immediate rewards: gold + lives (NOT speed yet)
-    const newGold = currentGold + rewardGold;
-    const newLives = currentLives + rewardLives;
-
-    const { error: updateError } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        coins: newGold,
-        lives: newLives,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", userId);
-
-    if (updateError) {
-      console.error("[PREMIUM] Profile update error:", updateError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Profile update failed" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Set pending premium booster flag
-    await supabaseAdmin
-      .from("user_premium_booster_state")
-      .upsert({
-        user_id: userId,
-        has_pending_premium_booster: true,
-        last_premium_purchase_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-    // Log wallet transaction
-    const idempotencyKey = `premium_booster:${userId}:${Date.now()}`;
-    await supabaseAdmin
-      .from("wallet_ledger")
-      .insert({
-        user_id: userId,
-        delta_coins: rewardGold,
-        delta_lives: rewardLives,
-        source: "booster_purchase",
-        idempotency_key: idempotencyKey,
-        metadata: {
-          booster_type_id: boosterType.id,
-          price_usd_cents: priceUsdCents,
-          reward_gold: rewardGold,
-          reward_lives: rewardLives,
-          speed_pending: true
-        }
-      });
-
-  // Log purchase
-  await supabaseAdmin
-    .from("booster_purchases")
-    .insert({
-      user_id: userId,
-      booster_type_id: boosterType.id,
-      purchase_source: "IAP",
-      gold_spent: 0,
-      usd_cents_spent: priceUsdCents,
-      iap_transaction_id: `stripe_${Date.now()}`, // TODO: Replace with real Stripe transaction ID
-      purchase_context: "DASHBOARD"
-    });
-
-  // Track purchase completion
-  await supabaseAdmin
-    .from("conversion_events")
-    .insert({
-      user_id: userId,
-      event_type: "purchase_complete",
-      product_type: "booster",
-      product_id: boosterType.code,
-      session_id: `session_${userId}_${Date.now()}`,
-      metadata: {
-        booster_code: boosterType.code,
-        price_usd_cents: priceUsdCents,
-        reward_gold: rewardGold,
-        reward_lives: rewardLives
-      }
-    });
-
-    console.log(`[PREMIUM] Purchase successful, pending activation`);
-
-    const response: BoosterPurchaseResponse = {
-      success: true,
-      balanceAfter: {
-        gold: newGold,
-        lives: newLives,
-        speedTokensAvailable: 0
-      },
-      grantedRewards: {
-        gold: rewardGold,
-        lives: rewardLives,
-        speedCount: 0, // Not activated yet
-        speedDurationMinutes: 0
-      },
-      instantPremiumBoosterEnabled: true,
-      hasPendingPremiumBooster: true
-    };
-
-    return new Response(
-      JSON.stringify(response),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    console.error("[PREMIUM] Transaction error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: "Transaction failed" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-}
-
-// GOLD_SAVER BOOSTER: Pay 500 gold → Net -250 gold, grant +250 gold, +15 lives, NO speed tokens
-// Total transaction: -500 + 250 = -250 net gold deduction
-// ALIGNED TO DOCUMENTATION: Uses credit_wallet() RPC for atomic, idempotent wallet operations
+// GOLD_SAVER BOOSTER: Pay 500 gold → Net -250 gold, grant +250 gold, +15 lives
 async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boosterType: any) {
   const priceGold = boosterType.price_gold || 0;
   const rewardGold = boosterType.reward_gold || 0;
@@ -503,7 +248,6 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
 
   console.log(`[GOLD_SAVER] Price: ${priceGold}, Rewards: gold=${rewardGold}, lives=${rewardLives}`);
 
-  // Get current user balance for validation only
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("coins, lives")
@@ -520,7 +264,6 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
   const currentGold = profile.coins || 0;
   const currentLives = profile.lives || 0;
 
-  // Check gold availability (validation before transaction)
   if (currentGold < priceGold) {
     return new Response(
       JSON.stringify({
@@ -532,22 +275,12 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
     );
   }
 
-  // CRITICAL: Use credit_wallet RPC for atomic, idempotent transaction
-  // Net change: -250 gold (because -500 + 250), +15 lives
-  // 
-  // IDEMPOTENCY KEY FORMAT: "gold_saver:userId:timestamp"
-  // - userId ensures user isolation
-  // - timestamp provides uniqueness per request
-  // 
-  // ASSUMPTION: Users cannot click purchase button multiple times rapidly due to UI state management
-  // If rapid double-clicks become an issue, migrate to request-scoped idempotency key
-  // (e.g., passed from frontend as unique requestId parameter)
   const idempotencyKey = `gold_saver:${userId}:${Date.now()}`;
   
   const { data: creditResult, error: creditError } = await supabaseAdmin.rpc('credit_wallet', {
     p_user_id: userId,
-    p_delta_coins: rewardGold - priceGold, // Net: +250 - 500 = -250
-    p_delta_lives: rewardLives, // +15
+    p_delta_coins: rewardGold - priceGold,
+    p_delta_lives: rewardLives,
     p_source: 'booster_purchase',
     p_idempotency_key: idempotencyKey,
     p_metadata: {
@@ -569,7 +302,6 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
   }
 
   if (!creditResult || !creditResult.success) {
-    console.error("[GOLD_SAVER] credit_wallet returned failure:", creditResult);
     return new Response(
       JSON.stringify({ success: false, error: creditResult?.error || "Insufficient funds" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -580,7 +312,7 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
   const newLives = creditResult.new_lives;
 
   // Log purchase
-  const { error: purchaseError } = await supabaseAdmin
+  await supabaseAdmin
     .from("booster_purchases")
     .insert({
       user_id: userId,
@@ -590,10 +322,6 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
       usd_cents_spent: 0,
       purchase_context: "INGAME"
     });
-
-  if (purchaseError) {
-    console.error("[GOLD_SAVER] Purchase log error:", purchaseError);
-  }
 
   // Track purchase completion
   await supabaseAdmin
@@ -608,12 +336,11 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
         booster_code: boosterType.code,
         price_gold: priceGold,
         reward_gold: rewardGold,
-        reward_lives: rewardLives,
-        purchase_context: 'INGAME'
+        reward_lives: rewardLives
       }
     });
 
-  console.log(`[GOLD_SAVER] Purchase successful, no speed tokens`);
+  console.log(`[GOLD_SAVER] Purchase successful`);
 
   const response: BoosterPurchaseResponse = {
     success: true,
@@ -633,29 +360,5 @@ async function handleGoldSaverPurchase(supabaseAdmin: any, userId: string, boost
   return new Response(
     JSON.stringify(response),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
-}
-
-async function handleInstantRescuePurchase(supabaseAdmin: any, userId: string, boosterType: any) {
-  const rewardGold = boosterType.reward_gold || 0;
-  const rewardLives = boosterType.reward_lives || 0;
-  const priceUsdCents = boosterType.price_usd_cents || 0;
-
-  console.log(`[INSTANT_RESCUE] CRITICAL: Instant Rescue must use Stripe payment`);
-  console.log(`[INSTANT_RESCUE] Rewards would be: gold=${rewardGold}, lives=${rewardLives}, price=$${(priceUsdCents / 100).toFixed(2)}`);
-
-  // **CRITICAL FIX - PRODUCTION BLOCKER**
-  // Instant Rescue purchases MUST use real Stripe payment via create-instant-rescue-payment
-  // Simulated payment is REMOVED - this is a production security issue
-  
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: "STRIPE_PAYMENT_REQUIRED",
-      message: "Instant Rescue purchases must use Stripe. Call create-instant-rescue-payment endpoint.",
-      requiresStripeCheckout: true,
-      boosterTypeId: boosterType.id
-    }),
-    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }

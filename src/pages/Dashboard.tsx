@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AgeGateModal } from '@/components/AgeGateModal';
 import { UsersHexagonBar } from '@/components/UsersHexagonBar';
 import { PlayNowButton } from '@/components/PlayNowButton';
-import { BoosterButton } from '@/components/BoosterButton';
+
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfileQuery } from '@/hooks/useProfileQuery';
@@ -296,15 +296,10 @@ const Dashboard = () => {
     const result = await popupManager.closePersonalWinner();
 
     if (result?.success) {
-      // Clear error and refresh wallet/profile when claim succeeds
-      setPersonalWinnerError(null);
       await Promise.all([
         refetchWallet(),
         refreshProfile(),
       ]);
-    } else {
-      // Show specific error message for failed claim
-      setPersonalWinnerError('Rendszerhiba miatt a jutalom jóváírása sikertelen. Kérlek próbáld meg később!');
     }
   };
 
@@ -313,87 +308,6 @@ const Dashboard = () => {
     popupManager.closeWelcomeBonus();
   };
 
-  const handleSpeedBoost = async () => {
-    if (!userId) {
-      toast.error(t('errors.login_required'));
-      return;
-    }
-
-    // If user has pending premium, activate it
-    if (boosterState.hasPendingPremium) {
-      await handleActivatePremiumSpeed();
-      return;
-    }
-
-    // Direct purchase without confirmation dialog
-    await purchasePremiumBooster(true);
-  };
-
-  const handleActivatePremiumSpeed = async () => {
-    try {
-      toast.loading(t('booster.activating_premium'), { id: 'activate-premium-speed' });
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error(t('errors.not_logged_in'), { id: 'activate-premium-speed' });
-        return;
-      }
-      
-      const { data, error } = await supabase.functions.invoke('activate-premium-speed', {
-        body: {},
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        const speedInfo = `${data.activatedSpeed?.speedCount}x ${t('booster.speed')} (${data.activatedSpeed?.speedDurationMinutes} ${t('booster.minutes')})`;
-        toast.success(`${t('booster.activated')}: ${speedInfo}`, { id: 'activate-premium-speed' });
-        await refetchWallet();
-        await refreshProfile();
-      } else if (data?.error === 'NO_PENDING_PREMIUM') {
-        toast.info(t('booster.already_activated'), { id: 'activate-premium-speed' });
-      } else {
-        throw new Error(data?.error || t('errors.unknown'));
-      }
-    } catch (error) {
-      console.error('Premium speed activation error:', error);
-      const errorMsg = error instanceof Error ? error.message : t('errors.activation_failed');
-      toast.error(errorMsg, { id: 'activate-premium-speed' });
-    }
-  };
-
-  /**
-   * PREMIUM BOOSTER VÁSÁRLÁS - STRIPE CHECKOUT
-   * PWA-ban window.location.href redirect használata megbízhatóság miatt
-   */
-  const purchasePremiumBooster = async (confirmInstant: boolean = false) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error(t('errors.not_logged_in'));
-        return;
-      }
-      
-      toast.loading(t('booster.processing'), { id: 'premium-payment' });
-
-      // Stripe Checkout session létrehozása
-      const { data, error } = await supabase.functions.invoke('create-premium-booster-payment', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      });
-
-      if (error || !data?.url) {
-        throw new Error(error?.message || t('errors.payment_failed'));
-      }
-
-      // PWA-ban window.location.href a megbízható
-      window.location.href = data.url;
-    } catch (error) {
-      console.error('Premium booster payment error:', error);
-      const errorMsg = error instanceof Error ? error.message : t('errors.payment_failed');
-      toast.error(errorMsg, { id: 'premium-payment' });
-    }
-  };
 
   // Don't render until critical data is loaded
   if (profileLoading || !profile || !walletData) {
@@ -563,46 +477,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Booster Button - Top 100 felett */}
-          <div className="flex justify-center w-full px-3" style={{ marginBottom: '2vh' }}>
-            <div className="w-full max-w-screen-lg">
-              <BoosterButton
-                onClick={handleSpeedBoost}
-                disabled={!profile || boosterState.loading}
-                className="transition-all duration-300 hover:scale-105 active:scale-95"
-              >
-                <svg className="inline w-[clamp(2rem,6vw,3rem)] h-[clamp(2rem,6vw,3rem)] sm:w-[clamp(2.5rem,7vw,4rem)] sm:h-[clamp(2.5rem,7vw,4rem)] mr-2 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.9))', background: 'transparent' }}>
-                  <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <div className="flex flex-col items-center bg-transparent">
-                  <span 
-                    className="relative font-black text-[clamp(1.275rem,3.75vw,1.725rem)] sm:text-[clamp(1.5rem,4.5vw,2.25rem)] tracking-[0.05em] sm:tracking-[0.1em]" 
-                    style={{ 
-                      textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 8px rgba(0,0,0,0.9), 0 0 15px rgba(234,179,8,0.8)',
-                      background: 'transparent'
-                    }}
-                  >
-                    {boosterState.hasPendingPremium ? t('dashboard.premium_speed_activate') : t('dashboard.speed_booster')}
-                  </span>
-                  {!boosterState.hasPendingPremium && (
-                    <span 
-                      className="block text-[clamp(0.975rem,3vw,1.275rem)] sm:text-[clamp(1.125rem,3.75vw,1.5rem)] font-semibold mt-0.5 opacity-90"
-                      style={{ 
-                        textShadow: '-0.5px -0.5px 0 #000, 0.5px -0.5px 0 #000, -0.5px 0.5px 0 #000, 0.5px 0.5px 0 #000',
-                        background: 'transparent'
-                      }}
-                    >
-                      {t('dashboard.premium_booster_price')}
-                    </span>
-                  )}
-                </div>
-                <svg className="inline w-[clamp(2rem,6vw,3rem)] h-[clamp(2rem,6vw,3rem)] sm:w-[clamp(2.5rem,7vw,4rem)] sm:h-[clamp(2.5rem,7vw,4rem)] ml-2 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.9))', background: 'transparent' }}>
-                  <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </BoosterButton>
-            </div>
-          </div>
-
           {/* Play Now Button - Boosters felett */}
           <div className="flex justify-center w-full px-3" style={{ marginBottom: '2vh' }}>
             <div className="w-[90%] max-w-screen-lg">
@@ -695,7 +569,6 @@ const Dashboard = () => {
           username={popupManager.rankReward.pendingReward.username}
           goldReward={popupManager.rankReward.pendingReward.gold}
           livesReward={popupManager.rankReward.pendingReward.lives}
-          errorMessage={personalWinnerError ?? undefined}
           isClaiming={popupManager.rankReward.isClaiming}
         />
       )}
