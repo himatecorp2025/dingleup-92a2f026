@@ -94,7 +94,7 @@ const Creators = () => {
               </div>
 
               {/* Title */}
-              <h1 className="text-[clamp(1.5rem,6vw,2.5rem)] font-bold text-white leading-tight mb-4 tracking-tight">
+              <h1 className="text-[clamp(1.2rem,5vw,2.5rem)] font-bold text-white leading-tight mb-4 tracking-tight whitespace-nowrap">
                 {t('creators.hero_title')}
               </h1>
 
