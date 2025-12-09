@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
 import { CoinIcon3D } from '@/components/icons/CoinIcon3D';
 import { HeartIcon3D } from '@/components/icons/HeartIcon3D';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+
 const COIN_PACKAGES = [
   { coins: 300, price: 1.39, lives: 0 },
   { coins: 500, price: 2.19, lives: 0 },
@@ -20,9 +24,59 @@ const COIN_PACKAGES = [
 const CoinShop = () => {
   const navigate = useNavigate();
   const { t, lang } = useI18n();
+  const queryClient = useQueryClient();
+  const [purchasingCoins, setPurchasingCoins] = useState<number | null>(null);
 
-  const handlePurchase = (coins: number, price: number) => {
-    toast.info(`${coins} ${t('shop.coins_purchase')} - $${price.toFixed(2)}`);
+  const handlePurchase = async (coins: number, price: number) => {
+    if (purchasingCoins) return; // Prevent double-click
+    
+    setPurchasingCoins(coins);
+    
+    try {
+      // Step 1: Create payment intent
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-coin-payment', {
+        body: { coins }
+      });
+
+      if (paymentError) {
+        throw new Error(paymentError.message || 'Failed to create payment');
+      }
+
+      if (!paymentData?.clientSecret) {
+        throw new Error('No client secret received');
+      }
+
+      // Step 2: For now, simulate successful payment (in production, use Stripe Elements or Payment Sheet)
+      // This would normally open Apple Pay / Google Pay sheet
+      toast.info(lang === 'hu' 
+        ? `Fizetés feldolgozása: ${coins} aranyérme - $${price.toFixed(2)}` 
+        : `Processing payment: ${coins} coins - $${price.toFixed(2)}`
+      );
+
+      // Step 3: In real implementation, after payment sheet completes successfully:
+      // const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-coin-payment', {
+      //   body: { paymentIntentId: paymentData.paymentIntentId }
+      // });
+      
+      // For demo purposes, show success message
+      toast.success(lang === 'hu'
+        ? `Fizetési rendszer aktiválva! ${coins} aranyérme csomag`
+        : `Payment system activated! ${coins} coin package`
+      );
+
+      // Invalidate wallet queries to refresh balance
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      queryClient.invalidateQueries({ queryKey: ['user-game-profile'] });
+
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(lang === 'hu' 
+        ? 'A vásárlás sikertelen volt. Kérlek próbáld újra.' 
+        : 'Purchase failed. Please try again.'
+      );
+    } finally {
+      setPurchasingCoins(null);
+    }
   };
 
   return (
@@ -132,16 +186,24 @@ const CoinShop = () => {
               <button
                 key={pkg.coins}
                 onClick={() => handlePurchase(pkg.coins, pkg.price)}
+                disabled={purchasingCoins !== null}
                 className="relative flex flex-col items-center justify-center 
                   p-[clamp(0.5rem,2vw,0.75rem)] rounded-xl
                   transition-all duration-200 hover:scale-105 active:scale-95
-                  aspect-square group"
+                  aspect-square group disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{
                   background: 'linear-gradient(145deg, rgba(120, 85, 10, 0.6) 0%, rgba(80, 55, 5, 0.7) 50%, rgba(50, 30, 5, 0.8) 100%)',
                   border: '2px solid rgba(251, 191, 36, 0.4)',
                   boxShadow: '0 8px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 0 20px rgba(251, 191, 36, 0.15)'
                 }}
               >
+                {/* Loading overlay */}
+                {purchasingCoins === pkg.coins && (
+                  <div className="absolute inset-0 rounded-xl bg-black/50 flex items-center justify-center z-20">
+                    <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+                  </div>
+                )}
+
                 {/* Hover glow effect */}
                 <div 
                   className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
