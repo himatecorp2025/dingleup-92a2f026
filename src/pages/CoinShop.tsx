@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Coins, Heart } from 'lucide-react';
+import { Coins, Heart, LogOut } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
@@ -25,74 +25,210 @@ const CoinShop = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-[#1a0033] via-[#2d1b69] to-[#0f0033] flex flex-col">
-      {/* Header - fixed height */}
-      <div className="flex-shrink-0 p-[clamp(0.75rem,2vh,1rem)]">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-[clamp(1rem,4vw,1.25rem)] h-[clamp(1rem,4vw,1.25rem)]" />
-          <span className="text-[clamp(0.75rem,3vw,0.875rem)]">{t('common.back')}</span>
-        </button>
-      </div>
+    <div className="h-dvh w-screen fixed inset-0 overflow-y-auto overflow-x-hidden flex flex-col" style={{
+      paddingTop: 'max(calc(env(safe-area-inset-top) + 2%), env(safe-area-inset-top) + 8px)',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+      width: '100vw',
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      touchAction: 'pan-y',
+      overscrollBehaviorX: 'none'
+    }}>
+      {/* Full-screen background that covers status bar */}
+      <div 
+        className="fixed bg-gradient-to-b from-[#0a0a2e] via-[#16213e] to-[#0f0f3d]"
+        style={{
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          pointerEvents: 'none'
+        }}
+      />
 
-      {/* Title - fixed height */}
-      <div className="flex-shrink-0 text-center px-4 pb-[clamp(0.5rem,1.5vh,0.75rem)]">
-        <h1 className="text-[clamp(1.25rem,5vw,1.5rem)] font-bold text-yellow-400 flex items-center justify-center gap-2">
-          <Coins className="w-[clamp(1.5rem,6vw,2rem)] h-[clamp(1.5rem,6vw,2rem)]" />
-          {t('shop.title')}
-        </h1>
-      </div>
-
-      {/* Coin Packages Grid - flexible, scrollable if needed */}
-      <div className="flex-1 overflow-y-auto px-[clamp(0.5rem,2vw,1rem)] pb-[calc(var(--bottom-nav-h,4rem)+0.5rem)]">
-        <div className="grid grid-cols-3 gap-[clamp(0.375rem,1.5vw,0.75rem)] max-w-lg mx-auto">
-          {COIN_PACKAGES.map((pkg) => (
+      <div className="flex-1 flex flex-col relative z-10 overflow-y-auto overflow-x-hidden" style={{ 
+        width: '100%',
+        maxWidth: '100%',
+        paddingTop: 'clamp(8px, 2vh, 16px)',
+        paddingBottom: 'calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 120px)' 
+      }}>
+        <div style={{ 
+          width: '90vw',
+          maxWidth: '90vw',
+          margin: '0 auto'
+        }}>
+          {/* Header - Back button and Title */}
+          <div className="flex items-center justify-between mb-4">
+            {/* 3D Back Button - matching Profile page style */}
             <button
-              key={pkg.coins}
-              onClick={() => handlePurchase(pkg.coins, pkg.price)}
-              className="relative flex flex-col items-center justify-center 
-                p-[clamp(0.5rem,2vw,0.75rem)] rounded-xl
-                bg-gradient-to-br from-yellow-900/40 via-yellow-800/30 to-amber-900/40
-                border border-yellow-500/30 hover:border-yellow-400/60
-                shadow-lg shadow-yellow-900/20 hover:shadow-yellow-500/30
-                transition-all duration-200 hover:scale-105 active:scale-95
-                backdrop-blur-sm aspect-square"
+              onClick={() => navigate('/dashboard')}
+              className="relative rounded-full hover:scale-110 transition-all"
+              style={{
+                padding: 'clamp(8px, 2vw, 12px)',
+                minWidth: 'clamp(40px, 10vw, 56px)',
+                minHeight: 'clamp(40px, 10vw, 56px)'
+              }}
+              title={t('common.back')}
             >
-              {/* Glow effect */}
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-yellow-500/10 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+              {/* BASE SHADOW */}
+              <div className="absolute inset-0 bg-black/40 rounded-full" style={{ transform: 'translate(3px, 3px)', filter: 'blur(4px)' }} aria-hidden />
               
-              {/* Coin and Life icons row */}
-              <div className="relative z-10 flex items-center justify-center gap-[clamp(0.25rem,1vw,0.5rem)] mb-[clamp(0.125rem,0.5vh,0.25rem)]">
-                <div className="w-[clamp(1.25rem,6vw,1.5rem)] h-[clamp(1.25rem,6vw,1.5rem)] rounded-full bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-600 flex items-center justify-center shadow-lg shadow-yellow-500/30">
-                  <Coins className="w-[clamp(0.75rem,4vw,1rem)] h-[clamp(0.75rem,4vw,1rem)] text-yellow-900" />
-                </div>
-                {pkg.lives > 0 && (
-                  <div className="w-[clamp(1.25rem,6vw,1.5rem)] h-[clamp(1.25rem,6vw,1.5rem)] rounded-full bg-gradient-to-br from-red-400 via-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/30">
-                    <Heart className="w-[clamp(0.75rem,4vw,1rem)] h-[clamp(0.75rem,4vw,1rem)] text-white fill-white" />
-                  </div>
-                )}
-              </div>
-
-              {/* Coin amount */}
-              <span className="relative z-10 text-yellow-400 font-bold text-[clamp(0.75rem,3.5vw,1rem)] leading-tight">
-                {pkg.coins.toLocaleString()}
-              </span>
-
-              {/* Lives amount */}
-              {pkg.lives > 0 && (
-                <span className="relative z-10 text-red-400 font-bold text-[clamp(0.625rem,2.5vw,0.75rem)] leading-tight">
-                  +{pkg.lives} ❤️
-                </span>
-              )}
-
-              {/* Price - doubled size */}
-              <span className="relative z-10 text-white font-bold text-[clamp(1rem,5vw,1.5rem)] mt-[clamp(0.25rem,1vh,0.5rem)] bg-yellow-600/40 px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.125rem,0.5vh,0.25rem)] rounded-full border border-yellow-500/50">
-                ${pkg.price.toFixed(2)}
-              </span>
+              {/* OUTER FRAME */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-700 via-red-600 to-red-900 border-2 border-red-400/50 shadow-lg" aria-hidden />
+              
+              {/* MIDDLE FRAME */}
+              <div className="absolute inset-[3px] rounded-full bg-gradient-to-b from-red-600 via-red-500 to-red-800" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3)' }} aria-hidden />
+              
+              {/* INNER LAYER */}
+              <div className="absolute inset-[5px] rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-700" style={{ boxShadow: 'inset 0 8px 16px rgba(255,255,255,0.2), inset 0 -8px 16px rgba(0,0,0,0.3)' }} aria-hidden />
+              
+              {/* SPECULAR HIGHLIGHT */}
+              <div className="absolute inset-[5px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(ellipse 100% 60% at 30% 0%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 30%, transparent 60%)' }} aria-hidden />
+              
+              {/* Icon */}
+              <LogOut 
+                className="text-white relative z-10 -scale-x-100" 
+                style={{ width: 'clamp(20px, 5vw, 24px)', height: 'clamp(20px, 5vw, 24px)' }}
+              />
             </button>
-          ))}
+
+            {/* 3D Title */}
+            <div className="relative">
+              <h1 
+                className="text-[clamp(1.25rem,5vw,1.75rem)] font-bold flex items-center gap-2"
+                style={{
+                  background: 'linear-gradient(180deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                  textShadow: '0 0 20px rgba(251, 191, 36, 0.4)'
+                }}
+              >
+                <div className="relative">
+                  {/* 3D Coin Icon */}
+                  <div 
+                    className="w-[clamp(1.5rem,6vw,2rem)] h-[clamp(1.5rem,6vw,2rem)] rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(145deg, #fcd34d 0%, #f59e0b 50%, #b45309 100%)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.2), 0 0 15px rgba(251, 191, 36, 0.3)'
+                    }}
+                  >
+                    <Coins className="w-[clamp(0.875rem,4vw,1.25rem)] h-[clamp(0.875rem,4vw,1.25rem)] text-yellow-900" />
+                  </div>
+                </div>
+                {t('shop.title')}
+              </h1>
+            </div>
+
+            {/* Spacer for alignment */}
+            <div style={{ minWidth: 'clamp(40px, 10vw, 56px)' }} />
+          </div>
+
+          {/* Coin Packages Grid with 3D styling */}
+          <div className="grid grid-cols-3 gap-[clamp(0.375rem,1.5vw,0.75rem)] max-w-lg mx-auto">
+            {COIN_PACKAGES.map((pkg) => (
+              <button
+                key={pkg.coins}
+                onClick={() => handlePurchase(pkg.coins, pkg.price)}
+                className="relative flex flex-col items-center justify-center 
+                  p-[clamp(0.5rem,2vw,0.75rem)] rounded-xl
+                  transition-all duration-200 hover:scale-105 active:scale-95
+                  aspect-square group"
+                style={{
+                  background: 'linear-gradient(145deg, rgba(120, 85, 10, 0.6) 0%, rgba(80, 55, 5, 0.7) 50%, rgba(50, 30, 5, 0.8) 100%)',
+                  border: '2px solid rgba(251, 191, 36, 0.4)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.2), 0 0 20px rgba(251, 191, 36, 0.15)'
+                }}
+              >
+                {/* Hover glow effect */}
+                <div 
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(ellipse at center, rgba(251, 191, 36, 0.2) 0%, transparent 70%)',
+                    boxShadow: '0 0 30px rgba(251, 191, 36, 0.3)'
+                  }}
+                />
+                
+                {/* 3D inner frame */}
+                <div 
+                  className="absolute inset-[2px] rounded-lg pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.2) 100%)'
+                  }}
+                />
+
+                {/* Coin and Life icons row */}
+                <div className="relative z-10 flex items-center justify-center gap-[clamp(0.25rem,1vw,0.5rem)] mb-[clamp(0.125rem,0.5vh,0.25rem)]">
+                  {/* 3D Coin Icon */}
+                  <div 
+                    className="w-[clamp(1.25rem,6vw,1.5rem)] h-[clamp(1.25rem,6vw,1.5rem)] rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(145deg, #fcd34d 0%, #f59e0b 50%, #b45309 100%)',
+                      boxShadow: '0 3px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4), inset 0 -1px 2px rgba(0,0,0,0.2), 0 0 10px rgba(251, 191, 36, 0.3)'
+                    }}
+                  >
+                    <Coins className="w-[clamp(0.75rem,4vw,1rem)] h-[clamp(0.75rem,4vw,1rem)] text-yellow-900" />
+                  </div>
+                  {pkg.lives > 0 && (
+                    /* 3D Heart Icon */
+                    <div 
+                      className="w-[clamp(1.25rem,6vw,1.5rem)] h-[clamp(1.25rem,6vw,1.5rem)] rounded-full flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(145deg, #f87171 0%, #ef4444 50%, #b91c1c 100%)',
+                        boxShadow: '0 3px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4), inset 0 -1px 2px rgba(0,0,0,0.2), 0 0 10px rgba(239, 68, 68, 0.3)'
+                      }}
+                    >
+                      <Heart className="w-[clamp(0.75rem,4vw,1rem)] h-[clamp(0.75rem,4vw,1rem)] text-white fill-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Coin amount with 3D text effect */}
+                <span 
+                  className="relative z-10 font-bold text-[clamp(0.75rem,3.5vw,1rem)] leading-tight"
+                  style={{
+                    background: 'linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                  }}
+                >
+                  {pkg.coins.toLocaleString()}
+                </span>
+
+                {/* Lives amount with 3D text effect */}
+                {pkg.lives > 0 && (
+                  <span 
+                    className="relative z-10 font-bold text-[clamp(0.625rem,2.5vw,0.75rem)] leading-tight"
+                    style={{
+                      background: 'linear-gradient(180deg, #f87171 0%, #ef4444 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                    }}
+                  >
+                    +{pkg.lives} ❤️
+                  </span>
+                )}
+
+                {/* 3D Price Button */}
+                <div 
+                  className="relative z-10 mt-[clamp(0.25rem,1vh,0.5rem)] px-[clamp(0.5rem,2vw,0.75rem)] py-[clamp(0.125rem,0.5vh,0.25rem)] rounded-full"
+                  style={{
+                    background: 'linear-gradient(145deg, #fbbf24 0%, #d97706 50%, #92400e 100%)',
+                    border: '1px solid rgba(251, 191, 36, 0.6)',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <span className="text-white font-bold text-[clamp(1rem,5vw,1.5rem)]" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
+                    ${pkg.price.toFixed(2)}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
