@@ -216,7 +216,7 @@ const Creators = () => {
 
       {/* Header */}
       <header 
-        className="px-4 py-1 border-b border-white/10"
+        className="px-4 py-1"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}
       >
         {/* Top row: Back button + Menu */}
@@ -226,9 +226,9 @@ const Creators = () => {
             onClick={() => navigate('/dashboard')}
             className="relative rounded-full hover:scale-110 transition-all"
             style={{
-              padding: 'clamp(6px, 1.5vw, 10px)',
-              minWidth: 'clamp(36px, 8vw, 48px)',
-              minHeight: 'clamp(36px, 8vw, 48px)'
+              padding: 'clamp(8px, 2vw, 12px)',
+              minWidth: 'clamp(40px, 10vw, 56px)',
+              minHeight: 'clamp(40px, 10vw, 56px)'
             }}
             title={t('common.back')}
           >
@@ -239,7 +239,7 @@ const Creators = () => {
             <div className="absolute inset-[5px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(ellipse 100% 60% at 30% 0%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 30%, transparent 60%)' }} aria-hidden />
             <LogOut 
               className="text-white relative z-10 -scale-x-100" 
-              style={{ width: 'clamp(18px, 4vw, 22px)', height: 'clamp(18px, 4vw, 22px)' }}
+              style={{ width: 'clamp(20px, 5vw, 24px)', height: 'clamp(20px, 5vw, 24px)' }}
             />
           </button>
 
@@ -272,8 +272,8 @@ const Creators = () => {
 
         {/* Profile: Avatar above Username (vertical stack, centered) */}
         <div className="flex flex-col items-center gap-1">
-          {/* Avatar - smaller */}
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-purple-400/50 shadow-lg">
+          {/* Avatar - 25% larger (w-16 -> w-20) */}
+          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-purple-400/50 shadow-lg">
             <img 
               src={profile?.avatar_url || defaultProfileImage} 
               alt="Profile"
@@ -315,13 +315,8 @@ const Creators = () => {
         style={{ paddingBottom: 'calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 24px)' }}
       >
         <div className="max-w-4xl mx-auto px-4 py-6">
-          {/* Section Title + Platform Filter */}
-          <h2 className="text-lg font-bold text-white mb-4">
-            {lang === 'hu' ? 'Megosztott videóid' : 'Your shared videos'}
-          </h2>
-
           {/* Platform Filter Icons - Always visible, equally distributed */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+          <div className="flex items-center justify-between mb-6">
             {filters.map((filter) => (
               <button
                 key={filter.id}
