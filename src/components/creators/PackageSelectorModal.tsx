@@ -179,11 +179,8 @@ const PackageSelectorModal = ({ isOpen, onClose, onSuccess, lang }: PackageSelec
             <h2 className="text-base md:text-lg font-bold text-white mb-1">
               {texts.title[lang]}
             </h2>
-            <p className="text-white/80 text-xs md:text-sm mb-1">
+            <p className="text-white/80 text-xs md:text-sm">
               {texts.subtitle[lang]}
-            </p>
-            <p className="text-white/60 text-[10px] md:text-xs">
-              {texts.explanation[lang]}
             </p>
           </div>
 
@@ -194,7 +191,7 @@ const PackageSelectorModal = ({ isOpen, onClose, onSuccess, lang }: PackageSelec
                 key={pkg.id}
                 onClick={() => handlePackageSelect(pkg)}
                 disabled={isLoading}
-                className={`relative p-2.5 md:p-4 rounded-xl border-2 transition-all text-center flex flex-col items-center justify-center ${
+                className={`relative p-3 md:p-4 rounded-xl border-2 transition-all text-center flex flex-col items-center justify-center ${
                   selectedPackage === pkg.id
                     ? 'border-purple-500 bg-purple-500/20'
                     : pkg.popular
@@ -211,42 +208,42 @@ const PackageSelectorModal = ({ isOpen, onClose, onSuccess, lang }: PackageSelec
                 )}
 
                 {/* Package name */}
-                <h3 className="text-sm md:text-base font-bold text-white mb-0.5">
+                <h3 className="text-base md:text-lg font-bold text-white mb-1">
                   {pkg.name[lang]}
                 </h3>
 
                 {/* Video count */}
-                <p className="text-white/70 text-[10px] md:text-xs mb-0.5">
+                <p className="text-white/80 text-sm md:text-base font-medium mb-1">
                   {pkg.videos} {pkg.videos === 1 ? texts.videoActive[lang] : texts.videosActive[lang]}
                 </p>
 
                 {/* Trial text */}
-                <p className="text-green-400 text-[10px] md:text-xs font-medium mb-0.5">
+                <p className="text-green-400 text-sm md:text-base font-semibold mb-2">
                   {texts.trialText[lang]}
                 </p>
 
-                {/* Price */}
-                <p className="text-white/60 text-[9px] md:text-[10px] mb-1.5">
-                  {texts.afterTrial[lang]} {formatPrice(pkg.priceHuf)} {texts.perMonth[lang]}
-                </p>
-
                 {/* Select button indicator */}
-                <div className={`flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg w-full ${
+                <div className={`flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg w-full ${
                   pkg.popular
                     ? 'bg-gradient-to-r from-pink-500 to-purple-500'
                     : 'bg-white/10'
                 }`}>
                   {isLoading && selectedPackage === pkg.id ? (
-                    <span className="text-white text-[10px] md:text-xs">{texts.processing[lang]}</span>
+                    <span className="text-white text-sm">{texts.processing[lang]}</span>
                   ) : (
                     <>
-                      <Check className="w-3 h-3 text-white" />
-                      <span className="text-white text-[10px] md:text-xs font-medium">
+                      <Check className="w-4 h-4 text-white" />
+                      <span className="text-white text-sm font-medium">
                         {texts.selectThis[lang]}
                       </span>
                     </>
                   )}
                 </div>
+
+                {/* Price - BELOW the button */}
+                <p className="text-white/60 text-[10px] md:text-xs mt-1.5">
+                  {texts.afterTrial[lang]} {formatPrice(pkg.priceHuf)} {texts.perMonth[lang]}
+                </p>
               </button>
             ))}
           </div>
