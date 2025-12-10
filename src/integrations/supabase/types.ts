@@ -405,6 +405,42 @@ export type Database = {
           },
         ]
       }
+      creator_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          monthly_price_huf: number
+          name: string
+          sort_order: number
+          updated_at: string | null
+          video_limit: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id: string
+          is_active?: boolean
+          monthly_price_huf: number
+          name: string
+          sort_order: number
+          updated_at?: string | null
+          video_limit: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          monthly_price_huf?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string | null
+          video_limit?: number
+        }
+        Relationships: []
+      }
       creator_subscriptions: {
         Row: {
           created_at: string
@@ -2028,6 +2064,9 @@ export type Database = {
           coins: number | null
           country_code: string
           created_at: string | null
+          creator_plan_id: string | null
+          creator_subscription_status: string
+          creator_trial_ends_at: string | null
           daily_gift_last_claimed: string | null
           daily_gift_last_seen: string | null
           daily_gift_streak: number | null
@@ -2042,6 +2081,7 @@ export type Database = {
           id: string
           invitation_code: string | null
           invitation_rewards_reset_at: string | null
+          is_creator: boolean
           last_invitation_reward_reset: string | null
           last_life_regeneration: string | null
           last_username_change: string | null
@@ -2079,6 +2119,9 @@ export type Database = {
           coins?: number | null
           country_code?: string
           created_at?: string | null
+          creator_plan_id?: string | null
+          creator_subscription_status?: string
+          creator_trial_ends_at?: string | null
           daily_gift_last_claimed?: string | null
           daily_gift_last_seen?: string | null
           daily_gift_streak?: number | null
@@ -2093,6 +2136,7 @@ export type Database = {
           id: string
           invitation_code?: string | null
           invitation_rewards_reset_at?: string | null
+          is_creator?: boolean
           last_invitation_reward_reset?: string | null
           last_life_regeneration?: string | null
           last_username_change?: string | null
@@ -2130,6 +2174,9 @@ export type Database = {
           coins?: number | null
           country_code?: string
           created_at?: string | null
+          creator_plan_id?: string | null
+          creator_subscription_status?: string
+          creator_trial_ends_at?: string | null
           daily_gift_last_claimed?: string | null
           daily_gift_last_seen?: string | null
           daily_gift_streak?: number | null
@@ -2144,6 +2191,7 @@ export type Database = {
           id?: string
           invitation_code?: string | null
           invitation_rewards_reset_at?: string | null
+          is_creator?: boolean
           last_invitation_reward_reset?: string | null
           last_life_regeneration?: string | null
           last_username_change?: string | null
@@ -2170,7 +2218,15 @@ export type Database = {
           webauthn_public_key?: string | null
           welcome_bonus_claimed?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_creator_plan_id_fkey"
+            columns: ["creator_plan_id"]
+            isOneToOne: false
+            referencedRelation: "creator_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       question_pools: {
         Row: {
