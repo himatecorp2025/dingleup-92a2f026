@@ -31,7 +31,7 @@ const FacebookIcon = () => (
 
 const Creators = () => {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const benefits = [
     { icon: Eye, titleKey: 'creators.benefit1_title', textKey: 'creators.benefit1_text' },
@@ -184,7 +184,7 @@ const Creators = () => {
                   <button
                     disabled
                     aria-disabled="true"
-                    className="w-full md:w-auto px-10 rounded-full opacity-60 cursor-not-allowed shadow-2xl transition-transform duration-200"
+                    className="w-full md:w-auto px-10 rounded-full opacity-60 cursor-not-allowed shadow-2xl transition-transform duration-200 mb-3"
                     style={{
                       height: 'clamp(52px, 12vw, 60px)',
                       background: 'linear-gradient(90deg, #FF4F8B 0%, #FFA800 100%)',
@@ -199,6 +199,27 @@ const Creators = () => {
                       }}
                     >
                       {t('creators.hero_cta')}
+                    </span>
+                  </button>
+                  
+                  {/* Creator Dashboard Link */}
+                  <button
+                    onClick={() => navigate('/creators/dashboard')}
+                    className="w-full md:w-auto px-8 rounded-full shadow-xl transition-all duration-200 hover:scale-105"
+                    style={{
+                      height: 'clamp(44px, 10vw, 52px)',
+                      background: 'linear-gradient(90deg, #A855F7 0%, #EC4899 100%)',
+                      boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)'
+                    }}
+                  >
+                    <span 
+                      className="text-[clamp(0.875rem,3.5vw,1rem)] text-white drop-shadow-lg"
+                      style={{ 
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600
+                      }}
+                    >
+                      {t('creators.go_to_dashboard') || (lang === 'hu' ? 'Creator Dashboard' : 'Creator Dashboard')}
                     </span>
                   </button>
                   
