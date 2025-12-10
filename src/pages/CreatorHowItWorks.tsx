@@ -106,7 +106,7 @@ const CreatorHowItWorks = () => {
           {/* Header */}
           <header className="flex items-center gap-4 mb-6">
             <button
-              onClick={() => navigate('/creators/dashboard')}
+              onClick={() => navigate('/creators')}
               className="relative rounded-full hover:scale-110 transition-all p-3"
               style={{ minWidth: '48px', minHeight: '48px' }}
             >
@@ -207,7 +207,7 @@ const CreatorHowItWorks = () => {
                 : 'Go back to the dashboard and add your first video!'}
             </p>
             <button
-              onClick={() => navigate('/creators/dashboard')}
+              onClick={() => navigate('/creators')}
               className="px-6 py-3 rounded-full font-semibold text-white transition-all hover:scale-105 shadow-lg"
               style={{
                 background: 'linear-gradient(90deg, #A855F7 0%, #EC4899 100%)',
