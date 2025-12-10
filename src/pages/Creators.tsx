@@ -6,6 +6,7 @@ import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import defaultProfileImage from '@/assets/default-profile.png';
+import { useAudioStore } from '@/stores/audioStore';
 
 // Platform Icons
 const TikTokIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -53,6 +54,25 @@ const Creators = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<PlatformFilter>('all');
   const [profile, setProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
+  
+  // Disable music on this page
+  const { musicEnabled, setMusicEnabled } = useAudioStore();
+  const [previousMusicState, setPreviousMusicState] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Save current music state and disable
+    if (previousMusicState === null && musicEnabled) {
+      setPreviousMusicState(musicEnabled);
+      setMusicEnabled(false);
+    }
+    
+    // Restore music state on unmount
+    return () => {
+      if (previousMusicState !== null) {
+        setMusicEnabled(previousMusicState);
+      }
+    };
+  }, [musicEnabled, previousMusicState, setMusicEnabled]);
 
   // Fetch user profile
   useEffect(() => {
@@ -74,6 +94,7 @@ const Creators = () => {
 
   // Placeholder video data (empty for now)
   const videos: any[] = [];
+  const hasVideos = videos.length > 0;
 
   const handleAddVideo = () => {
     // TODO: Implement package selection and payment modal here
@@ -107,29 +128,29 @@ const Creators = () => {
   ];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-white">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-[#0a0a2e] via-[#16213e] to-[#0f0f3d]">
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 md:hidden" onClick={() => setMobileMenuOpen(false)}>
           <div 
-            className="absolute right-0 top-0 h-full w-64 bg-white shadow-xl"
+            className="absolute right-0 top-0 h-full w-64 bg-[#0f0f3d] shadow-xl border-l border-white/10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b">
+            <div className="p-4 border-b border-white/10">
               <button onClick={() => setMobileMenuOpen(false)} className="p-2">
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-6 h-6 text-white" />
               </button>
             </div>
             <nav className="p-4 space-y-2">
               <button 
                 onClick={() => { setMobileMenuOpen(false); }}
-                className="w-full text-left px-4 py-3 rounded-lg bg-gray-100 text-gray-900 font-medium"
+                className="w-full text-left px-4 py-3 rounded-lg bg-white/10 text-white font-medium"
               >
                 Dashboard
               </button>
               <button 
                 onClick={() => { setMobileMenuOpen(false); navigate('/creators/how-it-works'); }}
-                className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 text-gray-600"
+                className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/5 text-white/70"
               >
                 {lang === 'hu' ? 'Hogyan működik' : 'How it works'}
               </button>
@@ -140,7 +161,7 @@ const Creators = () => {
 
       {/* Header */}
       <header 
-        className="bg-white border-b border-gray-200 px-4 py-3"
+        className="px-4 py-3 border-b border-white/10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
       >
         {/* Top row: Back button + Menu */}
@@ -171,7 +192,7 @@ const Creators = () => {
           <div className="hidden md:flex items-center gap-4">
             <button 
               onClick={() => navigate('/creators/how-it-works')}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <Info className="w-4 h-4" />
               {lang === 'hu' ? 'Hogyan működik' : 'How it works'}
@@ -188,16 +209,16 @@ const Creators = () => {
           {/* Mobile Menu Button */}
           <button 
             onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2 text-gray-600"
+            className="md:hidden p-2 text-white"
           >
             <Menu className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Profile row: Avatar + Name (centered on mobile) */}
+        {/* Profile row: Avatar + Name (centered on mobile) - 50% larger avatar */}
         <div className="flex flex-col items-center md:flex-row md:items-center md:justify-start gap-3">
-          {/* Avatar */}
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
+          {/* Avatar - 50% larger (was w-16 h-16 = 64px, now w-24 h-24 = 96px) */}
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-purple-400/50 shadow-lg">
             <img 
               src={profile?.avatar_url || defaultProfileImage} 
               alt="Profile"
@@ -206,10 +227,10 @@ const Creators = () => {
           </div>
           {/* Username */}
           <div className="text-center md:text-left">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-white">
               {profile?.username || 'Creator'}
             </h2>
-            <p className="text-sm text-gray-500">Creator Dashboard</p>
+            <p className="text-sm text-white/60">Creator Dashboard</p>
           </div>
         </div>
       </header>
@@ -232,149 +253,162 @@ const Creators = () => {
             </button>
           </div>
 
-          {/* Hero Box */}
-          <section className="mb-8 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 md:p-8 text-white">
-            <h1 
-              className="text-[clamp(1.25rem,5vw,2rem)] leading-tight mb-3"
-              style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800 }}
-            >
-              {t('creators.hero_h1_part1')} <span className="text-[#dc2626]">{t('creators.hero_h1_highlight')}</span> {t('creators.hero_h1_part2')}
-            </h1>
-            <p className="text-white/80 text-[clamp(0.875rem,3vw,1rem)] mb-2">
-              {t('creators.hero_h2')}
-            </p>
-            <p className="text-white/60 text-[clamp(0.75rem,2.5vw,0.875rem)]">
-              {t('creators.hero_h3')}
-            </p>
-          </section>
-
-          {/* Section Title */}
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {lang === 'hu' ? 'Megosztott videóid' : 'Your shared videos'}
-          </h2>
-
-          {/* Platform Filter Icons - Equally distributed */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-            {filters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => !filter.disabled && setActiveFilter(filter.id)}
-                disabled={filter.disabled}
-                className={`flex-1 flex items-center justify-center p-3 mx-1 rounded-xl transition-all ${
-                  activeFilter === filter.id
-                    ? 'bg-gray-900 text-white shadow-lg'
-                    : filter.disabled
-                      ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-                title={filter.id === 'all' 
-                  ? (lang === 'hu' ? 'Összes' : 'All')
-                  : filter.id.charAt(0).toUpperCase() + filter.id.slice(1)
-                }
+          {/* Hero Box - Only shows when no videos */}
+          {!hasVideos && (
+            <section className="mb-8 rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 p-6 md:p-8 text-white">
+              <h1 
+                className="text-[clamp(1.25rem,5vw,2rem)] leading-tight mb-3"
+                style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800 }}
               >
-                {filter.icon}
-              </button>
-            ))}
-          </div>
-
-          {/* Video List / Empty State */}
-          {videos.length === 0 ? (
-            <div className="text-center py-12 px-6 bg-gray-50 rounded-2xl">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
-                <Video className="w-10 h-10 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {lang === 'hu' ? 'Még nem osztottál meg videót' : "You haven't shared a video yet"}
-              </h3>
-              <p className="text-gray-500 max-w-sm mx-auto">
-                {lang === 'hu' 
-                  ? 'Hamarosan itt fognak megjelenni a TikTok videóid, amelyeket a játékosaink látni fognak.'
-                  : 'Your TikTok videos that our players will see will appear here soon.'}
+                {t('creators.hero_h1_part1')} <span className="text-[#dc2626]">{t('creators.hero_h1_highlight')}</span> {t('creators.hero_h1_part2')}
+              </h1>
+              <p className="text-white/80 text-[clamp(0.875rem,3vw,1rem)] mb-4">
+                {t('creators.hero_h2')}
               </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Video cards will go here */}
-            </div>
-          )}
-
-          {/* "Miért jó neked?" Section */}
-          <section className="mt-12 pt-8 border-t border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">
-              {t('creators.benefits_title')}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {benefits.map((benefit, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-50 rounded-2xl p-5 border border-gray-100"
-                >
-                  <div 
-                    className="flex items-center justify-center w-12 h-12 rounded-full mb-4 shadow-md"
-                    style={{ background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)' }}
-                  >
-                    <benefit.icon className="w-6 h-6 text-white" strokeWidth={2.5} />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t(benefit.titleKey)}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(benefit.textKey)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* "Hogyan működik?" Section */}
-          <section className="mt-10 pt-8 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">
-                {t('creators.steps_title')}
-              </h2>
-              <button
-                onClick={() => navigate('/creators/how-it-works')}
-                className="text-sm text-pink-500 hover:text-pink-600 font-medium"
-              >
-                {lang === 'hu' ? 'Részletek →' : 'Details →'}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {steps.map((step, index) => (
-                <div key={index} className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                  <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-sm mb-3">
-                    {step.step}
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t(step.titleKey)}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(step.textKey)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Closing Section */}
-          <section className="mt-10 mb-6 text-center">
-            <div className="bg-gray-900 rounded-2xl p-6">
-              <p className="text-white text-sm leading-relaxed mb-4">
-                {t('creators.closing_text')}
+              <p className="text-white/60 text-[clamp(0.75rem,2.5vw,0.875rem)] mb-6">
+                {t('creators.hero_h3')}
               </p>
-              <div className="pt-4 border-t border-white/10">
-                <p className="text-yellow-400/80 text-sm">
-                  🚀 {t('creators.closing_notice')}
+              
+              {/* Empty state inside hero box */}
+              <div className="text-center py-8 px-6 bg-white/5 rounded-xl border border-white/10">
+                <div className="w-20 h-20 mx-auto mb-6 bg-white/10 rounded-full flex items-center justify-center">
+                  <Video className="w-10 h-10 text-white/40" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {lang === 'hu' ? 'Még nem osztottál meg videót' : "You haven't shared a video yet"}
+                </h3>
+                <p className="text-white/60 max-w-sm mx-auto">
+                  {lang === 'hu' 
+                    ? 'Hamarosan itt fognak megjelenni a TikTok videóid, amelyeket a játékosaink látni fognak.'
+                    : 'Your TikTok videos that our players will see will appear here soon.'}
                 </p>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
+          {/* Section Title + Platform Filter - Only show when has videos */}
+          {hasVideos && (
+            <>
+              <h2 className="text-lg font-bold text-white mb-4">
+                {lang === 'hu' ? 'Megosztott videóid' : 'Your shared videos'}
+              </h2>
+
+              {/* Platform Filter Icons - Equally distributed */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => !filter.disabled && setActiveFilter(filter.id)}
+                    disabled={filter.disabled}
+                    className={`flex-1 flex items-center justify-center p-3 mx-1 rounded-xl transition-all ${
+                      activeFilter === filter.id
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : filter.disabled
+                          ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                          : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    }`}
+                    title={filter.id === 'all' 
+                      ? (lang === 'hu' ? 'Összes' : 'All')
+                      : filter.id.charAt(0).toUpperCase() + filter.id.slice(1)
+                    }
+                  >
+                    {filter.icon}
+                  </button>
+                ))}
+              </div>
+
+              {/* Video List */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Video cards will go here */}
+              </div>
+            </>
+          )}
+
+          {/* "Miért jó neked?" Section - Only shows when no videos */}
+          {!hasVideos && (
+            <section className="mt-8 pt-8 border-t border-white/10">
+              <h2 className="text-lg font-bold text-white mb-6">
+                {t('creators.benefits_title')}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {benefits.map((benefit, index) => (
+                  <div
+                    key={index}
+                    className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+                  >
+                    <div 
+                      className="flex items-center justify-center w-12 h-12 rounded-full mb-4 shadow-md"
+                      style={{ background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)' }}
+                    >
+                      <benefit.icon className="w-6 h-6 text-white" strokeWidth={2.5} />
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">
+                      {t(benefit.titleKey)}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {t(benefit.textKey)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* "Hogyan működik?" Section - Only shows when no videos */}
+          {!hasVideos && (
+            <section className="mt-10 pt-8 border-t border-white/10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-white">
+                  {t('creators.steps_title')}
+                </h2>
+                <button
+                  onClick={() => navigate('/creators/how-it-works')}
+                  className="text-sm text-pink-400 hover:text-pink-300 font-medium"
+                >
+                  {lang === 'hu' ? 'Részletek →' : 'Details →'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {steps.map((step, index) => (
+                  <div key={index} className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
+                    <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-sm mb-3">
+                      {step.step}
+                    </div>
+                    <h3 className="font-semibold text-white mb-1">
+                      {t(step.titleKey)}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {t(step.textKey)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Closing Section - Only shows when no videos */}
+          {!hasVideos && (
+            <section className="mt-10 mb-6 text-center">
+              <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/20">
+                <p className="text-white text-sm leading-relaxed mb-4">
+                  {t('creators.closing_text')}
+                </p>
+                <button
+                  disabled
+                  className="px-6 py-3 rounded-full font-semibold text-white/60 bg-white/10 cursor-not-allowed"
+                >
+                  {t('creators.cta_button')}
+                </button>
+                <p className="text-white/40 text-xs mt-3">
+                  {lang === 'hu' ? 'Hamarosan elérhető' : 'Coming soon'}
+                </p>
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
-      {/* Fixed Bottom Navigation */}
       <BottomNav />
     </div>
   );
