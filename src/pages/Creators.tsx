@@ -234,25 +234,19 @@ const Creators = () => {
             <p className="text-sm text-white/60">Creator Dashboard</p>
           </div>
 
-          {/* Stats Cards - 3 columns */}
-          <div className="flex items-center justify-center gap-4 mt-3">
-            {/* Shared Videos */}
-            <div className="flex flex-col items-center bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+          {/* Stats - icon + number only */}
+          <div className="flex items-center justify-center gap-6 mt-3">
+            <div className="flex flex-col items-center">
               <Film className="w-5 h-5 text-purple-400 mb-1" />
               <span className="text-lg font-bold text-white">0</span>
-              <span className="text-xs text-white/60">{lang === 'hu' ? 'Megosztott videóim' : 'My shared videos'}</span>
             </div>
-            {/* Views */}
-            <div className="flex flex-col items-center bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+            <div className="flex flex-col items-center">
               <Eye className="w-5 h-5 text-purple-400 mb-1" />
               <span className="text-lg font-bold text-white">0</span>
-              <span className="text-xs text-white/60">{lang === 'hu' ? 'Megtekintéseim' : 'My views'}</span>
             </div>
-            {/* Visitors */}
-            <div className="flex flex-col items-center bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+            <div className="flex flex-col items-center">
               <Trophy className="w-5 h-5 text-yellow-400 mb-1" />
               <span className="text-lg font-bold text-white">0</span>
-              <span className="text-xs text-white/60">{lang === 'hu' ? 'Látogatóim' : 'My visitors'}</span>
             </div>
           </div>
         </div>
