@@ -33,16 +33,17 @@ const FacebookIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
   </svg>
 );
 
-// "All" filter icon (based on the user's reference image - 3 lines with arrow)
+// "All" filter icon - 2x3 horizontal lines grid
 const AllFilterIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="4" y1="6" x2="11" y2="6" />
-    <line x1="4" y1="12" x2="11" y2="12" />
-    <line x1="4" y1="18" x2="11" y2="18" />
-    <line x1="15" y1="6" x2="20" y2="6" />
-    <line x1="15" y1="12" x2="20" y2="12" />
-    <line x1="15" y1="18" x2="20" y2="18" />
-    <polyline points="17 20 20 17 17 14" strokeLinecap="round" strokeLinejoin="round" />
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    {/* Left column - 3 lines */}
+    <line x1="3" y1="6" x2="10" y2="6" />
+    <line x1="3" y1="12" x2="10" y2="12" />
+    <line x1="3" y1="18" x2="10" y2="18" />
+    {/* Right column - 3 lines */}
+    <line x1="14" y1="6" x2="21" y2="6" />
+    <line x1="14" y1="12" x2="21" y2="12" />
+    <line x1="14" y1="18" x2="21" y2="18" />
   </svg>
 );
 
@@ -253,9 +254,38 @@ const Creators = () => {
             </button>
           </div>
 
+          {/* Section Title + Platform Filter - Between Add Video button and Hero Box */}
+          <h2 className="text-lg font-bold text-white mb-4">
+            {lang === 'hu' ? 'Megosztott videóid' : 'Your shared videos'}
+          </h2>
+
+          {/* Platform Filter Icons - Always visible, equally distributed */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+            {filters.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => !filter.disabled && setActiveFilter(filter.id)}
+                disabled={filter.disabled}
+                className={`flex-1 flex items-center justify-center p-3 mx-1 rounded-xl transition-all ${
+                  activeFilter === filter.id
+                    ? 'bg-white/20 text-white shadow-lg'
+                    : filter.disabled
+                      ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                      : 'bg-white/5 text-white/60 hover:bg-white/10'
+                }`}
+                title={filter.id === 'all' 
+                  ? (lang === 'hu' ? 'Összes' : 'All')
+                  : filter.id.charAt(0).toUpperCase() + filter.id.slice(1)
+                }
+              >
+                {filter.icon}
+              </button>
+            ))}
+          </div>
+
           {/* Hero Box - Only shows when no videos */}
           {!hasVideos && (
-            <section className="mb-8 rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 p-6 md:p-8 text-white">
+            <section className="mb-8 rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 p-6 md:p-8 text-white text-center">
               <h1 
                 className="text-[clamp(1.25rem,5vw,2rem)] leading-tight mb-3"
                 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800 }}
@@ -285,35 +315,6 @@ const Creators = () => {
               </div>
             </section>
           )}
-
-          {/* Section Title */}
-          <h2 className="text-lg font-bold text-white mb-4">
-            {lang === 'hu' ? 'Megosztott videóid' : 'Your shared videos'}
-          </h2>
-
-          {/* Platform Filter Icons - Always visible, equally distributed */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
-            {filters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => !filter.disabled && setActiveFilter(filter.id)}
-                disabled={filter.disabled}
-                className={`flex-1 flex items-center justify-center p-3 mx-1 rounded-xl transition-all ${
-                  activeFilter === filter.id
-                    ? 'bg-white/20 text-white shadow-lg'
-                    : filter.disabled
-                      ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                      : 'bg-white/5 text-white/60 hover:bg-white/10'
-                }`}
-                title={filter.id === 'all' 
-                  ? (lang === 'hu' ? 'Összes' : 'All')
-                  : filter.id.charAt(0).toUpperCase() + filter.id.slice(1)
-                }
-              >
-                {filter.icon}
-              </button>
-            ))}
-          </div>
 
           {/* Video List - Only when has videos */}
           {hasVideos && (
