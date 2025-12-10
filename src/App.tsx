@@ -32,7 +32,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Invitation from "./pages/Invitation";
 import CoinShop from "./pages/CoinShop";
 import Creators from "./pages/Creators";
-import CreatorDashboard from "./pages/CreatorDashboard";
+
 import CreatorHowItWorks from "./pages/CreatorHowItWorks";
 import LoginNew from "./pages/LoginNew";
 import RegisterNew from "./pages/RegisterNew";
@@ -155,7 +155,7 @@ const AppCore = () => {
               <Route path="/invitation" element={<ErrorBoundary><Invitation /></ErrorBoundary>} />
               <Route path="/about" element={<ErrorBoundary><About /></ErrorBoundary>} />
               <Route path="/creators" element={<ErrorBoundary><Creators /></ErrorBoundary>} />
-              <Route path="/creators/dashboard" element={<ErrorBoundary><CreatorDashboard /></ErrorBoundary>} />
+              
               <Route path="/creators/how-it-works" element={<ErrorBoundary><CreatorHowItWorks /></ErrorBoundary>} />
               <Route path="/coin-shop" element={<ErrorBoundary><CoinShop /></ErrorBoundary>} />
               
