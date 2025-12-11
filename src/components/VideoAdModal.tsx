@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { X, Film } from 'lucide-react';
 import { useI18n } from '@/i18n';
+import { toast } from 'sonner';
 
 interface VideoAdModalProps {
   isOpen: boolean;
@@ -32,13 +33,13 @@ export const VideoAdModal = ({
   onCancel,
   context,
 }: VideoAdModalProps) => {
-  const { t, lang } = useI18n();
+  const { lang } = useI18n();
   const [countdown, setCountdown] = useState(totalDurationSeconds);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [canClose, setCanClose] = useState(false);
-  const [showRewardMessage, setShowRewardMessage] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoStartTimeRef = useRef<number>(0);
+  const toastShownRef = useRef(false);
 
   // Calculate how many 15-second segments we need
   const totalSegments = Math.ceil(totalDurationSeconds / SEGMENT_DURATION);
@@ -83,6 +84,30 @@ export const VideoAdModal = ({
     return url;
   };
 
+  // Show toast when countdown ends
+  const showRewardToast = useCallback(() => {
+    if (toastShownRef.current) return;
+    toastShownRef.current = true;
+
+    if (context === 'refill') {
+      // 30s refill reward
+      toast.success(
+        lang === 'hu'
+          ? 'Jutalmad: 500 arany és 5 élet! Gratulálok!'
+          : 'Your reward: 500 gold and 5 lives! Congratulations!',
+        { duration: 4000 }
+      );
+    } else {
+      // 15s double reward (daily_gift or game_end)
+      toast.success(
+        lang === 'hu'
+          ? 'Jutalmad Duplázódott! Gratulálok!'
+          : 'Your reward has been doubled! Congratulations!',
+        { duration: 4000 }
+      );
+    }
+  }, [context, lang]);
+
   // Start countdown timer
   useEffect(() => {
     if (!isOpen) return;
@@ -90,7 +115,7 @@ export const VideoAdModal = ({
     setCountdown(totalDurationSeconds);
     setCurrentVideoIndex(0);
     setCanClose(false);
-    setShowRewardMessage(false);
+    toastShownRef.current = false;
     videoStartTimeRef.current = Date.now();
 
     intervalRef.current = setInterval(() => {
@@ -108,7 +133,7 @@ export const VideoAdModal = ({
         
         if (newValue <= 0) {
           setCanClose(true);
-          setShowRewardMessage(true);
+          showRewardToast();
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
           }
@@ -124,7 +149,7 @@ export const VideoAdModal = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isOpen, totalDurationSeconds, videos.length]);
+  }, [isOpen, totalDurationSeconds, videos.length, showRewardToast]);
 
   const handleClose = useCallback(() => {
     if (canClose) {
@@ -144,15 +169,9 @@ export const VideoAdModal = ({
   // Text translations
   const texts = {
     hu: {
-      watching: 'Videó megtekintése...',
-      rewardGranted: 'Gratulálunk! Jutalmad jóváírva!',
-      close: 'Bezárok',
       secondsRemaining: 'mp',
     },
     en: {
-      watching: 'Watching video...',
-      rewardGranted: 'Congratulations! Your reward has been credited!',
-      close: 'Close',
       secondsRemaining: 's',
     },
   };
@@ -218,18 +237,6 @@ export const VideoAdModal = ({
                   }`}
                 />
               ))}
-            </div>
-          )}
-
-          {/* Simple close overlay when done - no reward text */}
-          {showRewardMessage && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center animate-fade-in">
-              <button
-                onClick={handleClose}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-8 rounded-full transition-colors text-lg"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
           )}
         </div>
