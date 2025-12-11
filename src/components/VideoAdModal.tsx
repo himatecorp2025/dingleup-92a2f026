@@ -11,6 +11,7 @@ interface VideoAdModalProps {
   onComplete: () => void;
   onCancel: () => void;
   context: 'daily_gift' | 'game_end' | 'refill';
+  doubledAmount?: number; // The doubled coin amount to show in toast
 }
 
 interface VideoData {
@@ -32,6 +33,7 @@ export const VideoAdModal = ({
   onComplete,
   onCancel,
   context,
+  doubledAmount,
 }: VideoAdModalProps) => {
   const { lang } = useI18n();
   const [countdown, setCountdown] = useState<number>(totalDurationSeconds);
@@ -131,6 +133,14 @@ export const VideoAdModal = ({
           : 'Your reward: 500 gold and 5 lives! Congratulations!',
         { duration: 4000, position: 'top-center' }
       );
+    } else if (doubledAmount) {
+      // Show the actual doubled amount for daily_gift and game_end
+      toast.success(
+        lang === 'hu'
+          ? `Duplázott jutalmad: ${doubledAmount} arany! Gratulálok!`
+          : `Your doubled reward: ${doubledAmount} gold! Congratulations!`,
+        { duration: 4000, position: 'top-center' }
+      );
     } else {
       toast.success(
         lang === 'hu'
@@ -139,7 +149,7 @@ export const VideoAdModal = ({
         { duration: 4000, position: 'top-center' }
       );
     }
-  }, [context, lang]);
+  }, [context, lang, doubledAmount]);
 
   // Prevent body scroll when open
   useEffect(() => {

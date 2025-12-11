@@ -187,6 +187,7 @@ const DailyGiftDialog = ({
         onClose={handleVideoClose}
         onCancel={handleVideoClose}
         context="daily_gift"
+        doubledAmount={nextReward * 2}
       />
     );
   }
