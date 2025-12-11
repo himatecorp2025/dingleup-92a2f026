@@ -429,14 +429,16 @@ const GamePreview = memo(() => {
 
   // Background detection - exit game if app goes to background (only after video ended)
   // IMPORTANT: Do NOT trigger when video ad modal is open (iframe steals focus)
+  // IMPORTANT: Do NOT trigger when loading video ad (async operation in progress)
   useEffect(() => {
     // Do not activate background detection while the intro/loading video is playing
     // OR when video ad modal is open (iframe causes blur events)
-    if (gameState !== 'playing' || !videoEnded) return;
+    // OR when game is completed (user viewing results)
+    if (gameState !== 'playing' || !videoEnded || gameCompleted) return;
 
     const handleVisibilityChange = () => {
-      // Skip if video ad modal is showing (iframe causes visibility issues)
-      if (videoAdFlow.showVideo || videoAdFlow.showPrompt) return;
+      // Skip if video ad modal is showing OR loading (iframe causes visibility issues)
+      if (videoAdFlow.showVideo || videoAdFlow.showPrompt || videoAdFlow.isLoading) return;
       
       if (document.hidden) {
         toast.error(t('game.interrupted'));
@@ -445,8 +447,8 @@ const GamePreview = memo(() => {
     };
 
     const handleBlur = () => {
-      // Skip if video ad modal is showing (iframe steals focus)
-      if (videoAdFlow.showVideo || videoAdFlow.showPrompt) return;
+      // Skip if video ad modal is showing OR loading (iframe steals focus)
+      if (videoAdFlow.showVideo || videoAdFlow.showPrompt || videoAdFlow.isLoading) return;
       
       toast.error(t('game.interrupted'));
       navigate('/dashboard');
@@ -460,7 +462,7 @@ const GamePreview = memo(() => {
       window.removeEventListener('blur', handleBlur);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState, videoEnded, videoAdFlow.showVideo, videoAdFlow.showPrompt]); // t and navigate are stable refs
+  }, [gameState, videoEnded, gameCompleted, videoAdFlow.showVideo, videoAdFlow.showPrompt, videoAdFlow.isLoading]); // t and navigate are stable refs
 
   // Check for in-game payment success
   useEffect(() => {
