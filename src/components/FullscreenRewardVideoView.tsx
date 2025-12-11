@@ -124,16 +124,20 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
           videoQueueRef.current.forEach(v => watchedIdsRef.current.add(v.id));
           setTimerFinished(true);
           setCanClose(true);
+          // ALWAYS show intro video when timer ends (hide iframe completely)
+          setShowIntroVideo(true);
           
+          // Show toast with DOUBLED amount (rewardAmount * 2)
           let toastMessage: string;
           if (context === 'refill') {
             toastMessage = lang === 'hu' 
               ? 'Zárd be a videót a jutalom jóváírásához! +500 arany és 5 élet' 
               : 'Close the video to claim your reward! +500 gold and 5 lives';
           } else if (rewardAmount) {
+            const doubledAmount = rewardAmount * 2;
             toastMessage = lang === 'hu' 
-              ? `Zárd be a videót a jutalom jóváírásához! +${rewardAmount} arany` 
-              : `Close the video to claim your reward! +${rewardAmount} gold`;
+              ? `Zárd be a videót a jutalom jóváírásához! +${doubledAmount} arany` 
+              : `Close the video to claim your reward! +${doubledAmount} gold`;
           } else {
             toastMessage = lang === 'hu' 
               ? 'Zárd be a videót a jutalom jóváírásához!' 
@@ -150,18 +154,18 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
       if (currentVid && currentVid.durationSeconds && currentVid.durationSeconds > 0) {
         const videoElapsed = (Date.now() - currentVideoStartRef.current) / 1000;
         
-        // CRITICAL: Switch 5 seconds EARLY to completely prevent TikTok "Ajánlott tartalom"
-        // TikTok shows recommendations before video fully ends
-        const switchThreshold = Math.max(0, currentVid.durationSeconds - 5);
+        // CRITICAL: Switch 8 seconds EARLY to completely prevent TikTok "Ajánlott tartalom"
+        // TikTok shows recommendations VERY early, need aggressive threshold
+        const switchThreshold = Math.max(0, currentVid.durationSeconds - 8);
         
         if (videoElapsed >= switchThreshold) {
-          // IMMEDIATELY show black overlay to hide TikTok recommendations
+          // IMMEDIATELY show transition overlay with logo to hide TikTok recommendations
           setIsTransitioning(true);
           
           // Mark current video as watched
           watchedIdsRef.current.add(currentVid.id);
           
-          // Short delay for black overlay to appear, then switch
+          // Short delay for overlay to appear, then switch
           setTimeout(() => {
             // Decision: if >3 sec remaining → next creator video, else → intro video
             if (remaining > 3) {
@@ -183,21 +187,25 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         }
       }
       
-      // Timer finished - show close button
+      // Timer finished - show close button and switch to intro video
       if (remaining === 0 && !timerFinished) {
         videoQueueRef.current.forEach(v => watchedIdsRef.current.add(v.id));
         setTimerFinished(true);
         setCanClose(true);
+        // ALWAYS show intro video when timer ends (hide iframe completely)
+        setShowIntroVideo(true);
         
+        // Show toast with DOUBLED amount (rewardAmount * 2)
         let toastMessage: string;
         if (context === 'refill') {
           toastMessage = lang === 'hu' 
             ? 'Zárd be a videót a jutalom jóváírásához! +500 arany és 5 élet' 
             : 'Close the video to claim your reward! +500 gold and 5 lives';
         } else if (rewardAmount) {
+          const doubledAmount = rewardAmount * 2;
           toastMessage = lang === 'hu' 
-            ? `Zárd be a videót a jutalom jóváírásához! +${rewardAmount} arany` 
-            : `Close the video to claim your reward! +${rewardAmount} gold`;
+            ? `Zárd be a videót a jutalom jóváírásához! +${doubledAmount} arany` 
+            : `Close the video to claim your reward! +${doubledAmount} gold`;
         } else {
           toastMessage = lang === 'hu' 
             ? 'Zárd be a videót a jutalom jóváírásához!' 
