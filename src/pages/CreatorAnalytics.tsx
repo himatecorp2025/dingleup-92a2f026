@@ -83,17 +83,17 @@ const StatCard: React.FC<{
 const VideoCard: React.FC<{
   video: any;
   onClick: () => void;
-  lang: string;
-}> = ({ video, onClick, lang }) => {
+  t: (key: string) => string;
+}> = ({ video, onClick, t }) => {
   const statusColors = {
     active: 'bg-green-500/20 text-green-400 border-green-500/30',
     expired: 'bg-red-500/20 text-red-400 border-red-500/30',
     expiring_soon: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   };
-  const statusLabels = {
-    active: lang === 'hu' ? 'Aktív' : 'Active',
-    expired: lang === 'hu' ? 'Lejárt' : 'Expired',
-    expiring_soon: lang === 'hu' ? 'Hamarosan lejár' : 'Expiring Soon',
+  const statusLabels: Record<string, string> = {
+    active: t('creator.analytics.active'),
+    expired: t('creator.analytics.expired'),
+    expiring_soon: t('creator.analytics.expiringSoon'),
   };
 
   return (
@@ -115,16 +115,16 @@ const VideoCard: React.FC<{
           <div className="flex items-center gap-2 mb-2">
             <PlatformIcon platform={video.platform} className="w-4 h-4 text-slate-400" />
             <span className={`text-xs px-2 py-0.5 rounded-full border ${statusColors[video.status_badge as keyof typeof statusColors]}`}>
-              {statusLabels[video.status_badge as keyof typeof statusLabels]}
+              {statusLabels[video.status_badge] || video.status_badge}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="text-slate-500">{lang === 'hu' ? 'Megjelenések' : 'Impressions'}</span>
+              <span className="text-slate-500">{t('creator.analytics.impressions')}</span>
               <p className="text-white font-semibold">{video.impressions.toLocaleString()}</p>
             </div>
             <div>
-              <span className="text-slate-500">{lang === 'hu' ? 'Megtekintések' : 'Completions'}</span>
+              <span className="text-slate-500">{t('creator.analytics.completions')}</span>
               <p className="text-white font-semibold">{video.completions.toLocaleString()}</p>
             </div>
           </div>
@@ -146,10 +146,16 @@ const VideoCard: React.FC<{
   );
 };
 
-const Heatmap: React.FC<{ data: number[][]; lang: string }> = ({ data, lang }) => {
-  const days = lang === 'hu' 
-    ? ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo']
-    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const Heatmap: React.FC<{ data: number[][]; t: (key: string) => string }> = ({ data, t }) => {
+  const days = [
+    t('creator.analytics.sun'),
+    t('creator.analytics.mon'),
+    t('creator.analytics.tue'),
+    t('creator.analytics.wed'),
+    t('creator.analytics.thu'),
+    t('creator.analytics.fri'),
+    t('creator.analytics.sat'),
+  ];
   
   const maxValue = Math.max(...data.flat());
 
@@ -179,7 +185,7 @@ const Heatmap: React.FC<{ data: number[][]; lang: string }> = ({ data, lang }) =
               <div
                 key={hourIndex}
                 className={`w-4 h-4 rounded-sm ${getColor(value)} transition-colors`}
-                title={`${days[dayIndex]} ${hourIndex}:00 - ${value} ${lang === 'hu' ? 'elérés' : 'views'}`}
+                title={`${days[dayIndex]} ${hourIndex}:00 - ${value} ${t('creator.analytics.views')}`}
               />
             ))}
           </div>
@@ -220,10 +226,10 @@ const CreatorAnalytics: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-cyan-400" />
-              {lang === 'hu' ? 'Analitika' : 'Analytics'}
+              {t('creator.analytics.title')}
             </h1>
             <p className="text-sm text-slate-400">
-              {lang === 'hu' ? 'Videóid teljesítménye' : 'Your video performance'}
+              {t('creator.analytics.subtitle')}
             </p>
           </div>
         </div>
@@ -237,7 +243,7 @@ const CreatorAnalytics: React.FC = () => {
                 value={p}
                 className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
               >
-                {p === 'all' ? (lang === 'hu' ? 'Összes' : 'All') : (
+                {p === 'all' ? t('creator.analytics.all') : (
                   <div className="flex items-center gap-1.5">
                     <PlatformIcon platform={p} className="w-4 h-4" />
                     <span className="capitalize hidden sm:inline">{p}</span>
@@ -252,12 +258,10 @@ const CreatorAnalytics: React.FC = () => {
           <div className="text-center py-20">
             <BarChart3 className="w-16 h-16 text-slate-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-slate-400 mb-2">
-              {lang === 'hu' ? 'Még nincs elegendő adat' : 'Not enough data yet'}
+              {t('creator.analytics.noData')}
             </h2>
             <p className="text-slate-500">
-              {lang === 'hu'
-                ? 'A videóid statisztikái itt fognak megjelenni.'
-                : 'Your video statistics will appear here.'}
+              {t('creator.analytics.noDataSubtext')}
             </p>
           </div>
         ) : (
@@ -266,30 +270,30 @@ const CreatorAnalytics: React.FC = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <StatCard
                 icon={<Film className="w-5 h-5 text-purple-400" />}
-                label={lang === 'hu' ? 'Megjelenések' : 'Impressions'}
+                label={t('creator.analytics.impressions')}
                 value={overview?.impressions_total || 0}
-                subtext={lang === 'hu' ? 'Összes alkalommal, amikor a videóid megjelentek.' : 'Total times your videos were shown.'}
+                subtext={t('creator.analytics.impressionsSubtext')}
                 color="bg-purple-500/20"
               />
               <StatCard
                 icon={<Eye className="w-5 h-5 text-blue-400" />}
-                label={lang === 'hu' ? 'Megtekintések (15mp)' : 'Completions (15s)'}
+                label={t('creator.analytics.completions')}
                 value={overview?.completions_total || 0}
-                subtext={lang === 'hu' ? 'Teljes hosszban megnézett videók.' : 'Videos watched to completion.'}
+                subtext={t('creator.analytics.completionsSubtext')}
                 color="bg-blue-500/20"
               />
               <StatCard
                 icon={<Trophy className="w-5 h-5 text-yellow-400" />}
-                label={lang === 'hu' ? 'Releváns elérés' : 'Relevant Reach'}
+                label={t('creator.analytics.relevantReach')}
                 value={overview?.relevant_hits_total || 0}
-                subtext={lang === 'hu' ? 'Célközönséghez tartozó megtekintések.' : 'Views from target audience.'}
+                subtext={t('creator.analytics.relevantReachSubtext')}
                 color="bg-yellow-500/20"
               />
               <StatCard
                 icon={<ExternalLink className="w-5 h-5 text-green-400" />}
-                label={lang === 'hu' ? 'Átkattintások' : 'Click-throughs'}
+                label={t('creator.analytics.clickthroughs')}
                 value={overview?.clickthrough_total || 0}
-                subtext={lang === 'hu' ? 'Csatornádra kattintások.' : 'Clicks to your channel.'}
+                subtext={t('creator.analytics.clickthroughsSubtext')}
                 color="bg-green-500/20"
               />
             </div>
@@ -297,7 +301,7 @@ const CreatorAnalytics: React.FC = () => {
             {/* Weekly Chart */}
             <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-xl p-4 sm:p-6 border border-slate-700/50 mb-8">
               <h2 className="text-lg font-semibold mb-4">
-                {lang === 'hu' ? 'Heti aktivitás' : 'Weekly Activity'}
+                {t('creator.analytics.weeklyActivity')}
               </h2>
               {weeklyLoading ? (
                 <div className="h-64 flex items-center justify-center">
@@ -314,9 +318,9 @@ const CreatorAnalytics: React.FC = () => {
                       labelStyle={{ color: '#94a3b8' }}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="impressions" name={lang === 'hu' ? 'Megjelenések' : 'Impressions'} stroke="#a855f7" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="completions" name={lang === 'hu' ? 'Megtekintések' : 'Completions'} stroke="#3b82f6" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="relevant_hits" name={lang === 'hu' ? 'Releváns' : 'Relevant'} stroke="#eab308" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="impressions" name={t('creator.analytics.impressions')} stroke="#a855f7" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="completions" name={t('creator.analytics.completions')} stroke="#3b82f6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="relevant_hits" name={t('creator.analytics.relevant')} stroke="#eab308" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -325,21 +329,21 @@ const CreatorAnalytics: React.FC = () => {
             {/* Heatmap */}
             <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-xl p-4 sm:p-6 border border-slate-700/50 mb-8">
               <h2 className="text-lg font-semibold mb-4">
-                {lang === 'hu' ? 'Mikor aktív a közönséged?' : 'When Is Your Audience Active?'}
+                {t('creator.analytics.audienceActive')}
               </h2>
               {heatmapLoading ? (
                 <div className="h-40 flex items-center justify-center">
                   <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full" />
                 </div>
               ) : (
-                <Heatmap data={heatmapData?.heatmap || Array(7).fill(Array(24).fill(0))} lang={lang} />
+                <Heatmap data={heatmapData?.heatmap || Array(7).fill(Array(24).fill(0))} t={t} />
               )}
             </div>
 
             {/* Videos Section */}
             <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-xl p-4 sm:p-6 border border-slate-700/50">
               <h2 className="text-lg font-semibold mb-4">
-                {lang === 'hu' ? 'Videóim analitikája' : 'My Videos Analytics'}
+                {t('creator.analytics.myVideos')}
               </h2>
 
               {/* Filters */}
@@ -347,7 +351,7 @@ const CreatorAnalytics: React.FC = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
-                    placeholder={lang === 'hu' ? 'Keresés...' : 'Search...'}
+                    placeholder={t('creator.analytics.search')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-10 bg-slate-800 border-slate-700 text-white"
@@ -358,20 +362,20 @@ const CreatorAnalytics: React.FC = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white"
                 >
-                  <option value="all">{lang === 'hu' ? 'Minden státusz' : 'All Status'}</option>
-                  <option value="active">{lang === 'hu' ? 'Aktív' : 'Active'}</option>
-                  <option value="expired">{lang === 'hu' ? 'Lejárt' : 'Expired'}</option>
+                  <option value="all">{t('creator.analytics.allStatus')}</option>
+                  <option value="active">{t('creator.analytics.active')}</option>
+                  <option value="expired">{t('creator.analytics.expired')}</option>
                 </select>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-white"
                 >
-                  <option value="relevant_hits">{lang === 'hu' ? 'Releváns elérés' : 'Relevant Reach'}</option>
-                  <option value="impressions">{lang === 'hu' ? 'Megjelenések' : 'Impressions'}</option>
-                  <option value="completions">{lang === 'hu' ? 'Megtekintések' : 'Completions'}</option>
-                  <option value="clickthrough">{lang === 'hu' ? 'Átkattintások' : 'Click-throughs'}</option>
-                  <option value="activated_at">{lang === 'hu' ? 'Aktiválás dátuma' : 'Activation Date'}</option>
+                  <option value="relevant_hits">{t('creator.analytics.sortRelevant')}</option>
+                  <option value="impressions">{t('creator.analytics.sortImpressions')}</option>
+                  <option value="completions">{t('creator.analytics.sortCompletions')}</option>
+                  <option value="clickthrough">{t('creator.analytics.sortClicks')}</option>
+                  <option value="activated_at">{t('creator.analytics.sortDate')}</option>
                 </select>
               </div>
 
@@ -387,13 +391,13 @@ const CreatorAnalytics: React.FC = () => {
                       key={video.id}
                       video={video}
                       onClick={() => navigate(`/creator/analytics/video/${video.id}`)}
-                      lang={lang}
+                      t={t}
                     />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-10 text-slate-400">
-                  {lang === 'hu' ? 'Nincs találat' : 'No videos found'}
+                  {t('creator.analytics.noVideos')}
                 </div>
               )}
             </div>
