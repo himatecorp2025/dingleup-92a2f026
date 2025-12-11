@@ -10,6 +10,7 @@ interface RewardVideo {
   id: string;
   embedUrl: string;
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
+  creatorName: string | null;
 }
 
 serve(async (req) => {
@@ -59,7 +60,8 @@ serve(async (req) => {
         id,
         embed_url,
         platform,
-        user_id
+        user_id,
+        creator_name
       `)
       .eq('is_active', true)
       .gt('expires_at', now)
@@ -120,6 +122,7 @@ serve(async (req) => {
         id: video.id,
         embedUrl: video.embed_url!,
         platform: video.platform as RewardVideo['platform'],
+        creatorName: video.creator_name || null,
       });
     }
 

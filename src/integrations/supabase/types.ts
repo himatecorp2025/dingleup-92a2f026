@@ -578,6 +578,7 @@ export type Database = {
       creator_videos: {
         Row: {
           created_at: string
+          creator_name: string | null
           duration_seconds: number | null
           embed_url: string | null
           expires_at: string | null
@@ -594,6 +595,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_name?: string | null
           duration_seconds?: number | null
           embed_url?: string | null
           expires_at?: string | null
@@ -610,6 +612,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_name?: string | null
           duration_seconds?: number | null
           embed_url?: string | null
           expires_at?: string | null

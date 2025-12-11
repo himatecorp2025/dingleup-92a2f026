@@ -11,6 +11,7 @@ export interface RewardVideo {
   videoUrl?: string; // Original video URL for "Go to creator" link
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
   durationSeconds?: number;
+  creatorName?: string | null; // Creator display name from database
 }
 
 interface FullscreenRewardVideoViewProps {
@@ -58,8 +59,17 @@ const buildAutoplayUrl = (video: RewardVideo): string => {
   }
 };
 
-// Extract creator username from embed/video URL
-const extractCreatorUsername = (video: RewardVideo): string | null => {
+// Get display name: prefer database creatorName, fallback to URL extraction
+const getCreatorDisplayName = (video: RewardVideo): string | null => {
+  // Use database creator_name if available
+  if (video.creatorName) return video.creatorName;
+  
+  // Fallback: extract from URL
+  return extractCreatorUsernameFromUrl(video);
+};
+
+// Extract creator username from embed/video URL (fallback method)
+const extractCreatorUsernameFromUrl = (video: RewardVideo): string | null => {
   const url = video.videoUrl || video.embedUrl;
   
   try {
@@ -219,7 +229,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         setShowCreatorLink(true);
         // Store current creator username for persistence during intro
         if (currentVideo) {
-          setLastCreatorUsername(extractCreatorUsername(currentVideo));
+          setLastCreatorUsername(getCreatorDisplayName(currentVideo));
         }
       }
       
@@ -452,7 +462,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
                 textShadow: '0 1px 3px rgba(0,0,0,0.8)',
               }}
             >
-              {extractCreatorUsername(currentVideo) || (lang === 'hu' ? 'Alkotó' : 'Creator')}
+              {getCreatorDisplayName(currentVideo) || (lang === 'hu' ? 'Alkotó' : 'Creator')}
             </span>
           </div>
         </div>
@@ -478,8 +488,8 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
           <ExternalLink size={16} />
           <span>
             {lang === 'hu' 
-              ? `Tovább ${lastCreatorUsername || extractCreatorUsername(currentVideo) || 'az alkotó'} oldalára` 
-              : `Go to ${lastCreatorUsername || extractCreatorUsername(currentVideo) || 'creator'} page`}
+              ? `Tovább ${lastCreatorUsername || getCreatorDisplayName(currentVideo) || 'az alkotó'} oldalára` 
+              : `Go to ${lastCreatorUsername || getCreatorDisplayName(currentVideo) || 'creator'} page`}
           </span>
         </button>
       )}
