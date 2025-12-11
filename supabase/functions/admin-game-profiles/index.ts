@@ -20,7 +20,7 @@ interface AdminUserGameProfileRow {
   overallCorrectRatio: number;
   aiPersonalizedQuestionsEnabled: boolean;
   personalizationActive: boolean;
-  topTopics: { topicId: string; topicName: string; score: number; }[];
+  topTopics: { topicId: string; topicName: string; correctCount: number; }[];
 }
 
 Deno.serve(async (req) => {
@@ -91,26 +91,27 @@ Deno.serve(async (req) => {
     const userStatsMap = new Map();
     allStats.forEach(stat => {
       const existing = userStatsMap.get(stat.user_id) || {
-        totalAnswered: 0, totalCorrect: 0, topicScores: []
+        totalAnswered: 0, totalCorrect: 0, topicStats: []
       };
       existing.totalAnswered += stat.answered_count;
       existing.totalCorrect += stat.correct_count;
-      existing.topicScores.push({ topicId: stat.topic_id, score: Number(stat.score) });
+      existing.topicStats.push({ topicId: stat.topic_id, correctCount: stat.correct_count });
       userStatsMap.set(stat.user_id, existing);
     });
 
     const result: AdminUserGameProfileRow[] = [];
     userIds.forEach(userId => {
-      const stats = userStatsMap.get(userId) || { totalAnswered: 0, totalCorrect: 0, topicScores: [] };
+      const stats = userStatsMap.get(userId) || { totalAnswered: 0, totalCorrect: 0, topicStats: [] };
       const aiEnabled = settingsMap.get(userId) ?? true;
       const personalizationActive = stats.totalAnswered >= 100 && aiEnabled;
-      const topTopics = stats.topicScores
-        .sort((a: { topicId: any; score: number }, b: { topicId: any; score: number }) => b.score - a.score)
+      // Sort by correctCount (same as get-ad-video logic)
+      const topTopics = stats.topicStats
+        .sort((a: { topicId: any; correctCount: number }, b: { topicId: any; correctCount: number }) => b.correctCount - a.correctCount)
         .slice(0, 3)
-        .map((t: { topicId: any; score: number }) => ({
+        .map((t: { topicId: any; correctCount: number }) => ({
           topicId: String(t.topicId),
           topicName: topicMap.get(t.topicId) || `Topic ${t.topicId}`,
-          score: t.score,
+          correctCount: t.correctCount,
         }));
       result.push({
         userId, username: profileMap.get(userId) || 'Unknown', totalAnswered: stats.totalAnswered,

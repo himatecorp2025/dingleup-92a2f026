@@ -110,6 +110,11 @@ Deno.serve(async (req) => {
     });
 
     allTopics.sort((a, b) => b.correctCount - a.correctCount);
+    const topTopicIds = new Set(allTopics.slice(0, 3).map(t => t.topicId));
+    // Mark isInTop3
+    allTopics.forEach(topic => {
+      (topic as any).isInTop3 = topTopicIds.has(topic.topicId);
+    });
     const topTopics = allTopics.slice(0, 3);
 
     const aiEnabled = settings?.ai_personalized_questions_enabled ?? true;
