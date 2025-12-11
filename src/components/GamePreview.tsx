@@ -32,7 +32,7 @@ import { GameQuestionContainer } from "./game/GameQuestionContainer";
 import { FullscreenRewardVideoView } from "./FullscreenRewardVideoView";
 import { VideoAdPrompt } from "./VideoAdPrompt";
 import { useVideoAdFlow } from "@/hooks/useVideoAdFlow";
-import { useVideoAdStore } from "@/stores/videoAdStore";
+import { useRewardVideoStore } from "@/stores/rewardVideoStore";
 
 type GameState = 'playing' | 'finished' | 'out-of-lives';
 
@@ -75,8 +75,9 @@ const GamePreview = memo(() => {
   } = useGameState();
   const [gameCompleted, setGameCompleted] = useState(false);
   const [showVideoAdModal, setShowVideoAdModal] = useState(false);
-  // Read video ad availability from global store (pre-loaded at login)
-  const videoAdAvailable = useVideoAdStore(state => state.isAvailable);
+  // Read video ad availability from reward video store (pre-loaded at login)
+  const { isPreloaded, videoQueue } = useRewardVideoStore();
+  const videoAdAvailable = isPreloaded && videoQueue.length > 0;
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [gameInstanceId] = useState(() => crypto.randomUUID());
 
