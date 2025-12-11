@@ -296,6 +296,33 @@ const VideoLinkModal = ({
 
   const canAddMore = remainingActivations > 0;
 
+  // App-first deep linking: try app scheme, only fall back to web if app doesn't open
+  const openAppOrWeb = (appScheme: string, webUrl: string) => {
+    let appOpened = false;
+    
+    // Listen for visibility change - if page becomes hidden, app opened successfully
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        appOpened = true;
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Try to open the app
+    window.location.href = appScheme;
+    
+    // After timeout, check if app opened - if not, open web version
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Only open web if app didn't open (page stayed visible)
+      if (!appOpened && !document.hidden) {
+        window.open(webUrl, '_blank');
+      }
+    }, 1500);
+  };
+
   const handleTopicToggle = (topicId: number) => {
     setSelectedTopicIds(prev => {
       if (prev.includes(topicId)) {
@@ -444,54 +471,33 @@ const VideoLinkModal = ({
             </p>
             <div className="flex justify-center gap-4">
               {/* TikTok */}
-              <a
-                href="tiktok://feed"
-                onClick={(e) => {
-                  // Fallback to web if app not installed
-                  setTimeout(() => {
-                    window.open('https://www.tiktok.com', '_blank');
-                  }, 500);
-                }}
+              <button
+                onClick={() => openAppOrWeb('tiktok://feed', 'https://www.tiktok.com')}
                 className="w-12 h-12 rounded-xl bg-black flex items-center justify-center hover:scale-110 transition-transform"
               >
                 <TikTokIcon className="w-6 h-6 text-white" />
-              </a>
+              </button>
               {/* YouTube */}
-              <a
-                href="youtube://www.youtube.com/feed/shorts"
-                onClick={(e) => {
-                  setTimeout(() => {
-                    window.open('https://www.youtube.com/shorts', '_blank');
-                  }, 500);
-                }}
+              <button
+                onClick={() => openAppOrWeb('youtube://www.youtube.com/feed/shorts', 'https://www.youtube.com/shorts')}
                 className="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center hover:scale-110 transition-transform"
               >
                 <YouTubeIcon className="w-6 h-6 text-white" />
-              </a>
+              </button>
               {/* Instagram */}
-              <a
-                href="instagram://reels"
-                onClick={(e) => {
-                  setTimeout(() => {
-                    window.open('https://www.instagram.com/reels', '_blank');
-                  }, 500);
-                }}
+              <button
+                onClick={() => openAppOrWeb('instagram://reels', 'https://www.instagram.com/reels')}
                 className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center hover:scale-110 transition-transform"
               >
                 <InstagramIcon className="w-6 h-6 text-white" />
-              </a>
+              </button>
               {/* Facebook */}
-              <a
-                href="fb://reels"
-                onClick={(e) => {
-                  setTimeout(() => {
-                    window.open('https://www.facebook.com/reels', '_blank');
-                  }, 500);
-                }}
+              <button
+                onClick={() => openAppOrWeb('fb://reels', 'https://www.facebook.com/reels')}
                 className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center hover:scale-110 transition-transform"
               >
                 <FacebookIcon className="w-6 h-6 text-white" />
-              </a>
+              </button>
             </div>
           </div>
 
