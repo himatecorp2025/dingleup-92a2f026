@@ -4,7 +4,6 @@ import { usePlatformDetection } from '@/hooks/usePlatformDetection';
 import { trackBonusEvent, trackFeatureUsage } from '@/lib/analytics';
 import { supabase } from '@/integrations/supabase/client';
 import HexShieldFrame from './frames/HexShieldFrame';
-import HexAcceptButton from './ui/HexAcceptButton';
 import { useI18n } from '@/i18n';
 import { VideoAdPrompt } from './VideoAdPrompt';
 import { VideoAdModal } from './VideoAdModal';
@@ -40,7 +39,6 @@ const DailyGiftDialog = ({
   const [contentVisible, setContentVisible] = useState(false);
   const flagRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
-  const buttonWrapperRef = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
   const [burstActive, setBurstActive] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
@@ -51,31 +49,6 @@ const DailyGiftDialog = ({
   const [showVideoModal, setShowVideoModal] = useState(false);
   const videoAdAvailable = useVideoAdStore(state => state.isAvailable);
   const videoAdFlow = useVideoAdFlow({ userId: userId || undefined });
-
-  // Sync badge width to button (account for inner hexagon vs. outer frame ratio)
-  useEffect(() => {
-    if (!badgeRef.current || !buttonWrapperRef.current) return;
-
-    const INNER_TO_OUTER_RATIO = 132 / 108; // outerHexWidth / innerGreenWidth
-
-    const syncWidth = () => {
-      const badgeWidth = badgeRef.current?.offsetWidth;
-      if (badgeWidth && buttonWrapperRef.current) {
-        const targetButtonWidth = Math.round(badgeWidth * INNER_TO_OUTER_RATIO);
-        buttonWrapperRef.current.style.setProperty('--sync-width', `${targetButtonWidth}px`);
-      }
-    };
-
-    syncWidth();
-    const observer = new ResizeObserver(syncWidth);
-    observer.observe(badgeRef.current);
-    window.addEventListener('resize', syncWidth);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', syncWidth);
-    };
-  }, [contentVisible, open]);
 
   useEffect(() => {
     if (open) {
@@ -496,10 +469,11 @@ const DailyGiftDialog = ({
                 {/* Show both options side by side if video available */}
                 <div className={`flex ${videoAdAvailable ? 'gap-[3%]' : ''} justify-center mb-[4%] w-full`}>
                   
-                  {/* Normal reward option - purple */}
+                  {/* Normal reward option - purple - CLICKABLE */}
                   <div 
-                    className={`relative rounded-xl ${videoAdAvailable ? 'cursor-default' : ''}`} 
+                    className={`relative rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95 ${(claiming || claimed) ? 'pointer-events-none opacity-70' : ''}`}
                     style={{ padding: '2.5% 6%', flex: videoAdAvailable ? '1' : 'none' }}
+                    onClick={handleClaim}
                   >
                     <div className="absolute inset-0 rounded-xl translate-y-0.5 translate-x-0.5"
                          style={{
@@ -706,27 +680,7 @@ const DailyGiftDialog = ({
                   }
                 `}</style>
 
-                {/* Hex Accept Button */}
-                <div 
-                  ref={buttonWrapperRef}
-                  className="flex justify-center w-full"
-                  style={{
-                    width: 'var(--sync-width, 100%)',
-                    maxWidth: '100%'
-                  }}
-                >
-                  <HexAcceptButton
-                    onClick={handleClaim}
-                    disabled={!canClaim || claiming || claimed}
-                    style={{ width: 'var(--sync-width)' }}
-                  >
-                    {claimed 
-                      ? t('daily.claim_button_success') 
-                      : claiming 
-                        ? t('daily.claim_button_processing') 
-                        : t('daily.claim_button_active')}
-                  </HexAcceptButton>
-                </div>
+                {/* Button removed - boxes are now clickable */}
               </div>
               </HexShieldFrame>
             </div>
