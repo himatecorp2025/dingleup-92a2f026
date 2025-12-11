@@ -76,7 +76,8 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [canClose, setCanClose] = useState(false);
   const [timerFinished, setTimerFinished] = useState(false);
-  const [showIntroVideo, setShowIntroVideo] = useState(false); // Track if showing intro video
+  const [showIntroVideo, setShowIntroVideo] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false); // Black overlay during switch
   const watchedIdsRef = useRef<Set<string>>(new Set());
   const videoQueueRef = useRef<RewardVideo[]>([...videos]);
   const currentVideoStartRef = useRef<number>(Date.now());
@@ -116,7 +117,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
       setSecondsLeft(remaining);
       
       // If already showing intro video or timer finished, skip video switching logic
-      if (showIntroVideo || timerFinished) {
+      if (showIntroVideo || timerFinished || isTransitioning) {
         // Timer finished - show close button
         if (remaining === 0 && !timerFinished) {
           videoQueueRef.current.forEach(v => watchedIdsRef.current.add(v.id));
@@ -148,25 +149,36 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
       if (currentVid && currentVid.durationSeconds && currentVid.durationSeconds > 0) {
         const videoElapsed = (Date.now() - currentVideoStartRef.current) / 1000;
         
-        // Switch 3 seconds early to PREVENT platform "Ajánlott tartalom" UI from appearing
-        // This is critical for TikTok/YouTube which show recommendations at video end
-        const switchThreshold = Math.max(0, currentVid.durationSeconds - 3);
+        // CRITICAL: Switch 5 seconds EARLY to completely prevent TikTok "Ajánlott tartalom"
+        // TikTok shows recommendations before video fully ends
+        const switchThreshold = Math.max(0, currentVid.durationSeconds - 5);
         
         if (videoElapsed >= switchThreshold) {
+          // IMMEDIATELY show black overlay to hide TikTok recommendations
+          setIsTransitioning(true);
+          
           // Mark current video as watched
           watchedIdsRef.current.add(currentVid.id);
           
-          // Decision: if >3 sec remaining → next creator video, else → intro video
-          if (remaining > 3) {
-            console.log('[FullscreenRewardVideoView] Video ending, >3 sec remaining → next creator video');
-            const nextIndex = (currentVideoIndex + 1) % videoQueueRef.current.length;
-            setCurrentVideoIndex(nextIndex);
-            currentVideoStartRef.current = Date.now();
-            setVideoKey(prev => prev + 1);
-          } else {
-            console.log('[FullscreenRewardVideoView] Video ending, ≤3 sec remaining → intro video');
-            setShowIntroVideo(true);
-          }
+          // Short delay for black overlay to appear, then switch
+          setTimeout(() => {
+            // Decision: if >3 sec remaining → next creator video, else → intro video
+            if (remaining > 3) {
+              console.log('[FullscreenRewardVideoView] Video ending, >3 sec remaining → next creator video');
+              const nextIndex = (currentVideoIndex + 1) % videoQueueRef.current.length;
+              setCurrentVideoIndex(nextIndex);
+              currentVideoStartRef.current = Date.now();
+              setVideoKey(prev => prev + 1);
+            } else {
+              console.log('[FullscreenRewardVideoView] Video ending, ≤3 sec remaining → intro video');
+              setShowIntroVideo(true);
+            }
+            
+            // Remove transition overlay after switch
+            setTimeout(() => {
+              setIsTransitioning(false);
+            }, 100);
+          }, 50);
         }
       }
       
@@ -196,7 +208,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
     }, 100);
 
     return () => clearInterval(interval);
-  }, [totalDurationSeconds, lang, currentVideoIndex, timerFinished, showIntroVideo, context, rewardAmount]);
+  }, [totalDurationSeconds, lang, currentVideoIndex, timerFinished, showIntroVideo, isTransitioning, context, rewardAmount]);
 
   const handleClose = useCallback(() => {
     if (!canClose) return;
@@ -217,11 +229,22 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         backgroundColor: '#000000',
       }}
     >
-      {/* Solid black background layer */}
+      {/* Solid black background layer - ALWAYS visible */}
       <div 
         className="absolute inset-0" 
         style={{ backgroundColor: '#000000', zIndex: 0 }}
       />
+
+      {/* TRANSITION OVERLAY - Covers iframe completely during video switch */}
+      {isTransitioning && (
+        <div 
+          className="absolute inset-0"
+          style={{ 
+            backgroundColor: '#000000', 
+            zIndex: 50,
+          }}
+        />
+      )}
 
       {/* Show intro video OR creator video */}
       {showIntroVideo ? (
@@ -244,22 +267,24 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             style={{ backgroundColor: '#000000', zIndex: 5 }}
           />
           
-          {/* Creator video iframe */}
-          <iframe
-            key={`${currentVideo?.id}-${currentVideoIndex}-${videoKey}`}
-            src={embedSrc}
-            className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-[8vh] border-0 pointer-events-none"
-            style={{
-              width: '100vw',
-              height: '120vh',
-              zIndex: 10,
-              backgroundColor: '#000000',
-            }}
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
-            allowFullScreen
-          />
+          {/* Creator video iframe - HIDDEN during transition */}
+          {!isTransitioning && (
+            <iframe
+              key={`${currentVideo?.id}-${currentVideoIndex}-${videoKey}`}
+              src={embedSrc}
+              className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-[8vh] border-0 pointer-events-none"
+              style={{
+                width: '100vw',
+                height: '120vh',
+                zIndex: 10,
+                backgroundColor: '#000000',
+              }}
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
+              allowFullScreen
+            />
+          )}
           
-          {/* Black overlay strips for sides */}
+          {/* Black overlay strips for sides - ALWAYS visible */}
           <div 
             className="absolute top-0 left-0 h-full"
             style={{ width: '15vw', backgroundColor: '#000000', zIndex: 15 }}
@@ -269,13 +294,13 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             style={{ width: '15vw', backgroundColor: '#000000', zIndex: 15 }}
           />
           
-          {/* Top black overlay */}
+          {/* Top black overlay - ALWAYS visible */}
           <div 
             className="absolute top-0 left-0 right-0"
             style={{ height: '15vh', backgroundColor: '#000000', zIndex: 15 }}
           />
           
-          {/* Bottom black overlay */}
+          {/* Bottom black overlay - ALWAYS visible */}
           <div 
             className="absolute bottom-0 left-0 right-0"
             style={{ height: '15vh', backgroundColor: '#000000', zIndex: 15 }}
@@ -289,7 +314,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         style={{ 
           top: 'max(env(safe-area-inset-top, 0px), 16px)', 
           left: '16px',
-          zIndex: 30,
+          zIndex: 60,
         }}
       >
         <div 
@@ -317,7 +342,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             top: 'max(env(safe-area-inset-top, 0px), 16px)', 
             left: '50%', 
             transform: 'translateX(-50%)',
-            zIndex: 30,
+            zIndex: 60,
           }}
         >
           {videos.map((_, idx) => (
@@ -347,7 +372,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             height: '48px',
             backgroundColor: 'rgba(255,255,255,0.3)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-            zIndex: 30,
+            zIndex: 60,
           }}
         >
           <X color="#fff" size={28} strokeWidth={3} />
