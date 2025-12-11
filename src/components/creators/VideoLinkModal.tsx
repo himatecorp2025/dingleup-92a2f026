@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Link, AlertCircle, Loader2, Check } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { X, Link, AlertCircle, Loader2, Check, Upload, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -126,6 +126,18 @@ const texts = {
     instagram: 'Instagram Reels',
     facebook: 'Facebook Reels',
   },
+  uploadThumbnail: {
+    hu: 'Borítókép feltöltése (opcionális)',
+    en: 'Upload thumbnail (optional)',
+  },
+  thumbnailHint: {
+    hu: 'Instagram és Facebook videókhoz ajánlott',
+    en: 'Recommended for Instagram and Facebook videos',
+  },
+  removeThumbnail: {
+    hu: 'Eltávolítás',
+    en: 'Remove',
+  },
 };
 
 // Detect platform from URL
@@ -210,6 +222,9 @@ const VideoLinkModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicIds, setSelectedTopicIds] = useState<number[]>([]);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Detect platform in real-time
   const detectedPlatform = useMemo(() => detectPlatform(videoUrl), [videoUrl]);
@@ -237,8 +252,41 @@ const VideoLinkModal = ({
     if (!isOpen) {
       setVideoUrl('');
       setSelectedTopicIds([]);
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
     }
   }, [isOpen]);
+
+  // Check if thumbnail upload should be shown
+  const showThumbnailUpload = detectedPlatform === 'instagram' || detectedPlatform === 'facebook';
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(lang === 'hu' ? 'Csak képfájl tölthető fel' : 'Only image files allowed');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(lang === 'hu' ? 'Maximum 5MB méretű kép tölthető fel' : 'Maximum file size is 5MB');
+        return;
+      }
+      setThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    if (thumbnailPreview) {
+      URL.revokeObjectURL(thumbnailPreview);
+      setThumbnailPreview(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -279,11 +327,36 @@ const VideoLinkModal = ({
     setIsLoading(true);
 
     try {
+      let uploadedThumbnailUrl: string | null = null;
+
+      // Upload thumbnail if provided
+      if (thumbnailFile) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const fileExt = thumbnailFile.name.split('.').pop();
+          const fileName = `${session.user.id}/${Date.now()}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('creator-thumbnails')
+            .upload(fileName, thumbnailFile);
+
+          if (uploadError) {
+            console.error('Thumbnail upload error:', uploadError);
+          } else if (uploadData) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('creator-thumbnails')
+              .getPublicUrl(uploadData.path);
+            uploadedThumbnailUrl = publicUrl;
+          }
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('submit-creator-video', {
         body: {
           video_url: videoUrl.trim(),
           activate_now: true,
           topic_ids: selectedTopicIds,
+          custom_thumbnail_url: uploadedThumbnailUrl,
         },
       });
 
@@ -294,6 +367,7 @@ const VideoLinkModal = ({
         onSuccess(videoUrl);
         setVideoUrl('');
         setSelectedTopicIds([]);
+        removeThumbnail();
         onClose();
       } else {
         const errorCode = data?.error;
@@ -396,6 +470,51 @@ const VideoLinkModal = ({
             <p className="mt-3 text-white/40 text-xs text-center">
               {texts.supportedPlatforms[lang]}
             </p>
+          )}
+
+          {/* Thumbnail Upload - Only for Instagram/Facebook */}
+          {showThumbnailUpload && (
+            <div className="mt-5">
+              <p className="text-white/80 text-sm font-medium mb-2">
+                {texts.uploadThumbnail[lang]}
+              </p>
+              <p className="text-white/40 text-xs mb-3">
+                {texts.thumbnailHint[lang]}
+              </p>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              
+              {thumbnailPreview ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={thumbnailPreview} 
+                    alt="Thumbnail preview" 
+                    className="w-20 h-36 object-cover rounded-lg border border-white/20"
+                  />
+                  <button
+                    onClick={removeThumbnail}
+                    className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!canAddMore || isLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 transition-colors disabled:opacity-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span className="text-sm">{lang === 'hu' ? 'Kép kiválasztása' : 'Choose image'}</span>
+                </button>
+              )}
+            </div>
           )}
 
           {/* Topic Selector */}

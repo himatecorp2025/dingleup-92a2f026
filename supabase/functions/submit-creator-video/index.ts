@@ -116,7 +116,7 @@ function buildEmbedUrl(url: string, platform: string): string {
 }
 
 // Extract thumbnail URL based on platform
-function extractThumbnailUrl(url: string, platform: string): string | null {
+async function extractThumbnailUrl(url: string, platform: string): Promise<string | null> {
   try {
     // ============ YOUTUBE ============
     if (platform === 'youtube') {
@@ -150,8 +150,28 @@ function extractThumbnailUrl(url: string, platform: string): string | null {
       }
     }
     
-    // For TikTok, Instagram, Facebook - can't extract without API calls
-    // Frontend will handle fallback
+    // ============ TIKTOK - oEmbed API (FREE, no API key needed) ============
+    if (platform === 'tiktok') {
+      try {
+        console.log("[THUMBNAIL] Fetching TikTok oEmbed for:", url);
+        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+        const response = await fetch(oembedUrl, {
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.thumbnail_url) {
+            console.log("[THUMBNAIL] TikTok thumbnail found:", data.thumbnail_url);
+            return data.thumbnail_url;
+          }
+        }
+      } catch (e) {
+        console.error("[THUMBNAIL] TikTok oEmbed error:", e);
+      }
+    }
+    
+    // For Instagram/Facebook - can't extract without API, user must upload custom thumbnail
     
   } catch (e) {
     console.error("[THUMBNAIL] Error extracting thumbnail:", e);
@@ -195,7 +215,7 @@ serve(async (req) => {
 
     // Get request body
     const body = await req.json();
-    const { video_url, topic_ids, activate_now } = body;
+    const { video_url, topic_ids, activate_now, custom_thumbnail_url } = body;
 
     if (!video_url) {
       return new Response(
@@ -234,9 +254,12 @@ serve(async (req) => {
     const embedUrl = buildEmbedUrl(video_url, platform);
     console.log("[SUBMIT-VIDEO] Generated embed URL:", embedUrl);
 
-    // Extract thumbnail URL
-    const thumbnailUrl = extractThumbnailUrl(video_url, platform);
-    console.log("[SUBMIT-VIDEO] Extracted thumbnail URL:", thumbnailUrl);
+    // Extract thumbnail URL - use custom if provided, otherwise try to extract
+    let thumbnailUrl = custom_thumbnail_url || null;
+    if (!thumbnailUrl) {
+      thumbnailUrl = await extractThumbnailUrl(video_url, platform);
+    }
+    console.log("[SUBMIT-VIDEO] Thumbnail URL:", thumbnailUrl || "none");
 
     // Check if video already exists for this user
     const { data: existingVideo } = await supabaseClient
