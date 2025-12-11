@@ -146,8 +146,8 @@ export const CreatorVideoCard = ({
 
   return (
     <div className="relative overflow-hidden bg-black group">
-      {/* Thumbnail - 9:16 aspect ratio, no border radius like TikTok */}
-      <div className="relative aspect-[9/16]">
+      {/* Thumbnail - 9:12.8 aspect ratio (20% shorter than 9:16) */}
+      <div className="relative aspect-[9/12.8]">
         {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
