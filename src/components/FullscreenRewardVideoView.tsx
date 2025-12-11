@@ -8,7 +8,7 @@ import dingleupLogo from '@/assets/dingleup-logo-loading.png';
 export interface RewardVideo {
   id: string;
   embedUrl: string;
-  videoUrl?: string; // Original video URL for "Go to creator" link
+  videoUrl?: string | null; // Original video URL for "Go to creator" link and username extraction
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
   durationSeconds?: number;
   creatorName?: string | null; // Creator display name from database
@@ -429,37 +429,63 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         </div>
       )}
 
-      {/* Creator name display - TikTok style, always visible during video */}
+      {/* Creator name display - TOP of video, platform icon + username */}
       {currentVideo && !isTransitioning && (
         <div 
           className="absolute flex items-center gap-2"
           style={{ 
-            bottom: 'max(env(safe-area-inset-bottom, 0px), 160px)',
+            top: 'max(calc(env(safe-area-inset-top, 0px) + 16px), 80px)',
             left: '16px',
             zIndex: 60,
           }}
         >
           <div 
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            className="flex items-center gap-2 px-3 py-2 rounded-full"
             style={{
-              backgroundColor: 'rgba(0,0,0,0.6)',
+              backgroundColor: 'rgba(0,0,0,0.5)',
               backdropFilter: 'blur(8px)',
             }}
           >
-            {/* Platform icon */}
-            <span style={{ fontSize: '16px' }}>
-              {currentVideo.platform === 'tiktok' && '🎵'}
-              {currentVideo.platform === 'youtube' && '▶️'}
-              {currentVideo.platform === 'instagram' && '📷'}
-              {currentVideo.platform === 'facebook' && '📘'}
-            </span>
+            {/* Platform icon - SVG */}
+            {currentVideo.platform === 'tiktok' && (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.001.595.04.88.12V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43V9.45a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.88z" fill="#fff"/>
+              </svg>
+            )}
+            {currentVideo.platform === 'youtube' && (
+              <svg width="20" height="14" viewBox="0 0 24 17" fill="none">
+                <path d="M23.5 2.5a3 3 0 0 0-2.1-2.1C19.5 0 12 0 12 0S4.5 0 2.6.4A3 3 0 0 0 .5 2.5C0 4.4 0 8.5 0 8.5s0 4.1.5 6a3 3 0 0 0 2.1 2.1c1.9.4 9.4.4 9.4.4s7.5 0 9.4-.4a3 3 0 0 0 2.1-2.1c.5-1.9.5-6 .5-6s0-4.1-.5-6z" fill="#FF0000"/>
+                <path d="M9.5 12V5l6.5 3.5-6.5 3.5z" fill="#fff"/>
+              </svg>
+            )}
+            {currentVideo.platform === 'instagram' && (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2.2c3.2 0 3.6 0 4.8.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8 0 3.2 0 3.6-.1 4.8-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.8.1-3.2 0-3.6 0-4.8-.1-3.3-.1-4.8-1.7-4.9-4.9-.1-1.3-.1-1.6-.1-4.8 0-3.2 0-3.6.1-4.8.1-3.2 1.7-4.8 4.9-4.9 1.2-.1 1.6-.1 4.8-.1zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0z" fill="url(#ig-gradient)"/>
+                <path d="M12 5.8a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8z" fill="#fff"/>
+                <circle cx="18.4" cy="5.6" r="1.4" fill="#fff"/>
+                <defs>
+                  <linearGradient id="ig-gradient" x1="0" y1="24" x2="24" y2="0">
+                    <stop offset="0%" stopColor="#FD5"/>
+                    <stop offset="50%" stopColor="#FF543E"/>
+                    <stop offset="100%" stopColor="#C837AB"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            )}
+            {currentVideo.platform === 'facebook' && (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M24 12c0-6.627-5.373-12-12-12S0 5.373 0 12c0 5.99 4.388 10.954 10.125 11.854V15.47H7.078V12h3.047V9.356c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.875V12h3.328l-.532 3.469h-2.796v8.385C19.612 22.954 24 17.99 24 12z" fill="#1877F2"/>
+                <path d="M16.671 15.469L17.203 12h-3.328V9.75c0-.95.465-1.875 1.956-1.875h1.513V4.922s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669V12H7.078v3.469h3.047v8.385a12.09 12.09 0 0 0 3.75 0V15.47h2.796z" fill="#fff"/>
+              </svg>
+            )}
             {/* Creator username */}
             <span 
               style={{ 
                 color: '#fff', 
-                fontSize: '15px', 
-                fontWeight: 700,
+                fontSize: '14px', 
+                fontWeight: 600,
                 textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                letterSpacing: '0.3px',
               }}
             >
               {getCreatorDisplayName(currentVideo) || (lang === 'hu' ? 'Alkotó' : 'Creator')}

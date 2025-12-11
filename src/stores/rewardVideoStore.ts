@@ -5,6 +5,7 @@ import { useWalletStore } from './walletStore';
 export interface RewardVideo {
   id: string;
   embedUrl: string;
+  videoUrl?: string | null;
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
   creatorName?: string | null;
 }
