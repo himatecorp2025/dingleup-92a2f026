@@ -39,10 +39,17 @@ serve(async (req) => {
     const userId = userData.user.id;
     console.log("[GET-VIDEOS] User authenticated:", userId);
 
-    // Get query params
-    const url = new URL(req.url);
-    const platform = url.searchParams.get("platform");
-    const sortByExpiry = url.searchParams.get("sort_by_expiry") === "true";
+    // Get body params (POST request from supabase.functions.invoke)
+    let platform: string | null = null;
+    let sortByExpiry = false;
+
+    try {
+      const body = await req.json();
+      platform = body.platform || null;
+      sortByExpiry = body.sort_by_expiry === true;
+    } catch {
+      // No body or invalid JSON, use defaults
+    }
 
     // Build query
     let query = supabaseClient

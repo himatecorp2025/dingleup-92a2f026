@@ -93,11 +93,14 @@ serve(async (req) => {
         metadata: {
           user_id: user.id,
           package_type: "creator_basic",
+          type: "creator_subscription",
         },
       },
       metadata: {
         user_id: user.id,
+        user_email: userEmail,
         package_type: "creator_basic",
+        type: "creator_subscription",
       },
       success_url: `${origin}/creators?checkout=success`,
       cancel_url: `${origin}/creators?checkout=cancelled`,
