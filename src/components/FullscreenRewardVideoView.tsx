@@ -419,6 +419,45 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         </div>
       )}
 
+      {/* Creator name display - TikTok style, always visible during video */}
+      {currentVideo && !isTransitioning && (
+        <div 
+          className="absolute flex items-center gap-2"
+          style={{ 
+            bottom: 'max(env(safe-area-inset-bottom, 0px), 160px)',
+            left: '16px',
+            zIndex: 60,
+          }}
+        >
+          <div 
+            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            {/* Platform icon */}
+            <span style={{ fontSize: '16px' }}>
+              {currentVideo.platform === 'tiktok' && '🎵'}
+              {currentVideo.platform === 'youtube' && '▶️'}
+              {currentVideo.platform === 'instagram' && '📷'}
+              {currentVideo.platform === 'facebook' && '📘'}
+            </span>
+            {/* Creator username */}
+            <span 
+              style={{ 
+                color: '#fff', 
+                fontSize: '15px', 
+                fontWeight: 700,
+                textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+              }}
+            >
+              {extractCreatorUsername(currentVideo) || (lang === 'hu' ? 'Alkotó' : 'Creator')}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* TikTok-style "Go to creator" button - bottom left, appears at 10 seconds, stays during intro */}
       {showCreatorLink && currentVideo && !isTransitioning && (
         <button
