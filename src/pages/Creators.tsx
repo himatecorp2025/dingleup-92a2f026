@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LogOut, Plus, Menu, X, Video, Info, Eye, Users, MousePointerClick, Hash, Film, Trophy } from 'lucide-react';
+import { LogOut, Plus, Menu, X, Video, Info, Eye, Users, MousePointerClick, Hash, Film, Trophy, Clock } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import BottomNav from '@/components/BottomNav';
 import { toast } from 'sonner';
@@ -10,6 +10,8 @@ import { useAudioStore } from '@/stores/audioStore';
 import PackageSelectorModal from '@/components/creators/PackageSelectorModal';
 import VideoLinkModal from '@/components/creators/VideoLinkModal';
 import { useCreatorSubscription } from '@/hooks/useCreatorSubscription';
+import { useCreatorVideos } from '@/hooks/useCreatorVideos';
+import { CreatorVideoCard } from '@/components/creators/CreatorVideoCard';
 
 // Platform Icons
 const TikTokIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -50,7 +52,7 @@ const AllFilterIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
   </svg>
 );
 
-type PlatformFilter = 'all' | 'tiktok' | 'youtube' | 'instagram' | 'facebook';
+type PlatformFilter = 'all' | 'tiktok' | 'youtube' | 'instagram' | 'facebook' | 'expiry';
 
 const Creators = () => {
   const navigate = useNavigate();
@@ -101,7 +103,17 @@ const Creators = () => {
 
   // Use creator subscription hook
   const { hasActiveSubscription, refetch: refetchSubscription } = useCreatorSubscription(profile?.id);
-  const remainingActivations = 3; // Default, will be fetched from API
+  
+  // Use creator videos hook - sort by expiry when clock filter is active
+  const isExpiryFilter = activeFilter === 'expiry';
+  const platformFilter = isExpiryFilter ? 'all' : activeFilter;
+  const { videos, remainingActivations, refetch: refetchVideos } = useCreatorVideos(
+    profile?.id, 
+    platformFilter, 
+    isExpiryFilter
+  );
+
+  const hasVideos = videos.length > 0;
 
   // Handle checkout success from URL params
   useEffect(() => {
@@ -113,6 +125,7 @@ const Creators = () => {
           : 'Payment successful! You can now add your videos.'
       );
       refetchSubscription();
+      refetchVideos();
       // Clean URL
       window.history.replaceState({}, '', '/creators');
     } else if (checkoutStatus === 'cancelled') {
@@ -123,7 +136,7 @@ const Creators = () => {
       );
       window.history.replaceState({}, '', '/creators');
     }
-  }, [searchParams, lang, refetchSubscription]);
+  }, [searchParams, lang, refetchSubscription, refetchVideos]);
 
   // Listen for BottomNav "+" click event
   useEffect(() => {
@@ -139,10 +152,6 @@ const Creators = () => {
     return () => window.removeEventListener('creator-add-video-click', handleCreatorAddVideo);
   }, [hasActiveSubscription]);
 
-  // Placeholder video data (empty for now)
-  const videos: any[] = [];
-  const hasVideos = videos.length > 0;
-
   const handleAddVideo = () => {
     if (hasActiveSubscription) {
       setShowVideoLinkModal(true);
@@ -156,9 +165,8 @@ const Creators = () => {
     setShowVideoLinkModal(true);
   };
 
-  const handleVideoAdded = (videoUrl: string) => {
-    // TODO: Refresh video list
-    console.log('Video added:', videoUrl);
+  const handleVideoAdded = () => {
+    refetchVideos();
   };
 
   const filters: { id: PlatformFilter; icon: React.ReactNode; disabled?: boolean }[] = [
@@ -167,6 +175,7 @@ const Creators = () => {
     { id: 'youtube', icon: <YouTubeIcon className="w-5 h-5" />, disabled: true },
     { id: 'instagram', icon: <InstagramIcon className="w-5 h-5" />, disabled: true },
     { id: 'facebook', icon: <FacebookIcon className="w-5 h-5" />, disabled: true },
+    { id: 'expiry', icon: <Clock className="w-5 h-5" /> },
   ];
 
   const benefits = [
@@ -293,7 +302,7 @@ const Creators = () => {
           <div className="flex items-center justify-center w-full max-w-xs mx-auto mt-1">
             <div className="flex-1 flex flex-col items-center">
               <Film className="w-4 h-4 text-purple-400 mb-0.5" />
-              <span className="text-base font-bold text-white">0</span>
+              <span className="text-base font-bold text-white">{videos.length}</span>
               <span className="text-[10px] text-white/60">{lang === 'hu' ? 'Videóim' : 'Videos'}</span>
             </div>
             <div className="flex-1 flex flex-col items-center">
@@ -375,8 +384,16 @@ const Creators = () => {
 
           {/* Video List - Only when has videos */}
           {hasVideos && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {/* Video cards will go here */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+              {videos.map((video) => (
+                <CreatorVideoCard
+                  key={video.id}
+                  video={video}
+                  lang={lang as 'hu' | 'en'}
+                  onReactivate={refetchVideos}
+                  showReactivateButton={isExpiryFilter}
+                />
+              ))}
             </div>
           )}
 
