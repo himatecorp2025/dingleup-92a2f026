@@ -80,8 +80,8 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
   const videoQueueRef = useRef<RewardVideo[]>([...videos]);
   const currentVideoStartRef = useRef<number>(Date.now());
   const introVideoRef = useRef<HTMLVideoElement>(null);
-  // Counter to force iframe reload when video needs restart
-  const [videoRestartKey, setVideoRestartKey] = useState(0);
+  // Counter to force iframe reload when video changes
+  const [videoKey, setVideoKey] = useState(0);
 
   const currentVideo = videoQueueRef.current[currentVideoIndex];
 
@@ -115,41 +115,36 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
       
       setSecondsLeft(remaining);
       
-      // Check if current video has ended and we need to restart it
-      const currentVid = videoQueueRef.current[currentVideoIndex];
-      if (currentVid && currentVid.durationSeconds && currentVid.durationSeconds > 0) {
-        const videoElapsed = (Date.now() - currentVideoStartRef.current) / 1000;
-        
-        // If video has finished and there's at least 5 seconds remaining on countdown
-        // Restart the SAME video to prevent TikTok showing "related videos"
-        if (videoElapsed >= currentVid.durationSeconds && remaining >= 5) {
-          console.log('[FullscreenRewardVideoView] Video ended with 5+ sec remaining, restarting same video');
-          currentVideoStartRef.current = Date.now();
-          setVideoRestartKey(prev => prev + 1); // Force iframe reload
-        }
-      }
-      
-      // If less than 3 seconds remaining, show intro video
+      // If 3 seconds or less remaining, show intro video (regardless of video state)
       if (remaining <= 3 && remaining > 0 && !showIntroVideo) {
+        console.log('[FullscreenRewardVideoView] 3 seconds or less remaining, showing intro video');
         setShowIntroVideo(true);
         // Mark current video as watched
+        const currentVid = videoQueueRef.current[currentVideoIndex];
         if (currentVid) {
           watchedIdsRef.current.add(currentVid.id);
         }
       }
       
-      // Calculate which video should be playing (fallback time-based switching)
-      if (!showIntroVideo) {
-        const expectedIndex = Math.min(videoQueueRef.current.length - 1, Math.floor(elapsed / durationSecondsPerVideo));
-        
-        if (expectedIndex !== currentVideoIndex && expectedIndex < videoQueueRef.current.length) {
-          // Mark previous video as watched
-          if (videoQueueRef.current[currentVideoIndex]) {
-            watchedIdsRef.current.add(videoQueueRef.current[currentVideoIndex].id);
+      // Check if current video has ended and we need to switch to NEXT video
+      // Only do this if more than 3 seconds remaining
+      if (!showIntroVideo && remaining > 3) {
+        const currentVid = videoQueueRef.current[currentVideoIndex];
+        if (currentVid && currentVid.durationSeconds && currentVid.durationSeconds > 0) {
+          const videoElapsed = (Date.now() - currentVideoStartRef.current) / 1000;
+          
+          // If video has finished playing
+          if (videoElapsed >= currentVid.durationSeconds) {
+            console.log('[FullscreenRewardVideoView] Video ended with >3 sec remaining, switching to next video');
+            // Mark as watched
+            watchedIdsRef.current.add(currentVid.id);
+            
+            // Move to next video in queue (cycle if at end)
+            const nextIndex = (currentVideoIndex + 1) % videoQueueRef.current.length;
+            setCurrentVideoIndex(nextIndex);
+            currentVideoStartRef.current = Date.now();
+            setVideoKey(prev => prev + 1); // Force iframe reload
           }
-          setCurrentVideoIndex(expectedIndex);
-          currentVideoStartRef.current = Date.now();
-          setVideoRestartKey(0); // Reset restart key for new video
         }
       }
       
@@ -182,7 +177,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
     }, 100); // Update frequently for smooth countdown
 
     return () => clearInterval(interval);
-  }, [totalDurationSeconds, durationSecondsPerVideo, lang, currentVideoIndex, showIntroVideo, context, rewardAmount]);
+  }, [totalDurationSeconds, lang, currentVideoIndex, showIntroVideo, context, rewardAmount]);
 
   // Play intro video when it becomes visible
   useEffect(() => {
@@ -210,7 +205,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         backgroundColor: '#000000',
       }}
     >
-      {/* Solid black background layer */}
+      {/* Solid black background layer - covers everything */}
       <div 
         className="absolute inset-0" 
         style={{ backgroundColor: '#000000', zIndex: 0 }}
@@ -222,21 +217,22 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
           ref={introVideoRef}
           src={introVideo}
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ zIndex: 10 }}
+          style={{ zIndex: 10, backgroundColor: '#000000' }}
           muted
           playsInline
           loop
         />
       ) : (
         <>
-          {/* FULLSCREEN iframe - full width, taller than viewport, shifted DOWN to hide bottom platform UI */}
           {/* Black background container ensures no white/light gaps */}
           <div 
             className="absolute inset-0"
             style={{ backgroundColor: '#000000', zIndex: 5 }}
           />
+          
+          {/* FULLSCREEN iframe - full width, taller than viewport, shifted DOWN to hide bottom platform UI */}
           <iframe
-            key={`${currentVideo?.id}-${currentVideoIndex}-${videoRestartKey}`}
+            key={`${currentVideo?.id}-${currentVideoIndex}-${videoKey}`}
             src={embedSrc}
             className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-[8vh] border-0 pointer-events-none"
             style={{
@@ -249,11 +245,11 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             allowFullScreen
           />
           
-          {/* Black overlay strips for sides (in case iframe content has lighter background) */}
+          {/* Black overlay strips for sides - WIDER to fully cover any white edges */}
           <div 
             className="absolute top-0 left-0 h-full"
             style={{ 
-              width: '5vw', 
+              width: '15vw', 
               backgroundColor: '#000000',
               zIndex: 15,
             }}
@@ -261,7 +257,27 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
           <div 
             className="absolute top-0 right-0 h-full"
             style={{ 
-              width: '5vw', 
+              width: '15vw', 
+              backgroundColor: '#000000',
+              zIndex: 15,
+            }}
+          />
+          
+          {/* Top black overlay to hide platform header */}
+          <div 
+            className="absolute top-0 left-0 right-0"
+            style={{ 
+              height: '15vh', 
+              backgroundColor: '#000000',
+              zIndex: 15,
+            }}
+          />
+          
+          {/* Bottom black overlay to hide platform footer */}
+          <div 
+            className="absolute bottom-0 left-0 right-0"
+            style={{ 
+              height: '15vh', 
               backgroundColor: '#000000',
               zIndex: 15,
             }}
