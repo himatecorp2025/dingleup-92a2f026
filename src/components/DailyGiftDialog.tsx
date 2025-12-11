@@ -168,20 +168,31 @@ const DailyGiftDialog = ({
         setClaimed(true);
       }
     }
-    // Close dialog after short delay to show success
-    setTimeout(() => {
-      onLater();
-    }, 500);
   };
 
   const handleVideoClose = () => {
     videoAdFlow.cancelVideo();
-    // Don't close the dialog - user can still claim normal reward
   };
+
+  // If video is showing, only render the video modal (not the gift dialog)
+  if (videoAdFlow.showVideo) {
+    return (
+      <VideoAdModal
+        isOpen={videoAdFlow.showVideo}
+        videos={videoAdFlow.videos}
+        totalDurationSeconds={videoAdFlow.totalDuration}
+        onComplete={handleVideoComplete}
+        onClose={handleVideoClose}
+        onCancel={handleVideoClose}
+        context="daily_gift"
+      />
+    );
+  }
 
   if (!open) return null;
   
   return (
+    <>
     <Dialog open={open} onOpenChange={onLater}>
       <DialogContent 
         className="overflow-hidden p-0 border-0 bg-transparent w-screen h-screen max-w-none rounded-none [&>button[data-dialog-close]]:hidden z-[99999]"
@@ -686,7 +697,7 @@ const DailyGiftDialog = ({
         </div>
       </DialogContent>
 
-      {/* Video Ad Prompt */}
+      {/* Video Ad Prompt - inside dialog */}
       <VideoAdPrompt
         isOpen={showVideoPrompt}
         onClose={handleVideoDecline}
@@ -695,18 +706,8 @@ const DailyGiftDialog = ({
         context="daily_gift"
         rewardText={`+${nextReward} ${t('common.coins')}`}
       />
-
-      {/* Video Ad Modal */}
-      <VideoAdModal
-        isOpen={videoAdFlow.showVideo}
-        videos={videoAdFlow.videos}
-        totalDurationSeconds={videoAdFlow.totalDuration}
-        onComplete={handleVideoComplete}
-        onClose={handleVideoClose}
-        onCancel={handleVideoClose}
-        context="daily_gift"
-      />
     </Dialog>
+    </>
   );
 };
 
