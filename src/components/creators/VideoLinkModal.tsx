@@ -249,18 +249,12 @@ const VideoLinkModal = ({
               {texts.title[lang]}
             </h2>
             <p className="text-white/70 text-sm">
-              {texts.subtitle[lang]}
+              {texts.subtitle[lang]} <span className="text-white font-medium">({3 - remainingActivations + 1}/3)</span>
             </p>
           </div>
 
-          {/* Remaining activations indicator - X/3 format */}
-          {canAddMore ? (
-            <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/20">
-              <p className="text-white text-lg text-center font-bold">
-                {3 - remainingActivations}/3
-              </p>
-            </div>
-          ) : (
+          {/* Limit reached warning - only when no activations left */}
+          {!canAddMore && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <p className="text-red-400 text-sm">
