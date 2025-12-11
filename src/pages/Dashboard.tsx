@@ -207,6 +207,13 @@ const Dashboard = () => {
       // Remove the query parameter
       setSearchParams({});
     }
+    
+    // Check for showRescue flag (from game page when insufficient lives)
+    if (searchParams.get('showRescue') === 'true') {
+      setShowRescuePopup(true);
+      // Remove the query parameter
+      setSearchParams({});
+    }
   }, [searchParams, setSearchParams, t]);
 
   // Popup sequencing handled by useDashboardPopupManager hook
