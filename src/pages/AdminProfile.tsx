@@ -5,9 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Shield, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Shield, Eye, EyeOff, Users } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useI18n } from '@/i18n';
+
+interface AdminUser {
+  user_id: string;
+  username: string;
+  is_creator: boolean;
+  creator_subscription_status: string | null;
+}
 
 const AdminProfile = () => {
   const { t } = useI18n();
@@ -27,11 +34,50 @@ const AdminProfile = () => {
   const [targetUsername, setTargetUsername] = useState('');
   const [isGranting, setIsGranting] = useState(false);
   
+  // Admin list
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(true);
+  
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProfile();
+    fetchAdminUsers();
   }, []);
+
+  const fetchAdminUsers = async () => {
+    try {
+      setLoadingAdmins(true);
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const userIds = data.map(r => r.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, is_creator, creator_subscription_status')
+          .in('id', userIds);
+        
+        if (profilesError) throw profilesError;
+        
+        const admins: AdminUser[] = (profiles || []).map(p => ({
+          user_id: p.id,
+          username: p.username,
+          is_creator: p.is_creator || false,
+          creator_subscription_status: p.creator_subscription_status
+        }));
+        setAdminUsers(admins);
+      }
+    } catch (error) {
+      console.error('Error fetching admin users:', error);
+    } finally {
+      setLoadingAdmins(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -161,8 +207,39 @@ const AdminProfile = () => {
         throw insertError;
       }
 
+      // Also set as creator with permanent free access
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          is_creator: true,
+          creator_subscription_status: 'active_paid'
+        })
+        .eq('id', targetUser.id);
+
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+      }
+
+      // Create or update creator subscription
+      const { error: subError } = await supabase
+        .from('creator_subscriptions')
+        .upsert({
+          user_id: targetUser.id,
+          package_type: 'creator_max',
+          status: 'active',
+          max_videos: 999,
+          current_period_ends_at: '2099-12-31'
+        }, { onConflict: 'user_id' });
+
+      if (subError) {
+        console.error('Error creating subscription:', subError);
+      }
+
       toast.success(t('admin.grant_success').replace('{username}', targetUser.username));
       setTargetUsername('');
+      
+      // Refresh admin list
+      fetchAdminUsers();
     } catch (error: any) {
       toast.error(error.message || t('admin.grant_error'));
     } finally {
@@ -328,6 +405,54 @@ const AdminProfile = () => {
                 t('admin.profile.grant_admin_button')
               )}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Current Admins List */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {t('admin.profile.current_admins_title') || 'Jelenlegi adminok'}
+            </CardTitle>
+            <CardDescription>
+              {t('admin.profile.current_admins_description') || 'Admin jogosultsággal rendelkező felhasználók listája'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingAdmins ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+              </div>
+            ) : adminUsers.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t('admin.profile.no_admins') || 'Nincsenek adminok'}</p>
+            ) : (
+              <div className="space-y-3">
+                {adminUsers.map((admin) => (
+                  <div 
+                    key={admin.user_id} 
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{admin.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {admin.is_creator ? (
+                            <span className="text-green-500">✓ Creator (örök ingyenes)</span>
+                          ) : (
+                            <span className="text-yellow-500">Creator státusz nincs beállítva</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Shield className="w-5 h-5 text-primary" />
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
