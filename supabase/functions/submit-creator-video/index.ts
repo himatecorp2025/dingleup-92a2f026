@@ -153,8 +153,26 @@ async function extractThumbnailUrl(url: string, platform: string): Promise<strin
     // ============ TIKTOK - oEmbed API (FREE, no API key needed) ============
     if (platform === 'tiktok') {
       try {
-        console.log("[THUMBNAIL] Fetching TikTok oEmbed for:", url);
-        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+        // For short links (vm.tiktok.com), first resolve to full URL
+        let resolvedUrl = url;
+        if (url.includes('vm.tiktok.com') || url.includes('vt.tiktok.com')) {
+          console.log("[THUMBNAIL] Resolving TikTok short link:", url);
+          try {
+            const redirectResponse = await fetch(url, { 
+              method: 'HEAD',
+              redirect: 'follow'
+            });
+            if (redirectResponse.url && redirectResponse.url !== url) {
+              resolvedUrl = redirectResponse.url;
+              console.log("[THUMBNAIL] Resolved to:", resolvedUrl);
+            }
+          } catch (redirectErr) {
+            console.log("[THUMBNAIL] Redirect follow failed, trying oEmbed directly");
+          }
+        }
+        
+        console.log("[THUMBNAIL] Fetching TikTok oEmbed for:", resolvedUrl);
+        const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(resolvedUrl)}`;
         const response = await fetch(oembedUrl, {
           headers: { 'Accept': 'application/json' }
         });
