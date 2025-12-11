@@ -197,17 +197,15 @@ export const FullscreenRewardVideoView = ({
         height: 'calc(100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Video container - maximize while maintaining aspect ratio */}
-      <div className="relative w-full h-full flex items-center justify-center bg-black">
-        {/* Video iframe */}
+      {/* Video container - fill entire screen */}
+      <div className="relative w-full h-full">
+        {/* Video iframe - fill entire viewport */}
         <iframe
           ref={iframeRef}
           src={embedUrl}
-          className="max-w-full max-h-full w-full h-full object-contain"
+          className="absolute inset-0 w-full h-full"
           style={{
-            aspectRatio: '9/16',
-            maxHeight: '100vh',
-            maxWidth: 'calc(100vh * 9 / 16)',
+            objectFit: 'cover',
           }}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
