@@ -623,56 +623,53 @@ const GamePreview = memo(() => {
               visible={errorBannerVisible}
               message={errorBannerMessage}
               continueType={continueType}
-              onContinue={handleContinueAfterMistake}
-              onReject={handleRejectContinue}
-              disabled={profile?.coins !== undefined && profile.coins < (continueType === 'timeout' ? TIMEOUT_CONTINUE_COST : CONTINUE_AFTER_WRONG_COST)}
             />
             
             <GameQuestionContainer
-              currentQuestionIndex={currentQuestionIndex}
-              totalQuestions={questions.length}
-              coins={coins}
-              lives={lives}
-              timeLeft={timeLeft}
-              showExitDialog={showExitDialog}
-              onExitClick={() => setShowExitDialog(true)}
-              profile={profile}
-              rewardAnimation={rewardAnimation}
-            />
-            
-            {/* Question Card with 3D effects */}
-            <QuestionCard
-              question={currentQuestion}
-              selectedAnswer={selectedAnswer}
               isAnimating={isAnimating}
+              translateY={translateY}
               questionVisible={questionVisible}
-              showExplanation={false}
-              removedAnswer={removedAnswer}
-              audienceVotes={audienceVotes}
-              firstAttempt={firstAttempt}
-              secondAttempt={secondAttempt}
-              isDoubleAnswerActiveThisQuestion={isDoubleAnswerActiveThisQuestion}
-              isHelp5050ActiveThisQuestion={isHelp5050ActiveThisQuestion}
-              isAudienceActiveThisQuestion={isAudienceActiveThisQuestion}
-              onAnswerSelect={(answer: Answer) => handleAnswer(answer)}
-              onUse5050={useHelp5050}
-              onUse2xAnswer={useHelp2xAnswer}
-              onUseAudience={useHelpAudience}
-              onSwapQuestion={useQuestionSwap}
-              can5050={profile?.help_5050 ? profile.help_5050 > help5050UsageCount : false}
-              can2xAnswer={profile?.help_2x_answer ? profile.help_2x_answer > help2xAnswerUsageCount : false}
-              canAudience={profile?.help_audience ? profile.help_audience > helpAudienceUsageCount : false}
-              usedQuestionSwap={usedQuestionSwap}
-            />
+            >
+              {/* Question Card with 3D effects */}
+              <QuestionCard
+                question={currentQuestion}
+                questionNumber={currentQuestionIndex + 1}
+                timeLeft={timeLeft}
+                selectedAnswer={selectedAnswer}
+                firstAttempt={firstAttempt}
+                secondAttempt={secondAttempt}
+                removedAnswer={removedAnswer}
+                audienceVotes={audienceVotes}
+                help5050UsageCount={help5050UsageCount}
+                help2xAnswerUsageCount={help2xAnswerUsageCount}
+                helpAudienceUsageCount={helpAudienceUsageCount}
+                isHelp5050ActiveThisQuestion={isHelp5050ActiveThisQuestion}
+                isDoubleAnswerActiveThisQuestion={isDoubleAnswerActiveThisQuestion}
+                isAudienceActiveThisQuestion={isAudienceActiveThisQuestion}
+                usedQuestionSwap={usedQuestionSwap}
+                lives={lives}
+                maxLives={profile?.max_lives || 15}
+                coins={coins}
+                coinRewardAmount={coinRewardAmount}
+                coinRewardTrigger={coinRewardTrigger}
+                onAnswerSelect={(answerId: string) => handleAnswer(answerId)}
+                onUseHelp5050={useHelp5050}
+                onUseHelp2xAnswer={useHelp2xAnswer}
+                onUseHelpAudience={useHelpAudience}
+                onUseQuestionSwap={useQuestionSwap}
+                onExit={() => setShowExitDialog(true)}
+              />
+            </GameQuestionContainer>
             
             {/* Exit Game Dialog */}
             <ExitGameDialog
               open={showExitDialog}
-              onClose={() => setShowExitDialog(false)}
-              onConfirm={() => {
+              onOpenChange={setShowExitDialog}
+              onConfirmExit={() => {
                 setShowExitDialog(false);
                 finishGame();
               }}
+              gameCompleted={gameCompleted}
             />
             
             {/* In-Game Rescue Popup */}
@@ -703,32 +700,32 @@ const GamePreview = memo(() => {
           </div>
         </GameSwipeHandler>
 
-          {/* Video Ad Prompt */}
-          {videoAdFlow.showPrompt && (
-            <VideoAdPrompt
-              isOpen={true}
-              onClose={videoAdFlow.declinePrompt}
-              onAccept={videoAdFlow.acceptPrompt}
-              onDecline={videoAdFlow.declinePrompt}
-              context="game_end"
-              rewardText={`${coinsEarned} → ${coinsEarned * 2} ${lang === 'hu' ? 'arany' : 'gold'}`}
-            />
-          )}
+        {/* Video Ad Prompt */}
+        {videoAdFlow.showPrompt && (
+          <VideoAdPrompt
+            isOpen={true}
+            onClose={videoAdFlow.declinePrompt}
+            onAccept={videoAdFlow.acceptPrompt}
+            onDecline={videoAdFlow.declinePrompt}
+            context="game_end"
+            rewardText={`${coinsEarned} → ${coinsEarned * 2} ${lang === 'hu' ? 'arany' : 'gold'}`}
+          />
+        )}
 
-          {/* Video Ad Modal for doubling reward */}
-          {videoAdFlow.showVideo && videoAdFlow.videos.length > 0 && (
-            <VideoAdModal
-              isOpen={true}
-              onClose={() => videoAdFlow.onVideoComplete()}
-              videos={videoAdFlow.videos}
-              totalDurationSeconds={videoAdFlow.totalDuration}
-              onComplete={() => videoAdFlow.onVideoComplete()}
-              onCancel={videoAdFlow.cancelVideo}
-              context="game_end"
-            />
-          )}
-        </>
-      );
+        {/* Video Ad Modal for doubling reward */}
+        {videoAdFlow.showVideo && videoAdFlow.videos.length > 0 && (
+          <VideoAdModal
+            isOpen={true}
+            onClose={() => videoAdFlow.onVideoComplete()}
+            videos={videoAdFlow.videos}
+            totalDurationSeconds={videoAdFlow.totalDuration}
+            onComplete={() => videoAdFlow.onVideoComplete()}
+            onCancel={videoAdFlow.cancelVideo}
+            context="game_end"
+          />
+        )}
+      </>
+    );
   }
 
   // Video Ad Modal - rendered outside gameState check so it works after game ends
