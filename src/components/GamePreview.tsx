@@ -722,6 +722,7 @@ const GamePreview = memo(() => {
             onComplete={() => videoAdFlow.onVideoComplete()}
             onCancel={videoAdFlow.cancelVideo}
             context="game_end"
+            doubledAmount={coinsEarned * 2}
           />
         )}
       </>
@@ -750,7 +751,7 @@ const GamePreview = memo(() => {
           isOpen={true}
           onClose={() => {
             videoAdFlow.onVideoComplete();
-            // After video completes, allow swipe to restart game
+            // After video completes, user stays in game - scroll to restart
           }}
           videos={videoAdFlow.videos}
           totalDurationSeconds={videoAdFlow.totalDuration}
@@ -759,6 +760,7 @@ const GamePreview = memo(() => {
           }}
           onCancel={videoAdFlow.cancelVideo}
           context="game_end"
+          doubledAmount={coinsEarned * 2}
         />
       )}
     </>
