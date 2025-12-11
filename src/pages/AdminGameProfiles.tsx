@@ -182,17 +182,17 @@ export default function AdminGameProfiles() {
             {/* Top scrollbar - synced with bottom */}
             <div 
               ref={topScrollRef}
-              className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/10 mb-1"
-              style={{ overflowY: 'hidden' }}
+              className="overflow-x-scroll mb-1"
+              style={{ overflowY: 'hidden', height: '16px' }}
             >
-              <div style={{ width: tableWidth > 0 ? tableWidth : '100%', height: '12px' }} />
+              <div style={{ width: tableWidth > 0 ? `${tableWidth}px` : '100%', height: '1px' }} />
             </div>
             {/* Table with bottom scrollbar */}
             <div 
               ref={bottomScrollRef}
-              className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-white/10"
+              className="overflow-x-auto"
             >
-              <table className="w-full">
+              <table className="w-full min-w-[900px]">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">{t('admin.game_profiles.col_user')}</th>
@@ -233,7 +233,7 @@ export default function AdminGameProfiles() {
                         <div className="flex flex-col gap-1">
                           {profile.topTopics.slice(0, 2).map((topic, idx) => (
                             <span key={topic.topicId} className="text-xs">
-                              {idx + 1}. {topic.topicName} ({topic.score.toFixed(1)})
+                              {idx + 1}. {topic.topicName} ({topic.correctCount})
                             </span>
                           ))}
                         </div>

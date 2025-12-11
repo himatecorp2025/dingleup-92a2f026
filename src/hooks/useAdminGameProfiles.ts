@@ -11,7 +11,7 @@ export interface AdminUserGameProfileRow {
   topTopics: {
     topicId: string;
     topicName: string;
-    score: number;
+    correctCount: number;
   }[];
 }
 

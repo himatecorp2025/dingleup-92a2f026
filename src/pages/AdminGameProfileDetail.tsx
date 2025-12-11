@@ -164,7 +164,7 @@ export default function AdminGameProfileDetail() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{t('admin.game_profile.score')} {topic.score.toFixed(2)}</p>
+                    <p className="font-semibold">{topic.correctCount} {t('admin.game_profile.correct')}</p>
                   </div>
                 </div>
               ))}
@@ -226,7 +226,7 @@ export default function AdminGameProfileDetail() {
                     <th className="text-right py-2 px-4">{t('admin.game_profile.table.answers')}</th>
                     <th className="text-right py-2 px-4">{t('admin.game_profile.table.correct_percent')}</th>
                     <th className="text-right py-2 px-4">{t('admin.game_profile.table.avg_time')}</th>
-                    <th className="text-right py-2 px-4">{t('admin.game_profile.table.score')}</th>
+                    <th className="text-right py-2 px-4">{t('admin.game_profile.table.correct')}</th>
                     <th className="text-center py-2 px-4">{t('admin.game_profile.table.top3')}</th>
                   </tr>
                 </thead>
@@ -241,7 +241,7 @@ export default function AdminGameProfileDetail() {
                       <td className="text-right py-3 px-4">
                         {topic.avgResponseMs ? `${topic.avgResponseMs}ms` : '-'}
                       </td>
-                      <td className="text-right py-3 px-4">{topic.score.toFixed(2)}</td>
+                      <td className="text-right py-3 px-4">{topic.correctCount}</td>
                       <td className="text-center py-3 px-4">
                         {topic.isInTop3 && (
                           <Badge variant="default" className="bg-yellow-500">★</Badge>
