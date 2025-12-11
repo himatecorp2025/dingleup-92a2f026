@@ -9,6 +9,7 @@ const corsHeaders = {
 interface RewardVideo {
   id: string;
   embedUrl: string;
+  videoUrl: string | null;
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
   creatorName: string | null;
 }
@@ -59,6 +60,7 @@ serve(async (req) => {
       .select(`
         id,
         embed_url,
+        video_url,
         platform,
         user_id,
         creator_name
@@ -121,6 +123,7 @@ serve(async (req) => {
       resultVideos.push({
         id: video.id,
         embedUrl: video.embed_url!,
+        videoUrl: video.video_url || null,
         platform: video.platform as RewardVideo['platform'],
         creatorName: video.creator_name || null,
       });
