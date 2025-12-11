@@ -102,9 +102,9 @@ export const useVideoAdFlow = ({ userId, onRewardClaimed }: UseVideoAdFlowOption
     return true;
   }, [userId, videoAd]);
 
-  // Start refill flow (2 videos, 30 seconds total)
-  const startRefillFlow = useCallback(async () => {
-    if (!userId) return;
+  // Start refill flow (2 videos, 30 seconds total) - directly starts video, no prompt
+  const startRefillFlow = useCallback(async (): Promise<boolean> => {
+    if (!userId) return false;
     
     setState(prev => ({ ...prev, isLoading: true }));
     
@@ -112,18 +112,20 @@ export const useVideoAdFlow = ({ userId, onRewardClaimed }: UseVideoAdFlowOption
     
     if (videos.length < 2) {
       setState(prev => ({ ...prev, isLoading: false }));
-      return;
+      return false;
     }
 
     setState({
-      showPrompt: true,
-      showVideo: false,
+      showPrompt: false,
+      showVideo: true, // Go directly to video, no prompt
       videos,
       totalDuration: 30,
       isLoading: false,
       context: 'refill',
       originalReward: 0,
     });
+    
+    return true;
   }, [userId, videoAd]);
 
   // Accept prompt - start watching videos

@@ -275,8 +275,8 @@ export const InGameRescuePopup: React.FC<InGameRescuePopupProps> = ({
                 <Film className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-lg" />
               </div>
 
-              <h4 className="text-sm sm:text-base font-black text-center text-purple-100 mb-1" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
-                {lang === 'hu' ? 'Videó' : 'Video'}
+              <h4 className="text-[10px] sm:text-xs font-black text-center text-purple-100 mb-1 leading-tight" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
+                {lang === 'hu' ? 'Nézz alkotókat jutalomért!' : 'Watch creators for reward!'}
               </h4>
 
               {/* Rewards */}
@@ -319,8 +319,8 @@ export const InGameRescuePopup: React.FC<InGameRescuePopupProps> = ({
                 <GoldRewardCoin3D size={28} className="drop-shadow-lg" />
               </div>
 
-              <h4 className="text-sm sm:text-base font-black text-center text-yellow-100 mb-1" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
-                {lang === 'hu' ? 'Aranyért' : 'For Gold'}
+              <h4 className="text-[10px] sm:text-xs font-black text-center text-yellow-100 mb-1 leading-tight" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
+                {lang === 'hu' ? 'Mentsd magad arannyal!' : 'Save yourself with gold!'}
               </h4>
 
               {/* Rewards - Net: spend 500, get 750+5 = net +250 gold +5 lives */}
