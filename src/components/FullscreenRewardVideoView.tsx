@@ -148,8 +148,9 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
       if (currentVid && currentVid.durationSeconds && currentVid.durationSeconds > 0) {
         const videoElapsed = (Date.now() - currentVideoStartRef.current) / 1000;
         
-        // Switch 1.5 seconds early to prevent platform "Kapcsolódó videók" UI
-        const switchThreshold = Math.max(0, currentVid.durationSeconds - 1.5);
+        // Switch 3 seconds early to PREVENT platform "Ajánlott tartalom" UI from appearing
+        // This is critical for TikTok/YouTube which show recommendations at video end
+        const switchThreshold = Math.max(0, currentVid.durationSeconds - 3);
         
         if (videoElapsed >= switchThreshold) {
           // Mark current video as watched
