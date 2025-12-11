@@ -682,11 +682,13 @@ const GamePreview = memo(() => {
             <ExitGameDialog
               open={showExitDialog}
               onOpenChange={setShowExitDialog}
-              onConfirmExit={async () => {
-                toast.dismiss(); // Dismiss game results toast before leaving
+              onConfirmExit={() => {
+                toast.dismiss(); // Dismiss any toasts instantly
                 setShowExitDialog(false);
-                await finishGame();
+                // INSTANT navigation - don't wait for async operations
                 navigate('/dashboard');
+                // Background cleanup (non-blocking)
+                finishGame().catch(console.error);
               }}
               gameCompleted={gameCompleted}
             />
