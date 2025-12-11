@@ -45,12 +45,12 @@ const texts = {
     hu: 'Elérted a napi 3 új videós limitet. Holnap újra aktiválhatsz videókat.',
     en: 'You reached the daily limit of 3 new videos. You can activate more tomorrow.',
   },
-  videosRemaining: {
-    hu: 'Ma még aktiválhatsz',
-    en: 'You can activate',
+  activatedCount: {
+    hu: '',
+    en: '',
   },
   videos: {
-    hu: 'új videót',
+    hu: '',
     en: 'more videos today',
   },
   supportedPlatforms: {
@@ -78,16 +78,16 @@ const texts = {
     en: 'You don\'t have an active Creator subscription.',
   },
   selectTopics: {
-    hu: 'Válassz témákat (max 3)',
-    en: 'Select topics (max 3)',
+    hu: 'Válassz témákat (max 5)',
+    en: 'Select topics (max 5)',
   },
   topicsRequired: {
     hu: 'Legalább 1 témát válassz ki!',
     en: 'Select at least 1 topic!',
   },
   maxTopicsReached: {
-    hu: 'Maximum 3 témát választhatsz',
-    en: 'You can select up to 3 topics',
+    hu: 'Maximum 5 témát választhatsz',
+    en: 'You can select up to 5 topics',
   },
 };
 
@@ -153,7 +153,7 @@ const VideoLinkModal = ({
       if (prev.includes(topicId)) {
         return prev.filter(id => id !== topicId);
       } else {
-        if (prev.length >= 3) {
+        if (prev.length >= 5) {
           toast.error(texts.maxTopicsReached[lang]);
           return prev;
         }
@@ -253,11 +253,11 @@ const VideoLinkModal = ({
             </p>
           </div>
 
-          {/* Remaining activations indicator */}
+          {/* Remaining activations indicator - X/3 format */}
           {canAddMore ? (
-            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <p className="text-green-400 text-sm text-center">
-                {texts.videosRemaining[lang]} <span className="font-bold">{remainingActivations}</span> {texts.videos[lang]}
+            <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/20">
+              <p className="text-white text-lg text-center font-bold">
+                {3 - remainingActivations}/3
               </p>
             </div>
           ) : (
@@ -287,7 +287,7 @@ const VideoLinkModal = ({
           {/* Topic Selector */}
           <div className="mt-5">
             <p className="text-white/80 text-sm font-medium mb-3">
-              {texts.selectTopics[lang]} ({selectedTopicIds.length}/3)
+              {texts.selectTopics[lang]} ({selectedTopicIds.length}/5)
             </p>
             <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto p-1">
               {topics.map((topic) => {
