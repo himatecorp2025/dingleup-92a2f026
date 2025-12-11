@@ -6,6 +6,7 @@ export interface RewardVideo {
   id: string;
   embedUrl: string;
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
+  creatorName?: string | null;
 }
 
 interface RewardSession {
