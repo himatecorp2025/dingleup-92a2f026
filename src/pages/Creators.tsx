@@ -392,6 +392,7 @@ const Creators = () => {
                   lang={lang as 'hu' | 'en'}
                   onReactivate={refetchVideos}
                   showReactivateButton={isExpiryFilter}
+                  showDaysRemaining={isExpiryFilter}
                 />
               ))}
             </div>

@@ -64,13 +64,15 @@ interface CreatorVideoCardProps {
   lang: 'hu' | 'en';
   onReactivate: () => void;
   showReactivateButton?: boolean;
+  showDaysRemaining?: boolean;
 }
 
 export const CreatorVideoCard = ({ 
   video, 
   lang, 
   onReactivate,
-  showReactivateButton = false 
+  showReactivateButton = false,
+  showDaysRemaining = false
 }: CreatorVideoCardProps) => {
   const [isReactivating, setIsReactivating] = useState(false);
 
@@ -123,17 +125,21 @@ export const CreatorVideoCard = ({
       if (videoUrl.includes('/shorts/')) {
         videoId = videoUrl.split('/shorts/')[1]?.split('?')[0];
       } else if (videoUrl.includes('watch?v=')) {
-        videoId = new URL(videoUrl).searchParams.get('v');
+        try {
+          videoId = new URL(videoUrl).searchParams.get('v');
+        } catch {
+          // Invalid URL, skip
+        }
       } else if (videoUrl.includes('youtu.be/')) {
         videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
       }
       if (videoId) {
-        return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       }
     }
     
-    // For other platforms, use placeholder with 9:16 aspect
-    return `https://picsum.photos/seed/${video.id}/270/480`;
+    // For other platforms, use a gradient placeholder based on platform
+    return null;
   };
 
   const thumbnailUrl = getThumbnailUrl();
@@ -142,14 +148,23 @@ export const CreatorVideoCard = ({
     <div className="relative rounded-xl overflow-hidden bg-white/5 border border-white/10 group">
       {/* Thumbnail - 9:16 aspect ratio */}
       <div className="relative aspect-[9/16]">
-        <img
-          src={thumbnailUrl}
-          alt={video.title || 'Video thumbnail'}
-          className="w-full h-full object-cover"
-        />
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={video.title || 'Video thumbnail'}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          // Platform-based gradient placeholder when no thumbnail
+          <div className={`w-full h-full flex items-center justify-center ${getPlatformColor(video.platform)}`}>
+            <div className="text-white/80">
+              {getPlatformIcon(video.platform)}
+            </div>
+          </div>
+        )}
         
         {/* Platform Icon Badge */}
-        <div className={`absolute top-2 left-2 p-1 rounded-lg ${getPlatformColor(video.platform)} shadow-lg`}>
+        <div className={`absolute top-2 left-2 p-1.5 rounded-lg ${getPlatformColor(video.platform)} shadow-lg`}>
           {getPlatformIcon(video.platform)}
         </div>
 
@@ -163,41 +178,43 @@ export const CreatorVideoCard = ({
         )}
       </div>
 
-      {/* Days Remaining */}
-      <div className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className={`w-4 h-4 ${isExpired ? 'text-red-400' : isNearExpiry ? 'text-yellow-400' : 'text-white/60'}`} />
-            <span className={`text-lg font-bold ${isExpired ? 'text-red-400' : isNearExpiry ? 'text-yellow-400' : 'text-white'}`}>
-              {isExpired ? (lang === 'hu' ? 'Lejárt' : 'Expired') : video.days_remaining}
-            </span>
-            {!isExpired && (
-              <span className="text-xs text-white/50">
-                {lang === 'hu' ? 'nap' : 'days'}
+      {/* Days Remaining - Only show when showDaysRemaining is true */}
+      {showDaysRemaining && (
+        <div className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className={`w-4 h-4 ${isExpired ? 'text-red-400' : isNearExpiry ? 'text-yellow-400' : 'text-white/60'}`} />
+              <span className={`text-lg font-bold ${isExpired ? 'text-red-400' : isNearExpiry ? 'text-yellow-400' : 'text-white'}`}>
+                {isExpired ? (lang === 'hu' ? 'Lejárt' : 'Expired') : video.days_remaining}
               </span>
+              {!isExpired && (
+                <span className="text-xs text-white/50">
+                  {lang === 'hu' ? 'nap' : 'days'}
+                </span>
+              )}
+            </div>
+
+            {/* Reactivate Button */}
+            {shouldShowReactivate && (
+              <button
+                onClick={handleReactivate}
+                disabled={isReactivating}
+                className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 text-white ${isReactivating ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] font-semibold text-white">
+                  {lang === 'hu' ? '290 Ft' : '$0.9'}
+                </span>
+              </button>
             )}
           </div>
 
-          {/* Reactivate Button */}
-          {shouldShowReactivate && (
-            <button
-              onClick={handleReactivate}
-              disabled={isReactivating}
-              className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 text-white ${isReactivating ? 'animate-spin' : ''}`} />
-              <span className="text-[10px] font-semibold text-white">
-                {lang === 'hu' ? '290 Ft' : '$0.9'}
-              </span>
-            </button>
+          {/* Video title if available */}
+          {video.title && (
+            <p className="text-xs text-white/70 mt-2 truncate">{video.title}</p>
           )}
         </div>
-
-        {/* Video title if available */}
-        {video.title && (
-          <p className="text-xs text-white/70 mt-2 truncate">{video.title}</p>
-        )}
-      </div>
+      )}
     </div>
   );
 };
