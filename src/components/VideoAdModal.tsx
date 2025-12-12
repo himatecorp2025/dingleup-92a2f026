@@ -229,38 +229,24 @@ export const VideoAdModal = ({
 
   return (
     <div className="fixed inset-0 w-screen h-[100dvh] bg-black overflow-hidden z-[9999]">
-      {/* Video iframe - FULLSCREEN */}
+      {/* Video iframe - TRUE FULLSCREEN */}
       {hasVideo && !videoError ? (
         <>
-          {/* Crop container - clips overflow to hide platform UI */}
-          <div className="absolute inset-0 overflow-hidden bg-black">
-            {/* Cropping window - fullscreen */}
-            <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden"
-              style={{
-                width: '100vw',
-                height: '100dvh',
-              }}
-            >
-              {/* Oversized iframe shifted DOWN to hide bottom info bar */}
-              <iframe
-                key={embedUrl}
-                src={embedUrl}
-                className="absolute left-1/2 border-0 pointer-events-none"
-                style={{
-                  width: '110vw',
-                  height: '115dvh',
-                  top: '50%',
-                  transform: 'translateX(-50%) translateY(10vh)',
-                  backgroundColor: '#000',
-                }}
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="origin-when-cross-origin"
-                onError={() => setVideoError(true)}
-              />
-            </div>
-          </div>
+          {/* Fullscreen iframe - no wrapper, no cropping */}
+          <iframe
+            key={embedUrl}
+            src={embedUrl}
+            className="absolute inset-0 w-full h-full border-0"
+            style={{
+              width: '100vw',
+              height: '100dvh',
+              backgroundColor: '#000',
+            }}
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            allowFullScreen
+            referrerPolicy="origin-when-cross-origin"
+            onError={() => setVideoError(true)}
+          />
           
           {/* TOP MASK - hides TikTok/IG top bar with profile info */}
           <div 
