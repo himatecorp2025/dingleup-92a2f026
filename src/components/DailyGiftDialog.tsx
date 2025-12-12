@@ -168,10 +168,13 @@ const DailyGiftDialog = ({
     // Credit the doubled reward via new store
     const result = await rewardStore.completeRewardSession(watchedVideoIds);
     
+    // Calculate the correct doubled amount for display
+    const doubledReward = nextReward * 2;
+    
     if (result.success) {
       toast.success(lang === 'hu' 
-        ? `Gratulálunk! A jutalmad jóváíródott! +${result.coinsDelta} arany` 
-        : `Congratulations! Your reward has been credited! +${result.coinsDelta} gold`, 
+        ? `Gratulálunk! A jutalmad duplázva jóváíródott! +${doubledReward} arany` 
+        : `Congratulations! Your doubled reward has been credited! +${doubledReward} gold`, 
         { position: 'top-center', duration: 2000 }
       );
     }

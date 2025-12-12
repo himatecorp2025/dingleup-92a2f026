@@ -96,25 +96,35 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     }
   }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, welcomeBonus.canClaim, popupState.welcomeBonusCompleted, dailyGift.canClaim, popupState.showDailyGift, popupState.dailyGiftCompleted]);
 
-  // Priority 4: Personal Winner OR Daily Winners
+  // Priority 4: Personal Winner OR Daily Winners (3 second delay after Daily Gift completion)
   useEffect(() => {
     if (!canMountModals || !userId || profileLoading) return;
     if (!popupState.ageGateCompleted || popupState.showAgeGate || popupState.showWelcomeBonus || popupState.showDailyGift) return;
+    
+    // CRITICAL: Wait for Daily Gift to be fully completed (not just canClaim false)
+    // This ensures video reward flow is complete before showing next popup
     if (dailyGift.canClaim && !popupState.dailyGiftCompleted) return;
+    
+    // Only proceed if dailyGiftCompleted is true (meaning user closed/claimed Daily Gift)
+    if (!popupState.dailyGiftCompleted && dailyGift.canClaim === false) {
+      // Daily Gift was never shown (already claimed today) - proceed immediately
+    } else if (!popupState.dailyGiftCompleted) {
+      return;
+    }
 
-    // If user has pending reward → Personal Winner
+    // If user has pending reward → Personal Winner (3 second delay)
     if (hasPendingReward && !popupState.showPersonalWinner) {
       const timer = setTimeout(() => {
         setPopupState(prev => ({ ...prev, showPersonalWinner: true, showDailyWinners: false }));
-      }, 500);
+      }, 3000); // 3 second delay after Daily Gift closes
       return () => clearTimeout(timer);
     }
 
-    // If no pending reward → Daily Winners (if should show)
+    // If no pending reward → Daily Winners (if should show) (3 second delay)
     if (!hasPendingReward && dailyWinners.showPopup && !popupState.showDailyWinners) {
       const timer = setTimeout(() => {
         setPopupState(prev => ({ ...prev, showDailyWinners: true, showPersonalWinner: false }));
-      }, 500);
+      }, 3000); // 3 second delay after Daily Gift closes
       return () => clearTimeout(timer);
     }
   }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, popupState.showDailyGift, dailyGift.canClaim, popupState.dailyGiftCompleted, hasPendingReward, dailyWinners.showPopup, popupState.showDailyWinners, popupState.showPersonalWinner]);
