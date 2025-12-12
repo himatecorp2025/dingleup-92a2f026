@@ -198,6 +198,17 @@ export function AdminSidebar() {
                   <span>{t('admin.sidebar.retention')}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {/* Session Analytics */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/admin/session-analytics')}
+                  isActive={isActive('/admin/session-analytics')}
+                  className={isActive('/admin/session-analytics') ? 'bg-gradient-to-r from-purple-600/30 to-blue-600/30 text-white' : 'text-white/60'}
+                >
+                  <Activity className="text-purple-400" />
+                  <span>{t('admin.sidebar.session_analytics')}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

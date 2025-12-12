@@ -4233,6 +4233,7 @@ export type Database = {
       cleanup_expired_speed_tokens: { Args: never; Returns: undefined }
       cleanup_old_analytics: { Args: never; Returns: undefined }
       cleanup_old_messages: { Args: never; Returns: undefined }
+      count_distinct_users_sessions: { Args: never; Returns: number }
       create_friendship_from_invitation: {
         Args: { p_invitee_id: string; p_inviter_id: string }
         Returns: Json
