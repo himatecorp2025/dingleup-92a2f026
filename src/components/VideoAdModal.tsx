@@ -272,62 +272,78 @@ export const VideoAdModal = ({
   return (
     // ROOT: True fullscreen, black background, no wrapper box
     <div 
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100vw',
+      className="fixed inset-0 z-[9999] overflow-hidden"
+      style={{ 
+        width: '100vw', 
         height: '100dvh',
-        backgroundColor: '#000',
-        overflow: 'hidden',
-        zIndex: 9999,
+        backgroundColor: '#000000',
       }}
     >
+      {/* Solid black background layer */}
+      <div 
+        className="absolute inset-0" 
+        style={{ backgroundColor: '#000000', zIndex: 0 }}
+      />
+
       {/* Video content */}
       {hasVideo && !videoError ? (
         <>
-          {/* OVERFLOW CONTAINER - clips the oversized iframe */}
-          <div
+          {/* Black background container */}
+          <div 
+            className="absolute inset-0"
+            style={{ backgroundColor: '#000000', zIndex: 5 }}
+          />
+          
+          {/* Creator video iframe - SAME TECHNIQUE AS FullscreenRewardVideoView */}
+          {/* 175vw × 250vh, top: 75% + translateY(-50%) to hide bottom platform info */}
+          <iframe
+            key={embedUrl}
+            src={embedUrl}
+            onLoad={handleIframeLoad}
+            onError={() => setVideoError(true)}
+            className="absolute left-1/2 border-0 pointer-events-none"
             style={{
-              position: 'absolute',
-              inset: 0,
-              overflow: 'hidden',
-              backgroundColor: '#000',
+              width: '175vw',
+              height: '250vh',
+              top: '75%',
+              transform: 'translateX(-50%) translateY(-50%)',
+              zIndex: 10,
+              backgroundColor: '#000000',
             }}
-          >
-            {/* OVERSIZED IFRAME - pushed DOWN to hide bottom platform info */}
-            <iframe
-              key={embedUrl}
-              src={embedUrl}
-              onLoad={handleIframeLoad}
-              onError={() => setVideoError(true)}
-              style={{
-                position: 'absolute',
-                // Center horizontally, but with oversized width
-                left: `${-(OVERSIZE_W - 100) / 2}vw`,
-                // Push DOWN by CROP_Y_VH to hide bottom info bar
-                top: `${CROP_Y_VH}vh`,
-                width: `${OVERSIZE_W}vw`,
-                height: `${OVERSIZE_H}dvh`,
-                border: 'none',
-                backgroundColor: '#000',
-              }}
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              allowFullScreen
-              referrerPolicy="origin-when-cross-origin"
-            />
-          </div>
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          
+          {/* Black overlay strips for sides */}
+          <div 
+            className="absolute top-0 left-0 h-full"
+            style={{ width: '15vw', backgroundColor: '#000000', zIndex: 15 }}
+          />
+          <div 
+            className="absolute top-0 right-0 h-full"
+            style={{ width: '15vw', backgroundColor: '#000000', zIndex: 15 }}
+          />
+          
+          {/* Top black overlay - THICKER to hide more of creator profile */}
+          <div 
+            className="absolute top-0 left-0 right-0"
+            style={{ height: '25vh', backgroundColor: '#000000', zIndex: 15 }}
+          />
+          
+          {/* Bottom black overlay */}
+          <div 
+            className="absolute bottom-0 left-0 right-0"
+            style={{ height: '15vh', backgroundColor: '#000000', zIndex: 15 }}
+          />
           
           {/* Loading indicator - shown while iframe loads */}
           {isLoading && (
             <div 
+              className="absolute inset-0 flex items-center justify-center"
               style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#000',
-                zIndex: 5,
+                backgroundColor: '#000000',
+                zIndex: 20,
               }}
             >
               <p style={{ color: '#fff', fontSize: '18px' }}>{t.loading}</p>
@@ -338,28 +354,18 @@ export const VideoAdModal = ({
           {!isPlaying && needsTapToPlay && (
             <div 
               onClick={handleTapToPlay}
+              className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer"
               style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
                 backgroundColor: 'rgba(0,0,0,0.6)',
-                cursor: 'pointer',
-                zIndex: 20,
+                zIndex: 25,
               }}
             >
               <div 
+                className="flex items-center justify-center rounded-full mb-4"
                 style={{
                   width: '96px',
                   height: '96px',
-                  borderRadius: '50%',
                   backgroundColor: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px',
                 }}
               >
                 <Play style={{ width: '48px', height: '48px', color: '#fff', marginLeft: '8px' }} fill="#fff" />
@@ -371,28 +377,16 @@ export const VideoAdModal = ({
       ) : (
         // No video or error state
         <div 
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            backgroundColor: '#000',
-          }}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-4"
+          style={{ backgroundColor: '#000000' }}
         >
           <AlertTriangle style={{ width: '64px', height: '64px', color: '#eab308' }} />
           <p style={{ color: '#fff', fontSize: '18px', fontWeight: 500 }}>{t.noVideo}</p>
           <button
             onClick={handleForceClose}
+            className="px-6 py-3 rounded-full font-bold text-white"
             style={{
-              padding: '12px 24px',
               backgroundColor: 'hsl(var(--primary))',
-              color: '#fff',
-              borderRadius: '9999px',
-              fontWeight: 'bold',
-              fontSize: '16px',
               border: 'none',
               cursor: 'pointer',
             }}
