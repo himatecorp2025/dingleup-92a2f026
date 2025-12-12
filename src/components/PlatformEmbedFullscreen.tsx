@@ -114,7 +114,7 @@ const PlatformEmbedFullscreen = memo(({ platform, originalUrl, embedUrl, videoId
 
         const iframe = document.createElement('iframe');
         iframe.src = url.toString();
-        iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+        iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block;';
         iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
         iframe.allowFullscreen = true;
         iframe.setAttribute('playsinline', '');
@@ -124,7 +124,7 @@ const PlatformEmbedFullscreen = memo(({ platform, originalUrl, embedUrl, videoId
       const fbSrc = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(originalUrl)}&autoplay=1&mute=1&show_text=0`;
       const iframe = document.createElement('iframe');
       iframe.src = fbSrc;
-      iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
+      iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block;';
       iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
       iframe.allowFullscreen = true;
       container.appendChild(iframe);
@@ -140,8 +140,11 @@ const PlatformEmbedFullscreen = memo(({ platform, originalUrl, embedUrl, videoId
       ref={containerRef} 
       className="platform-embed-root"
       style={{
-        width: '100dvw',
-        height: '100dvh',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         backgroundColor: '#000',
       }}
     />
