@@ -178,18 +178,22 @@ export const useRewardVideoStore = create<RewardVideoStore>((set, get) => ({
     set({ isStartingSession: true });
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        set({ isStartingSession: false });
-        return null;
-      }
-
-      // Auto-refill if queue is empty or below threshold BEFORE starting session
       const requiredVideos = eventType === 'refill' ? 2 : 1;
-      if (get().videoQueue.length < requiredVideos) {
-        console.log(`[RewardVideoStore] Not enough videos (${get().videoQueue.length}/${requiredVideos}), force refilling...`);
+      
+      // PERFORMANCE OPTIMIZATION: Use preloaded videos from queue instead of calling backend
+      // This eliminates the slow reward-start API call and makes video playback instant
+      let videosToUse = get().getVideosFromQueue(requiredVideos);
+      
+      // If queue is empty, try to refill synchronously
+      if (videosToUse.length < requiredVideos) {
+        console.log(`[RewardVideoStore] Queue empty, forcing sync refill...`);
         
-        // Force reload videos before starting session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          set({ isStartingSession: false });
+          return null;
+        }
+
         const { data: refillData } = await supabase.functions.invoke('preload-reward-videos', {
           body: {},
           headers: { Authorization: `Bearer ${session.access_token}` },
@@ -200,42 +204,40 @@ export const useRewardVideoStore = create<RewardVideoStore>((set, get) => ({
             videoQueue: [...state.videoQueue, ...refillData.videos],
             lastPreloadAt: Date.now(),
           }));
-          console.log(`[RewardVideoStore] Force refilled, queue now has ${get().videoQueue.length} videos`);
+          videosToUse = get().getVideosFromQueue(requiredVideos);
         }
       }
 
-      // Call backend to create session
-      const { data, error } = await supabase.functions.invoke('reward-start', {
-        body: { eventType, originalReward },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-
-      if (error || !data?.success) {
-        console.error('[RewardVideoStore] Start session error:', error || data?.error);
+      // If still no videos, fail gracefully
+      if (videosToUse.length === 0) {
+        console.warn('[RewardVideoStore] No videos available for session');
         set({ isStartingSession: false });
         return null;
       }
 
+      // Generate session ID locally (no backend call needed!)
+      const rewardSessionId = `${userId}-${eventType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
       const rewardSession: RewardSession = {
-        id: data.rewardSessionId,
+        id: rewardSessionId,
         eventType,
-        videos: data.videos,
+        videos: videosToUse,
         originalReward,
-        requiredAds: data.requiredAds,
+        requiredAds: requiredVideos,
       };
 
       // Consume videos from queue (remove used ones)
-      const usedIds = new Set(data.videos.map((v: RewardVideo) => v.id));
+      const usedIds = new Set(videosToUse.map((v: RewardVideo) => v.id));
       set(state => ({
         videoQueue: state.videoQueue.filter(v => !usedIds.has(v.id)),
         activeSession: rewardSession,
         isStartingSession: false,
       }));
 
-      // Trigger refill check in background
+      // Trigger refill check in background (non-blocking)
       get().refillQueueIfNeeded(userId);
 
-      console.log(`[RewardVideoStore] Session started: ${rewardSession.id} with ${rewardSession.videos.length} videos`);
+      console.log(`[RewardVideoStore] Session started INSTANTLY: ${rewardSession.id} with ${rewardSession.videos.length} videos`);
       
       return rewardSession;
     } catch (err) {
