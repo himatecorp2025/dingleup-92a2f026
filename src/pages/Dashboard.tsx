@@ -184,8 +184,9 @@ const Dashboard = () => {
   // INSTANT prefetch - no artificial delay
   useEffect(() => {
     if (!profileLoading && walletData) {
-      // Immediate prefetch - uses requestIdleCallback for non-blocking
-      requestIdleCallback(() => prefetchGameAssets(), { timeout: 100 });
+      // Immediate prefetch - uses requestIdleCallback with Safari fallback
+      const scheduleIdle = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
+      scheduleIdle(() => prefetchGameAssets());
     }
   }, [profileLoading, walletData]);
 
