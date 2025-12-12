@@ -29,7 +29,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Tables to export in order (respecting foreign key dependencies) - 105 tables total
+// Tables to export in order (respecting foreign key dependencies) - 109 tables total
 const TABLES = [
   // Level 0: No foreign keys - base/config tables
   'topics', 'booster_types', 'legal_documents', 'translations', 'daily_prize_table',
