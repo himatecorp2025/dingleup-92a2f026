@@ -219,26 +219,15 @@ export const useVideoAdFlow = ({ userId, onRewardStarted, onRewardClaimed }: Use
     });
   }, [state, userId, videoAd, onRewardClaimed]);
 
-  // FIX: Cancel video watching - credit 1× base reward for game_end (user declined doubling)
-  const cancelVideo = useCallback(async () => {
-    // For game_end context, user clicked double button but then cancelled
-    // They should still get 1× base reward
-    if (state.context === 'game_end' && state.originalReward > 0) {
-      const idempotencyKey = `video-ad-${state.context}-${userId}-${Date.now()}`;
-      
-      // Credit 1× base reward since user declined doubling
-      await videoAd.claimReward(
-        'game_end_double',
-        state.originalReward,
-        idempotencyKey,
-        1 // multiplier=1: user declined video → 1× base reward
-      );
-
-      if (onRewardClaimed) {
-        onRewardClaimed(state.originalReward, 0);
-      }
-    }
-
+  // FIX: Cancel video - this is called AFTER onVideoComplete when user closes the fullscreen view
+  // CRITICAL: Do NOT credit any reward here - reward is ONLY credited in onVideoComplete
+  // This function is just for cleanup after video completion or if user somehow aborts
+  // The 1× fallback is handled by finishGame() when user swipes up without watching video
+  const cancelVideo = useCallback(() => {
+    // Just reset state - no reward crediting here
+    // Reward was either:
+    // 1. Already credited in onVideoComplete (2×) if user watched full video
+    // 2. Will be credited in finishGame() (1×) when user swipes up if they didn't watch
     setState({
       showPrompt: false,
       showVideo: false,
@@ -248,7 +237,7 @@ export const useVideoAdFlow = ({ userId, onRewardStarted, onRewardClaimed }: Use
       context: null,
       originalReward: 0,
     });
-  }, [state, userId, videoAd, onRewardClaimed]);
+  }, []);
 
   return {
     // State
