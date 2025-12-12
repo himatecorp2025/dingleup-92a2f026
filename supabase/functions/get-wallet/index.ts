@@ -66,31 +66,30 @@ serve(async (req) => {
     // Client for database operations (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Lives regeneration via DB RPC removed (non-existent RPC). We calculate below based on profile fields.
+    // OPTIMIZATION: Parallel queries for profile and speed tokens
+    const [profileResult, speedTokensResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('coins, lives, max_lives, last_life_regeneration, lives_regeneration_rate')
+        .eq('id', user.id)
+        .single(),
+      supabase
+        .from('speed_tokens')
+        .select('id, expires_at, duration_minutes, source, used_at')
+        .eq('user_id', user.id)
+        .not('used_at', 'is', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: false })
+        .limit(1)
+    ]);
 
-
-    // Get current balances with subscriber status and booster info (after regeneration)
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('coins, lives, max_lives, last_life_regeneration, lives_regeneration_rate')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) {
-      throw profileError;
+    if (profileResult.error) {
+      throw profileResult.error;
     }
 
-    // Check for active speed token
-    const { data: activeSpeedTokens, error: speedError } = await supabase
-      .from('speed_tokens')
-      .select('*')
-      .eq('user_id', user.id)
-      .not('used_at', 'is', null)
-      .gt('expires_at', new Date().toISOString())
-      .order('expires_at', { ascending: false })
-      .limit(1);
-
-    const hasActiveSpeed = !speedError && activeSpeedTokens && activeSpeedTokens.length > 0;
+    const profile = profileResult.data;
+    const activeSpeedTokens = speedTokensResult.data;
+    const hasActiveSpeed = !speedTokensResult.error && activeSpeedTokens && activeSpeedTokens.length > 0;
     const activeSpeedToken = hasActiveSpeed ? activeSpeedTokens[0] : null;
 
     // Determine effective max lives and regen rate from profile fields

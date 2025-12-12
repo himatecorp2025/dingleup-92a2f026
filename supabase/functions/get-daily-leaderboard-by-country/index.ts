@@ -119,33 +119,48 @@ Deno.serve(async (req) => {
 
     console.log('[get-daily-leaderboard-by-country] User authenticated:', user.id);
 
-    // Get user's country code
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('country_code')
-      .eq('id', user.id)
-      .single();
+    // Calculate current day (YYYY-MM-DD UTC)
+    const now = new Date();
+    const currentDay = now.toISOString().split('T')[0];
+    const dayOfWeek = getDayOfWeekNumber(now);
+    const isSunday = now.getDay() === 0;
 
-    if (profileError) {
-      console.error('[get-daily-leaderboard-by-country] Profile error:', profileError);
+    // OPTIMIZATION: Parallel queries for profile and daily rewards
+    const [profileResult, rewardsResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('country_code')
+        .eq('id', user.id)
+        .single(),
+      supabase
+        .from('daily_prize_table')
+        .select('rank, gold, lives, day_of_week')
+        .eq('day_of_week', dayOfWeek)
+        .order('rank', { ascending: true })
+    ]);
+
+    if (profileResult.error) {
+      console.error('[get-daily-leaderboard-by-country] Profile error:', profileResult.error);
       return new Response(
         JSON.stringify({ error: 'Profile not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const userCountryCode = profile?.country_code || 'HU';
-    console.log('[get-daily-leaderboard-by-country] User country:', userCountryCode);
-
-    // Calculate current day (YYYY-MM-DD UTC)
-    const now = new Date();
-    const currentDay = now.toISOString().split('T')[0];
-
-    console.log('[get-daily-leaderboard-by-country] Current day:', currentDay);
-
-    // Get daily rewards for today from database
-    const dailyRewards = await getDailyRewardsForDate(now, supabase);
-    console.log('[get-daily-leaderboard-by-country] Daily rewards type:', dailyRewards.type, 'day:', dailyRewards.day, 'rewards count:', dailyRewards.rewards.length);
+    const userCountryCode = profileResult.data?.country_code || 'HU';
+    
+    // Build daily rewards from parallel query result
+    const dailyRewards = {
+      day: getWeekday(now),
+      type: isSunday ? 'JACKPOT' as const : 'NORMAL' as const,
+      rewards: (rewardsResult.data || []).map((r: any) => ({
+        rank: r.rank,
+        gold: r.gold,
+        life: r.lives,
+      }))
+    };
+    
+    console.log('[get-daily-leaderboard-by-country] User country:', userCountryCode, 'Day:', currentDay, 'Rewards:', dailyRewards.rewards.length);
 
     // Determine how many players to fetch based on day type
     const maxPlayers = dailyRewards.type === 'JACKPOT' ? 25 : 10;
