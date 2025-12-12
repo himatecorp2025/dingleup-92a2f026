@@ -108,7 +108,6 @@ export default defineConfig(({ mode }) => ({
             './src/pages/AdminPopularContent.tsx',
             './src/pages/PerformanceDashboard.tsx',
             './src/pages/RetentionDashboard.tsx',
-            './src/pages/EngagementDashboard.tsx',
             './src/pages/MonetizationDashboard.tsx',
             './src/pages/UserJourneyDashboard.tsx',
           ],

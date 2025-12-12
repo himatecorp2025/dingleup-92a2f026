@@ -85,15 +85,17 @@ Deno.serve(async (req) => {
       { step: t('journey.funnel.first_purchase'), users: madePurchase, dropoffRate: playedFirstGame > 0 ? ((playedFirstGame - madePurchase) / playedFirstGame) * 100 : 0 },
     ];
 
-    // Purchase Funnel: termék megtekintés (rescue popup) → kosárba helyezés → vásárlás
-    const viewedProduct = new Set((conversionEvents || []).filter((e: any) => e.event_type === 'product_view').map((e: any) => e.user_id)).size;
-    const addedToCart = new Set((conversionEvents || []).filter((e: any) => e.event_type === 'add_to_cart').map((e: any) => e.user_id)).size;
-    const completedPurchase = new Set((conversionEvents || []).filter((e: any) => e.event_type === 'purchase_complete').map((e: any) => e.user_id)).size;
+    // Purchase Funnel: CoinShop - Bolt meglátogatása → Csomag kiválasztása → Vásárlás befejezése
+    // Filter for CoinShop purchases (product_type = 'coins')
+    const coinShopEvents = (conversionEvents || []).filter((e: any) => e.product_type === 'coins');
+    const viewedShop = new Set(coinShopEvents.filter((e: any) => e.event_type === 'product_view').map((e: any) => e.user_id)).size;
+    const clickedBuy = new Set(coinShopEvents.filter((e: any) => e.event_type === 'add_to_cart').map((e: any) => e.user_id)).size;
+    const completedPurchase = new Set(coinShopEvents.filter((e: any) => e.event_type === 'purchase_complete').map((e: any) => e.user_id)).size;
 
     const purchaseFunnel = [
-      { step: t('journey.funnel.product_view'), users: viewedProduct, dropoffRate: 0 },
-      { step: t('journey.funnel.add_to_cart'), users: addedToCart, dropoffRate: viewedProduct > 0 ? ((viewedProduct - addedToCart) / viewedProduct) * 100 : 0 },
-      { step: t('journey.funnel.purchase'), users: completedPurchase, dropoffRate: addedToCart > 0 ? ((addedToCart - completedPurchase) / addedToCart) * 100 : 0 },
+      { step: t('journey.funnel.product_view'), users: viewedShop, dropoffRate: 0 },
+      { step: t('journey.funnel.add_to_cart'), users: clickedBuy, dropoffRate: viewedShop > 0 ? ((viewedShop - clickedBuy) / viewedShop) * 100 : 0 },
+      { step: t('journey.funnel.purchase'), users: completedPurchase, dropoffRate: clickedBuy > 0 ? ((clickedBuy - completedPurchase) / clickedBuy) * 100 : 0 },
     ];
 
     // Game Funnel: játék kezdés → 5. kérdés elérése → 10. kérdés elérése → befejezés
