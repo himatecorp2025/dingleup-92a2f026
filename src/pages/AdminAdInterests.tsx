@@ -216,7 +216,9 @@ const AdminAdInterests = () => {
                   <SelectValue placeholder={t('admin.ad_interests.all_topics')} />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a0b2e] border-white/10">
-                  <SelectItem value="all" className="text-white">{t('admin.ad_interests.all_topics_count')}</SelectItem>
+                  <SelectItem value="all" className="text-white">
+                    {t('admin.ad_interests.all_topics')} ({allTopics.length})
+                  </SelectItem>
                   {allTopics.map(topic => (
                     <SelectItem key={topic.topicId} value={topic.topicId} className="text-white">
                       {topic.topicName}
