@@ -56,6 +56,9 @@ const GamePreview = memo(() => {
   const [prefetchedQuestions, setPrefetchedQuestions] = useState<Question[] | null>(null);
   const prefetchTriggeredRef = useRef(false);
   
+  // CRITICAL: Ref to always have latest coinsEarned for video ad callback
+  const coinsEarnedRef = useRef(0);
+  
   const {
     gameState,
     setGameState,
@@ -180,6 +183,8 @@ const GamePreview = memo(() => {
     broadcast
   });
 
+  // Keep ref in sync with latest coinsEarned for stable callback access
+  coinsEarnedRef.current = coinsEarned;
   const {
     showLoadingVideo,
     videoEnded,
@@ -300,9 +305,9 @@ const GamePreview = memo(() => {
     setRescueReason,
     setShowRescuePopup,
     triggerHaptic,
-    onDoubleRewardClick: async () => {
-      // Start video ad flow - goes directly to video
-      await videoAdFlow.startGameEndDouble(coinsEarned);
+    onDoubleRewardClick: () => {
+      // CRITICAL: Use ref to get latest coinsEarned value (avoids stale closure)
+      videoAdFlow.startGameEndDouble(coinsEarnedRef.current);
     },
   });
 
