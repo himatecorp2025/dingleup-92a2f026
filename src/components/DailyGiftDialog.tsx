@@ -53,9 +53,9 @@ const DailyGiftDialog = ({
 
   useEffect(() => {
     if (open) {
-      const t = setTimeout(() => setContentVisible(true), 10);
+      // INSTANT visibility - no delay
+      setContentVisible(true);
       return () => {
-        clearTimeout(t);
         setContentVisible(false);
         setBurstActive(false);
         setClaimed(false);
@@ -68,24 +68,20 @@ const DailyGiftDialog = ({
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-    if (!contentVisible) return;
+    if (!open || !contentVisible) return;
     
-    const timer = setTimeout(() => {
-      requestAnimationFrame(() => {
-        const el = flagRef.current;
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          const x = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
-          const y = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
-          setOrigin({ x, y });
-          setBurstKey((k) => k + 1);
-          setBurstActive(true);
-        }
-      });
-    }, 200);
-
-    return () => clearTimeout(timer);
+    // INSTANT burst animation trigger - no delay
+    requestAnimationFrame(() => {
+      const el = flagRef.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const x = ((rect.left + rect.width / 2) / window.innerWidth) * 100;
+        const y = ((rect.top + rect.height / 2) / window.innerHeight) * 100;
+        setOrigin({ x, y });
+        setBurstKey((k) => k + 1);
+        setBurstActive(true);
+      }
+    });
   }, [contentVisible, open]);
 
   useEffect(() => {
