@@ -44,13 +44,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch booster purchases (only real-money purchases with usd_cents_spent > 0)
-    const { data: boosterPurchases, error: boosterPurchasesError } = await supabase
-      .from('booster_purchases')
-      .select('*, booster_types(name, code)')
+    // CoinShop packages for reference
+    const COIN_PACKAGES = [
+      { coins: 300, price: 1.39 },
+      { coins: 500, price: 2.19 },
+      { coins: 700, price: 2.99 },
+      { coins: 900, price: 3.79 },
+      { coins: 1000, price: 3.99 },
+      { coins: 1500, price: 5.49 },
+      { coins: 2500, price: 8.49 },
+      { coins: 3000, price: 9.99 },
+      { coins: 5000, price: 14.99 },
+    ];
+
+    // Fetch CoinShop purchase events from conversion_events
+    const { data: conversionEvents, error: convError } = await supabase
+      .from('conversion_events')
+      .select('*')
+      .eq('product_type', 'coins')
       .order('created_at', { ascending: false });
 
-    if (boosterPurchasesError) throw boosterPurchasesError;
+    if (convError) throw convError;
 
     // Fetch total users
     const { count: totalUsers, error: usersError } = await supabase
@@ -59,14 +73,32 @@ Deno.serve(async (req) => {
 
     if (usersError) throw usersError;
 
-    // Calculate metrics from booster purchases only (usd_cents_spent > 0 = real money)
-    const boosterRevenueUSD = (boosterPurchases || []).reduce((sum, p) => sum + (p.usd_cents_spent / 100), 0);
-    const totalRevenue = boosterRevenueUSD;
+    // Calculate metrics from CoinShop purchases
+    // product_view = visited shop, add_to_cart = clicked buy, purchase_complete = completed purchase
+    const shopViews = (conversionEvents || []).filter(e => e.event_type === 'product_view');
+    const clickedBuy = (conversionEvents || []).filter(e => e.event_type === 'add_to_cart');
+    const completedPurchases = (conversionEvents || []).filter(e => e.event_type === 'purchase_complete');
 
-    // Paying users (those who spent real money)
-    const payingUsersSet = new Set(
-      (boosterPurchases || []).filter(p => p.usd_cents_spent > 0).map(p => p.user_id)
-    );
+    // Calculate revenue from completed purchases (product_id contains coins amount)
+    let totalRevenue = 0;
+    const packageStats: Record<string, { count: number; revenue: number }> = {};
+
+    completedPurchases.forEach(p => {
+      const coinsAmount = parseInt(p.product_id || '0', 10);
+      const pkg = COIN_PACKAGES.find(pk => pk.coins === coinsAmount);
+      if (pkg) {
+        totalRevenue += pkg.price;
+        const key = `${coinsAmount} ${coinsAmount === 1 ? 'coin' : 'coins'}`;
+        if (!packageStats[key]) {
+          packageStats[key] = { count: 0, revenue: 0 };
+        }
+        packageStats[key].count += 1;
+        packageStats[key].revenue += pkg.price;
+      }
+    });
+
+    // Paying users (unique users who completed purchases)
+    const payingUsersSet = new Set(completedPurchases.map(p => p.user_id));
     const payingUsers = payingUsersSet.size;
     
     const arpu = totalUsers ? totalRevenue / totalUsers : 0;
@@ -79,40 +111,42 @@ Deno.serve(async (req) => {
     
     const revenueByDay: Record<string, number> = {};
     
-    // Add booster purchases with real money
-    (boosterPurchases || [])
-      .filter(p => new Date(p.created_at) >= thirtyDaysAgo && p.usd_cents_spent > 0)
+    completedPurchases
+      .filter(p => new Date(p.created_at) >= thirtyDaysAgo)
       .forEach(p => {
-        const date = new Date(p.created_at).toISOString().split('T')[0];
-        if (!revenueByDay[date]) revenueByDay[date] = 0;
-        revenueByDay[date] += p.usd_cents_spent / 100;
+        const coinsAmount = parseInt(p.product_id || '0', 10);
+        const pkg = COIN_PACKAGES.find(pk => pk.coins === coinsAmount);
+        if (pkg) {
+          const date = new Date(p.created_at).toISOString().split('T')[0];
+          if (!revenueByDay[date]) revenueByDay[date] = 0;
+          revenueByDay[date] += pkg.price;
+        }
       });
 
     const revenueOverTime = Object.entries(revenueByDay)
       .map(([date, revenue]) => ({ date, revenue }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Revenue by product (booster types)
-    const revenueByProductMap: Record<string, { product: string; revenue: number; count: number }> = {};
-    
-    // All booster purchases (including gold-based for count metrics)
-    (boosterPurchases || []).forEach(p => {
-      const productName = (p.booster_types as any)?.name || 'Unknown Booster';
-      if (!revenueByProductMap[productName]) {
-        revenueByProductMap[productName] = { product: productName, revenue: 0, count: 0 };
-      }
-      revenueByProductMap[productName].revenue += p.usd_cents_spent / 100;
-      revenueByProductMap[productName].count += 1;
-    });
+    // Funnel data for CoinShop
+    const shopViewers = new Set(shopViews.map(e => e.user_id)).size;
+    const buyClickers = new Set(clickedBuy.map(e => e.user_id)).size;
+    const purchaseCompleters = payingUsers;
 
-    const revenueByProduct = Object.values(revenueByProductMap)
-      .sort((a, b) => b.count - a.count);
+    const funnelData = {
+      shopVisits: shopViewers,
+      clickedBuy: buyClickers,
+      completedPurchase: purchaseCompleters,
+      viewToClickRate: shopViewers > 0 ? (buyClickers / shopViewers) * 100 : 0,
+      clickToCompleteRate: buyClickers > 0 ? (purchaseCompleters / buyClickers) * 100 : 0,
+      overallConversionRate: shopViewers > 0 ? (purchaseCompleters / shopViewers) * 100 : 0,
+    };
 
-    console.log('[admin-monetization-analytics] Metrics calculated:', {
+    console.log('[admin-monetization-analytics] CoinShop metrics:', {
       totalRevenue,
       payingUsers,
       totalUsers,
-      boosterCount: boosterPurchases?.length || 0
+      shopVisits: shopViewers,
+      completedPurchases: completedPurchases.length
     });
 
     return new Response(JSON.stringify({
@@ -123,7 +157,7 @@ Deno.serve(async (req) => {
       totalUsers: totalUsers || 0,
       payingUsers,
       revenueOverTime,
-      revenueByProduct
+      funnelData,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

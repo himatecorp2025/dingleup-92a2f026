@@ -8,10 +8,13 @@ interface RevenueDataPoint {
   revenue: number;
 }
 
-interface ProductRevenue {
-  product: string;
-  revenue: number;
-  count: number;
+interface FunnelData {
+  shopVisits: number;
+  clickedBuy: number;
+  completedPurchase: number;
+  viewToClickRate: number;
+  clickToCompleteRate: number;
+  overallConversionRate: number;
 }
 
 export interface MonetizationAnalytics {
@@ -22,7 +25,7 @@ export interface MonetizationAnalytics {
   totalUsers: number;
   payingUsers: number;
   revenueOverTime: RevenueDataPoint[];
-  revenueByProduct: ProductRevenue[];
+  funnelData: FunnelData;
 }
 
 const MONETIZATION_ANALYTICS_KEY = 'monetization-analytics';
@@ -84,10 +87,10 @@ export function useMonetizationAnalyticsQuery() {
         {
           event: '*',
           schema: 'public',
-          table: 'purchases',
+          table: 'conversion_events',
         },
         (payload) => {
-          logger.log('[useMonetizationAnalyticsQuery] Purchases update received:', payload);
+          logger.log('[useMonetizationAnalyticsQuery] Conversion events update received:', payload);
           queryClient.refetchQueries({
             queryKey: [MONETIZATION_ANALYTICS_KEY],
             exact: true,

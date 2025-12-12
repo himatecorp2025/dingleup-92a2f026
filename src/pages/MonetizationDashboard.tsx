@@ -1,15 +1,15 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, TrendingUp, DollarSign, Users, ShoppingCart } from 'lucide-react';
+import { RefreshCw, TrendingUp, DollarSign, Users, ShoppingCart, Eye, MousePointer, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useMonetizationAnalyticsQuery } from '@/hooks/queries/useMonetizationAnalyticsQuery';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { useI18n } from '@/i18n';
 
+const FUNNEL_COLORS = ['#a78bfa', '#60a5fa', '#34d399'];
+
 const MonetizationDashboard = () => {
-  const navigate = useNavigate();
   const { analytics, loading, error, refetch } = useMonetizationAnalyticsQuery();
   const { t } = useI18n();
 
@@ -47,6 +47,12 @@ const MonetizationDashboard = () => {
     );
   }
 
+  const funnelChartData = analytics?.funnelData ? [
+    { step: t('admin.monetization.shop_visits'), users: analytics.funnelData.shopVisits },
+    { step: t('admin.monetization.clicked_buy'), users: analytics.funnelData.clickedBuy },
+    { step: t('admin.monetization.completed_purchase'), users: analytics.funnelData.completedPurchase },
+  ] : [];
+
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto space-y-[clamp(1.5rem,4vw,2rem)]">
@@ -77,7 +83,7 @@ const MonetizationDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-[clamp(1.5rem,4vw,1.875rem)] font-bold text-white">
-                {analytics?.totalRevenue?.toLocaleString('hu-HU')} Ft
+                ${analytics?.totalRevenue?.toFixed(2) || '0.00'}
               </div>
             </CardContent>
           </Card>
@@ -91,7 +97,7 @@ const MonetizationDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                {analytics?.arpu?.toFixed(0) || 0} Ft
+                ${analytics?.arpu?.toFixed(2) || '0.00'}
               </div>
               <p className="text-xs text-white/40 mt-1">{t('admin.monetization.arpu_desc')}</p>
             </CardContent>
@@ -106,7 +112,7 @@ const MonetizationDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                {analytics?.arppu?.toFixed(0) || 0} Ft
+                ${analytics?.arppu?.toFixed(2) || '0.00'}
               </div>
               <p className="text-xs text-white/40 mt-1">{t('admin.monetization.arppu_desc')}</p>
             </CardContent>
@@ -128,6 +134,75 @@ const MonetizationDashboard = () => {
           </Card>
         </div>
 
+        {/* CoinShop Funnel */}
+        <Card className="backdrop-blur-xl bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">{t('admin.monetization.coinshop_funnel')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Funnel Chart */}
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={funnelChartData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis type="number" stroke="rgba(255,255,255,0.6)" />
+                  <YAxis dataKey="step" type="category" width={150} stroke="rgba(255,255,255,0.6)" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.2)' }}
+                    labelStyle={{ color: '#fff' }}
+                    itemStyle={{ color: '#fff' }}
+                  />
+                  <Bar dataKey="users" name={t('admin.journey.users')}>
+                    {funnelChartData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+
+              {/* Funnel Stats */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
+                  <Eye className="w-8 h-8 text-purple-400" />
+                  <div className="flex-1">
+                    <p className="text-white/60 text-sm">{t('admin.monetization.shop_visits')}</p>
+                    <p className="text-2xl font-bold text-white">{analytics?.funnelData?.shopVisits || 0}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
+                  <MousePointer className="w-8 h-8 text-blue-400" />
+                  <div className="flex-1">
+                    <p className="text-white/60 text-sm">{t('admin.monetization.clicked_buy')}</p>
+                    <p className="text-2xl font-bold text-white">{analytics?.funnelData?.clickedBuy || 0}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-white/40">{t('admin.monetization.view_to_click')}</p>
+                    <p className="text-lg font-bold text-blue-400">{analytics?.funnelData?.viewToClickRate?.toFixed(1) || 0}%</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                  <div className="flex-1">
+                    <p className="text-white/60 text-sm">{t('admin.monetization.completed_purchase')}</p>
+                    <p className="text-2xl font-bold text-white">{analytics?.funnelData?.completedPurchase || 0}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-white/40">{t('admin.monetization.click_to_complete')}</p>
+                    <p className="text-lg font-bold text-green-400">{analytics?.funnelData?.clickToCompleteRate?.toFixed(1) || 0}%</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg border border-green-500/30">
+                  <p className="text-white/60 text-sm">{t('admin.monetization.overall_conversion')}</p>
+                  <p className="text-3xl font-bold text-green-400">{analytics?.funnelData?.overallConversionRate?.toFixed(1) || 0}%</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Revenue Over Time */}
         {analytics?.revenueOverTime && analytics.revenueOverTime.length > 0 && (
           <Card className="backdrop-blur-xl bg-white/5 border-white/10">
@@ -144,6 +219,7 @@ const MonetizationDashboard = () => {
                     contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.2)' }}
                     labelStyle={{ color: '#fff' }}
                     itemStyle={{ color: '#fff' }}
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, t('admin.monetization.revenue_chart')]}
                   />
                   <Legend />
                   <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name={t('admin.monetization.revenue_chart')} />
@@ -153,34 +229,8 @@ const MonetizationDashboard = () => {
           </Card>
         )}
 
-        {/* Revenue by Product */}
-        {analytics?.revenueByProduct && analytics.revenueByProduct.length > 0 && (
-          <Card className="backdrop-blur-xl bg-white/5 border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white">{t('admin.monetization.revenue_by_product')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={analytics.revenueByProduct}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis dataKey="product" stroke="rgba(255,255,255,0.6)" />
-                  <YAxis stroke="rgba(255,255,255,0.6)" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.2)' }}
-                    labelStyle={{ color: '#fff' }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="revenue" fill="#10b981" name={t('admin.monetization.revenue_chart')} />
-                  <Bar dataKey="count" fill="#3b82f6" name={t('admin.monetization.purchase_count')} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Empty State */}
-        {(!analytics?.revenueOverTime || analytics.revenueOverTime.length === 0) && (
+        {(!analytics?.revenueOverTime || analytics.revenueOverTime.length === 0) && (!analytics?.funnelData || analytics.funnelData.shopVisits === 0) && (
           <Card className="backdrop-blur-xl bg-white/5 border-white/10">
             <CardContent className="p-8 text-center">
               <p className="text-white/60">{t('admin.monetization.no_data')}</p>
