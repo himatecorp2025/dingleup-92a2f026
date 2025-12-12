@@ -228,7 +228,7 @@ export const useGameNavigation = (options: UseGameNavigationOptions) => {
       return;
     }
     
-    // Transition to next question with smooth animation
+    // INSTANT transition to next question - reduced delays
     transitionTimeoutRef.current = setTimeout(() => {
       nextQuestion();
       resetTimer(10);
@@ -238,18 +238,16 @@ export const useGameNavigation = (options: UseGameNavigationOptions) => {
       resetQuestionHelpers();
       setQuestionStartTime(Date.now());
       
-      visibilityTimeoutRef.current = setTimeout(() => {
-        // Clear safety timeout since we completed successfully
-        if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
-        
-        setQuestionVisible(true);
-        setIsAnimating(false);
-        setCanSwipe(true);
-        isNavigatingRef.current = false;
-        
-        logger.log(`[useGameNavigation] Transition complete to question ${currentQuestionIndex + 2}`);
-      }, 100);
-    }, 400);
+      // Clear safety timeout since we completed successfully
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
+      
+      setQuestionVisible(true);
+      setIsAnimating(false);
+      setCanSwipe(true);
+      isNavigatingRef.current = false;
+      
+      logger.log(`[useGameNavigation] Transition complete to question ${currentQuestionIndex + 2}`);
+    }, 150); // Reduced from 400+100ms to 150ms
   }, [
     isAnimating,
     currentQuestionIndex,

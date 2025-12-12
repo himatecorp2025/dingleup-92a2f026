@@ -111,13 +111,9 @@ export const GameSwipeHandler = ({
     } catch (error) {
       console.error('[GameSwipeHandler] Swipe error:', error);
     } finally {
-      // Always reset state after swipe completes
+      // INSTANT reset state after swipe completes
       onTranslateYChange(0);
-      
-      // Small delay before allowing next swipe (prevents accidental double swipes)
-      setTimeout(() => {
-        swipeInProgressRef.current = false;
-      }, 100);
+      swipeInProgressRef.current = false;
     }
   }, [enabled, swipeThreshold, onSwipeUp, onSwipeDown, onTranslateYChange]);
 

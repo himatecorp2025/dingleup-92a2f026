@@ -76,32 +76,32 @@ export const GameLoadingScreen = ({ onVideoEnd }: GameLoadingScreenProps) => {
         logger.log('[GameLoadingScreen] Initial play() blocked - waiting for canplay');
       });
 
-    // FAST FALLBACK: If video doesn't start playing within 3 seconds, skip it
+    // FAST FALLBACK: If video doesn't start playing within 1.5 seconds, skip it
     const fastFallback = setTimeout(() => {
       if (!playStarted && !hasEnded.current) {
-        logger.warn('[GameLoadingScreen] Fast fallback (3s) - video not playing, skipping intro');
+        logger.warn('[GameLoadingScreen] Fast fallback (1.5s) - video not playing, skipping intro');
         hasEnded.current = true;
         onVideoEnd();
       }
-    }, 3000);
+    }, 1500);
     
-    // MEDIUM FALLBACK: If canplay never fires within 5 seconds, skip video
+    // MEDIUM FALLBACK: If canplay never fires within 2.5 seconds, skip video
     const mediumFallback = setTimeout(() => {
       if (!canPlayFired && !hasEnded.current) {
-        logger.warn('[GameLoadingScreen] Medium fallback (5s) - canplay never fired, skipping intro');
+        logger.warn('[GameLoadingScreen] Medium fallback (2.5s) - canplay never fired, skipping intro');
         hasEnded.current = true;
         onVideoEnd();
       }
-    }, 5000);
+    }, 2500);
 
-    // SAFETY FALLBACK: Force video end after 8 seconds maximum (reduced from 15s)
+    // SAFETY FALLBACK: Force video end after 4 seconds maximum
     const safetyTimeout = setTimeout(() => {
       if (!hasEnded.current) {
-        logger.warn('[GameLoadingScreen] Safety timeout (8s) - forcing video end');
+        logger.warn('[GameLoadingScreen] Safety timeout (4s) - forcing video end');
         hasEnded.current = true;
         onVideoEnd();
       }
-    }, 8000);
+    }, 4000);
 
     return () => {
       video.removeEventListener('canplay', handleCanPlay);

@@ -24,7 +24,7 @@ export const useRealtimeAdmin = ({ onDataChange, enabled = true }: UseRealtimeAd
     throttleTimeoutRef.current = setTimeout(() => {
       onDataChange();
       throttleTimeoutRef.current = null;
-    }, 2000); // Max 1 refetch per 2 seconds (reduced database load)
+    }, 300); // FAST - 300ms throttle (was 2000ms)
   }, [onDataChange]);
 
   useEffect(() => {
