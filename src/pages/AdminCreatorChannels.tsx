@@ -22,47 +22,91 @@ const AdminCreatorChannels = () => {
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  // Aggregate channels from creator_videos (since creator_channels table may be empty)
   const { data: channels, isLoading } = useQuery({
     queryKey: ['admin-channels', search, platformFilter, statusFilter],
     queryFn: async () => {
-      let query = supabase
-        .from('creator_channels')
+      // Get all videos with creator info
+      const { data: videos, error: videosError } = await supabase
+        .from('creator_videos')
         .select(`
-          *,
-          profiles:creator_id (id, username)
+          id,
+          user_id,
+          platform,
+          is_active,
+          total_impressions,
+          total_video_completions,
+          created_at,
+          profiles:user_id (id, username)
         `)
         .order('created_at', { ascending: false });
 
+      if (videosError) throw videosError;
+
+      // Group by user_id + platform to create virtual channels
+      const channelMap = new Map<string, {
+        id: string;
+        creator_id: string;
+        platform: string;
+        channel_handle: string | null;
+        channel_url: string | null;
+        is_active: boolean;
+        created_at: string;
+        profiles: { id: string; username: string } | null;
+        videos_count: number;
+        total_impressions: number;
+      }>();
+
+      (videos || []).forEach(video => {
+        const key = `${video.user_id}-${video.platform}`;
+        const existing = channelMap.get(key);
+        
+        if (existing) {
+          existing.videos_count += 1;
+          existing.total_impressions += video.total_impressions || 0;
+          // Channel is active if any video is active
+          if (video.is_active) existing.is_active = true;
+          // Use earliest created_at
+          if (video.created_at < existing.created_at) existing.created_at = video.created_at;
+        } else {
+          channelMap.set(key, {
+            id: key,
+            creator_id: video.user_id,
+            platform: video.platform,
+            channel_handle: (video.profiles as any)?.username || null,
+            channel_url: null,
+            is_active: video.is_active,
+            created_at: video.created_at,
+            profiles: video.profiles as any,
+            videos_count: 1,
+            total_impressions: video.total_impressions || 0,
+          });
+        }
+      });
+
+      let result = Array.from(channelMap.values());
+
+      // Apply filters
       if (search) {
-        query = query.or(`channel_handle.ilike.%${search}%,channel_url.ilike.%${search}%`);
+        const searchLower = search.toLowerCase();
+        result = result.filter(c => 
+          c.channel_handle?.toLowerCase().includes(searchLower) ||
+          c.profiles?.username?.toLowerCase().includes(searchLower)
+        );
       }
 
       if (platformFilter !== 'all') {
-        query = query.eq('platform', platformFilter);
+        result = result.filter(c => c.platform === platformFilter);
       }
 
       if (statusFilter !== 'all') {
-        query = query.eq('is_active', statusFilter === 'active');
+        result = result.filter(c => c.is_active === (statusFilter === 'active'));
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
+      // Sort by created_at descending
+      result.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
-      // Get video counts per channel
-      const channelIds = data.map(c => c.id);
-      const { data: videos } = await supabase
-        .from('creator_videos')
-        .select('id, user_id, total_impressions')
-        .in('user_id', data.map(c => c.creator_id));
-
-      return data.map(channel => {
-        const channelVideos = videos?.filter(v => v.user_id === channel.creator_id) || [];
-        return {
-          ...channel,
-          videos_count: channelVideos.length,
-          total_impressions: channelVideos.reduce((sum, v) => sum + (v.total_impressions || 0), 0),
-        };
-      });
+      return result;
     },
     staleTime: 0,
   });
