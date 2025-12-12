@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Platform embed fullscreen override - forces all embed content to fill viewport */
+.platform-embed-root,
+.platform-embed-root iframe,
+.platform-embed-root blockquote,
+.platform-embed-root .tiktok-embed,
+.platform-embed-root .instagram-media {
+  width: 100dvw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  display: block !important;
+  background: #000 !important;
+}
+
 /* Chat layout variables */
 :root {
   --appbar-h: 56px;

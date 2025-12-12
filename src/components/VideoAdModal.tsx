@@ -4,6 +4,7 @@ import { useI18n } from '@/i18n';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import dingleupLogo from '@/assets/dingleup-logo-loading.png';
+import PlatformEmbedFullscreen from './PlatformEmbedFullscreen';
 
 interface VideoAdModalProps {
   isOpen: boolean;
@@ -299,27 +300,16 @@ export const VideoAdModal = ({
         overflow: 'hidden',
       }}
     >
-      {/* IFRAME - fills entire screen */}
-      {embedUrl ? (
-        <iframe
-          key={`${currentVideo?.id}-${activeIndex}-${embedUrl}`}
-          src={embedUrl}
-          onLoad={handleIframeLoad}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            border: 0,
-            display: 'block',
-            backgroundColor: '#000000',
-          }}
-          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-          allowFullScreen
+      {/* Platform-specific embed - fills entire screen */}
+      {currentVideo ? (
+        <PlatformEmbedFullscreen
+          key={`${currentVideo.id}-${activeIndex}`}
+          platform={currentPlatform as 'tiktok' | 'youtube' | 'instagram' | 'facebook'}
+          originalUrl={currentVideo.video_url}
+          embedUrl={currentVideo.embed_url || undefined}
         />
       ) : (
-        // No embed URL - show logo
+        // No video - show logo
         <div 
           style={{
             position: 'absolute',
@@ -338,27 +328,7 @@ export const VideoAdModal = ({
         </div>
       )}
 
-      {/* Loading overlay - while iframe loads */}
-      {embedUrl && !isLoaded && (
-        <div 
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#000000',
-            zIndex: 10,
-          }}
-        >
-          <img 
-            src={dingleupLogo} 
-            alt="DingleUP" 
-            className="animate-pulse"
-            style={{ width: 'min(160px, 40vw)', height: 'auto' }}
-          />
-        </div>
-      )}
+      {/* Loading overlay removed - PlatformEmbedFullscreen handles its own loading */}
 
       {/* Tap to play overlay for Instagram */}
       {!isPlaying && needsTapToPlay && (
