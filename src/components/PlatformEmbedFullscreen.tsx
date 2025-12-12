@@ -1,160 +1,138 @@
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo } from "react";
 
 interface PlatformEmbedFullscreenProps {
-  platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
+  platform: "tiktok" | "youtube" | "instagram" | "facebook";
   originalUrl: string;
   embedUrl?: string;
   videoId?: string;
 }
 
-declare global {
-  interface Window {
-    tiktokEmbed?: { load?: () => void };
-    instgrm?: { Embeds?: { process?: () => void } };
-  }
-}
-
 const extractYouTubeId = (url: string): string | null => {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
   ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
   }
   return null;
 };
 
 const extractTikTokVideoId = (url: string): string | null => {
-  const match = url.match(/\/video\/(\d+)/);
-  return match ? match[1] : null;
+  const m = url.match(/\/video\/(\d+)/);
+  return m ? m[1] : null;
+};
+
+const toInstagramEmbedUrl = (url: string): string => {
+  // originalUrl lehet ".../reel/XXXX" vagy ".../p/XXXX"
+  // Biztosítsuk a végén a "/"-t, majd tegyük rá az "embed/"
+  try {
+    const u = new URL(url);
+    let pathname = u.pathname;
+    if (!pathname.endsWith("/")) pathname += "/";
+    u.pathname = pathname + "embed/";
+    // Autoplay az Instagramnál nem garantált, de legalább az embed stabil lesz
+    u.searchParams.set("autoplay", "1");
+    return u.toString();
+  } catch {
+    // fallback: próbáljuk így
+    return url.endsWith("/") ? `${url}embed/` : `${url}/embed/`;
+  }
 };
 
 const PlatformEmbedFullscreen = memo(({ platform, originalUrl, embedUrl, videoId }: PlatformEmbedFullscreenProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptLoadedRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
     const container = containerRef.current;
+    if (!container) return;
 
-    const loadScript = (src: string, onLoad?: () => void) => {
-      if (scriptLoadedRef.current[src]) {
-        onLoad?.();
-        return;
-      }
-      const existing = document.querySelector(`script[src="${src}"]`);
-      if (existing) {
-        scriptLoadedRef.current[src] = true;
-        onLoad?.();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      script.onload = () => {
-        scriptLoadedRef.current[src] = true;
-        onLoad?.();
-      };
-      document.body.appendChild(script);
+    // Biztonságosabb, mint innerHTML
+    container.replaceChildren();
+
+    const makeIframe = (src: string) => {
+      const iframe = document.createElement("iframe");
+      iframe.src = src;
+      iframe.style.cssText = `
+          position:absolute;
+          inset:0;
+          width:100%;
+          height:100%;
+          border:0;
+          display:block;
+          background:#000;
+        `;
+      iframe.allow = "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write";
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      iframe.setAttribute("playsinline", "");
+      iframe.setAttribute("webkit-playsinline", "");
+      return iframe;
     };
 
-    // Clear container
-    container.innerHTML = '';
-
-    if (platform === 'tiktok') {
-      // TikTok embed has fixed internal size (~325px wide)
-      // We scale it up to fill the viewport
+    if (platform === "tiktok") {
       const vid = videoId || extractTikTokVideoId(originalUrl);
       if (vid) {
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://www.tiktok.com/embed/v2/${vid}?autoplay=1`;
-        // Scale the iframe to be much larger than viewport, center it
-        // TikTok player is ~325x580px, we need to scale to fill ~400x900 (mobile)
-        // Scale factor ~3x should cover most devices
-        iframe.style.cssText = `
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%) scale(3);
-          transform-origin: center center;
-          width: 100vw;
-          height: 100vh;
-          border: 0;
-          background: #000;
-        `;
-        iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
-        iframe.allowFullscreen = true;
-        container.appendChild(iframe);
+        // TikTok embed v2 – fullscreen iframe
+        // Autoplay iOS miatt: mute=1 erősen ajánlott
+        const src = `https://www.tiktok.com/embed/v2/${vid}?autoplay=1&mute=1`;
+        container.appendChild(makeIframe(src));
       }
-    } else if (platform === 'instagram') {
-      // Instagram also use iframe approach for fullscreen
-      // Extract post ID from URL and use embed iframe
-      const iframe = document.createElement('iframe');
-      iframe.src = `${originalUrl}embed/`;
-      iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block;background:#000;';
-      iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
-      iframe.allowFullscreen = true;
-      container.appendChild(iframe);
-    } else if (platform === 'youtube') {
+    }
+
+    if (platform === "instagram") {
+      const src = toInstagramEmbedUrl(originalUrl);
+      container.appendChild(makeIframe(src));
+    }
+
+    if (platform === "youtube") {
       let src = embedUrl;
       if (!src) {
-        const ytId = extractYouTubeId(originalUrl);
-        if (ytId) {
-          src = `https://www.youtube.com/embed/${ytId}`;
-        }
+        const id = extractYouTubeId(originalUrl);
+        if (id) src = `https://www.youtube.com/embed/${id}`;
       }
       if (src) {
-        const url = new URL(src);
-        url.searchParams.set('autoplay', '1');
-        url.searchParams.set('mute', '1');
-        url.searchParams.set('playsinline', '1');
-        url.searchParams.set('controls', '0');
-        url.searchParams.set('rel', '0');
-        url.searchParams.set('modestbranding', '1');
-
-        const iframe = document.createElement('iframe');
-        iframe.src = url.toString();
-        iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block;';
-        iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
-        iframe.allowFullscreen = true;
-        iframe.setAttribute('playsinline', '');
-        container.appendChild(iframe);
+        const u = new URL(src);
+        u.searchParams.set("autoplay", "1");
+        u.searchParams.set("mute", "1");
+        u.searchParams.set("playsinline", "1");
+        u.searchParams.set("controls", "0");
+        u.searchParams.set("rel", "0");
+        u.searchParams.set("modestbranding", "1");
+        container.appendChild(makeIframe(u.toString()));
       }
-    } else if (platform === 'facebook') {
-      const fbSrc = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(originalUrl)}&autoplay=1&mute=1&show_text=0`;
-      const iframe = document.createElement('iframe');
-      iframe.src = fbSrc;
-      iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:block;';
-      iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
-      iframe.allowFullscreen = true;
-      container.appendChild(iframe);
+    }
+
+    if (platform === "facebook") {
+      const src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
+        originalUrl,
+      )}&autoplay=1&mute=1&show_text=0`;
+      container.appendChild(makeIframe(src));
     }
 
     return () => {
-      container.innerHTML = '';
+      container.replaceChildren();
     };
   }, [platform, originalUrl, embedUrl, videoId]);
 
+  // FONTOS: fixed inset-0 => tényleg fullscreen, nem a parenttől függ
   return (
-    <div 
-      ref={containerRef} 
-      className="platform-embed-root"
+    <div
+      ref={containerRef}
       style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#000',
-        overflow: 'hidden',
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100dvh",
+        minHeight: "100vh",
+        backgroundColor: "#000",
+        overflow: "hidden",
+        zIndex: 9999,
       }}
     />
   );
 });
 
-PlatformEmbedFullscreen.displayName = 'PlatformEmbedFullscreen';
-
+PlatformEmbedFullscreen.displayName = "PlatformEmbedFullscreen";
 export default PlatformEmbedFullscreen;
