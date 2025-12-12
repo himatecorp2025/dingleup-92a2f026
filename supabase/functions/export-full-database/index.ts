@@ -4,7 +4,7 @@ import { getCorsHeaders, handleCorsPreflight } from '../_shared/cors.ts';
 const corsHeaders = getCorsHeaders('*');
 
 // COMPLETE Tables list in STRICT foreign key dependency order - updated 2025-12-12
-// Based on actual database query: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+// Includes ALL tables from information_schema.tables WHERE table_schema = 'public'
 const TABLES = [
   // Level 0: No foreign keys - base/config tables
   'topics', 'booster_types', 'legal_documents', 'translations', 'daily_prize_table',
@@ -60,6 +60,9 @@ const TABLES = [
   // Views (read-only, skip if view)
   'public_profiles',
 ];
+
+// OPTIMIZATION: Batch size for parallel processing
+const BATCH_SIZE = 5;
 
 // Map PostgreSQL data_type to SQL DDL type
 function mapPgType(dataType: string, udtName: string): string {
