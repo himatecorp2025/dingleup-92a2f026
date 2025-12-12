@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface VideoCountry {
+  country_code: string;
+  is_primary: boolean;
+  sort_order: number;
+}
+
 export interface CreatorVideo {
   id: string;
   user_id: string;
@@ -16,6 +22,7 @@ export interface CreatorVideo {
   created_at: string;
   days_remaining: number;
   topics?: { id: number; name: string }[];
+  countries?: VideoCountry[];
 }
 
 interface UseCreatorVideosResult {

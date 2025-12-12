@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2, Power, PowerOff } from 'lucide-react';
+import { X, Check, Loader2, Power, PowerOff, Globe, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { CreatorVideo } from '@/hooks/useCreatorVideos';
+import { COUNTRIES } from '@/data/countries';
 
 interface Topic {
   id: number;
   name: string;
+}
+
+interface VideoCountry {
+  country_code: string;
+  is_primary: boolean;
+  sort_order: number;
 }
 
 interface VideoEditModalProps {
@@ -26,6 +33,26 @@ const texts = {
     hu: 'Témakörök (max 5)',
     en: 'Topics (max 5)',
   },
+  countries: {
+    hu: 'Megjelenítési országok',
+    en: 'Display countries',
+  },
+  primaryCountry: {
+    hu: 'Elsődleges',
+    en: 'Primary',
+  },
+  addCountry: {
+    hu: 'Ország hozzáadása',
+    en: 'Add country',
+  },
+  maxCountries: {
+    hu: 'Maximum 5 országot adhatsz hozzá',
+    en: 'You can add up to 5 countries',
+  },
+  selectCountry: {
+    hu: 'Válassz országot...',
+    en: 'Select country...',
+  },
   status: {
     hu: 'Státusz',
     en: 'Status',
@@ -37,14 +64,6 @@ const texts = {
   inactive: {
     hu: 'Inaktív',
     en: 'Inactive',
-  },
-  activate: {
-    hu: 'Aktiválás',
-    en: 'Activate',
-  },
-  deactivate: {
-    hu: 'Inaktiválás',
-    en: 'Deactivate',
   },
   save: {
     hu: 'Mentés',
@@ -78,16 +97,55 @@ const texts = {
     hu: 'Legalább 1 témát válassz ki!',
     en: 'Select at least 1 topic!',
   },
+  minCountries: {
+    hu: 'Legalább 1 országot válassz ki!',
+    en: 'Select at least 1 country!',
+  },
+};
+
+// Country name mapping for display
+const COUNTRY_NAMES: Record<string, { hu: string; en: string }> = {
+  HU: { hu: 'Magyarország', en: 'Hungary' },
+  DE: { hu: 'Németország', en: 'Germany' },
+  AT: { hu: 'Ausztria', en: 'Austria' },
+  SK: { hu: 'Szlovákia', en: 'Slovakia' },
+  RO: { hu: 'Románia', en: 'Romania' },
+  US: { hu: 'Egyesült Államok', en: 'United States' },
+  GB: { hu: 'Egyesült Királyság', en: 'United Kingdom' },
+  FR: { hu: 'Franciaország', en: 'France' },
+  IT: { hu: 'Olaszország', en: 'Italy' },
+  ES: { hu: 'Spanyolország', en: 'Spain' },
+  PL: { hu: 'Lengyelország', en: 'Poland' },
+  NL: { hu: 'Hollandia', en: 'Netherlands' },
+  BE: { hu: 'Belgium', en: 'Belgium' },
+  CH: { hu: 'Svájc', en: 'Switzerland' },
+  CZ: { hu: 'Csehország', en: 'Czech Republic' },
+  UA: { hu: 'Ukrajna', en: 'Ukraine' },
+  RS: { hu: 'Szerbia', en: 'Serbia' },
+  HR: { hu: 'Horvátország', en: 'Croatia' },
+  SI: { hu: 'Szlovénia', en: 'Slovenia' },
+  BA: { hu: 'Bosznia-Hercegovina', en: 'Bosnia and Herzegovina' },
+};
+
+const getCountryName = (code: string, lang: 'hu' | 'en'): string => {
+  if (COUNTRY_NAMES[code]) {
+    return COUNTRY_NAMES[code][lang];
+  }
+  // Fallback to code if not in our map
+  const country = COUNTRIES.find(c => c.code === code);
+  return country ? code : code;
 };
 
 const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditModalProps) => {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopicIds, setSelectedTopicIds] = useState<number[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<VideoCountry[]>([]);
   const [isActive, setIsActive] = useState(video.is_active);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [showCountrySelector, setShowCountrySelector] = useState(false);
 
-  // Fetch topics and current video topics on mount
+  // Fetch topics, countries and current video data on mount
   useEffect(() => {
     const fetchData = async () => {
       setIsFetching(true);
@@ -111,6 +169,17 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
       if (videoTopics) {
         setSelectedTopicIds(videoTopics.map(vt => vt.topic_id));
       }
+
+      // Fetch current video countries
+      const { data: videoCountries } = await supabase
+        .from('creator_video_countries')
+        .select('country_code, is_primary, sort_order')
+        .eq('creator_video_id', video.id)
+        .order('sort_order');
+      
+      if (videoCountries && videoCountries.length > 0) {
+        setSelectedCountries(videoCountries);
+      }
       
       setIsFetching(false);
     };
@@ -118,6 +187,7 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
     if (isOpen) {
       fetchData();
       setIsActive(video.is_active);
+      setShowCountrySelector(false);
     }
   }, [isOpen, video.id, video.is_active]);
 
@@ -139,9 +209,53 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
     });
   };
 
+  const handleAddCountry = (countryCode: string) => {
+    if (selectedCountries.length >= 5) {
+      toast.error(texts.maxCountries[lang]);
+      return;
+    }
+    if (selectedCountries.some(c => c.country_code === countryCode)) {
+      return; // Already added
+    }
+    
+    const newCountry: VideoCountry = {
+      country_code: countryCode,
+      is_primary: selectedCountries.length === 0, // First one is primary
+      sort_order: selectedCountries.length + 1,
+    };
+    
+    setSelectedCountries(prev => [...prev, newCountry]);
+    setShowCountrySelector(false);
+  };
+
+  const handleRemoveCountry = (countryCode: string) => {
+    setSelectedCountries(prev => {
+      const filtered = prev.filter(c => c.country_code !== countryCode);
+      // If we removed the primary, make the first one primary
+      if (filtered.length > 0 && !filtered.some(c => c.is_primary)) {
+        filtered[0].is_primary = true;
+      }
+      // Reorder sort_order
+      return filtered.map((c, idx) => ({ ...c, sort_order: idx + 1 }));
+    });
+  };
+
+  const handleSetPrimary = (countryCode: string) => {
+    setSelectedCountries(prev => 
+      prev.map(c => ({
+        ...c,
+        is_primary: c.country_code === countryCode,
+      }))
+    );
+  };
+
   const handleSave = async () => {
     if (selectedTopicIds.length === 0) {
       toast.error(texts.minTopics[lang]);
+      return;
+    }
+    if (selectedCountries.length === 0) {
+      toast.error(texts.minCountries[lang]);
       return;
     }
 
@@ -162,6 +276,23 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
       await supabase
         .from('creator_video_topics')
         .insert(topicInserts);
+
+      // Update countries - delete old and insert new
+      await supabase
+        .from('creator_video_countries')
+        .delete()
+        .eq('creator_video_id', video.id);
+
+      const countryInserts = selectedCountries.map(c => ({
+        creator_video_id: video.id,
+        country_code: c.country_code,
+        is_primary: c.is_primary,
+        sort_order: c.sort_order,
+      }));
+
+      await supabase
+        .from('creator_video_countries')
+        .insert(countryInserts);
 
       // Update active status if changed and not expired
       if (!isExpired && isActive !== video.is_active) {
@@ -184,6 +315,11 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
       setIsLoading(false);
     }
   };
+
+  // Available countries (not yet selected)
+  const availableCountries = COUNTRIES.filter(
+    c => !selectedCountries.some(sc => sc.country_code === c.code)
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -266,12 +402,85 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
                 </div>
               )}
 
+              {/* Country Selector */}
+              <div className="mb-6">
+                <p className="text-white/80 text-sm font-medium mb-3 flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  {texts.countries[lang]} ({selectedCountries.length}/5)
+                </p>
+                
+                {/* Selected countries list */}
+                <div className="space-y-2 mb-3">
+                  {selectedCountries.map((country, idx) => (
+                    <div 
+                      key={country.country_code}
+                      className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2"
+                    >
+                      <span className="text-lg">{getFlagEmoji(country.country_code)}</span>
+                      <span className="flex-1 text-white text-sm">
+                        {getCountryName(country.country_code, lang)}
+                      </span>
+                      {country.is_primary ? (
+                        <span className="text-xs px-2 py-0.5 bg-purple-500/30 text-purple-300 rounded-full">
+                          {texts.primaryCountry[lang]}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSetPrimary(country.country_code)}
+                          className="text-xs px-2 py-0.5 bg-white/10 text-white/60 rounded-full hover:bg-white/20"
+                        >
+                          {texts.primaryCountry[lang]}
+                        </button>
+                      )}
+                      {selectedCountries.length > 1 && (
+                        <button
+                          onClick={() => handleRemoveCountry(country.country_code)}
+                          className="p-1 hover:bg-red-500/20 rounded-full transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add country button/selector */}
+                {selectedCountries.length < 5 && (
+                  <>
+                    {showCountrySelector ? (
+                      <div className="bg-white/10 rounded-lg p-2 max-h-[150px] overflow-y-auto">
+                        {availableCountries.slice(0, 50).map(country => (
+                          <button
+                            key={country.code}
+                            onClick={() => handleAddCountry(country.code)}
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-left"
+                          >
+                            <span className="text-lg">{getFlagEmoji(country.code)}</span>
+                            <span className="text-white text-sm">
+                              {getCountryName(country.code, lang)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowCountrySelector(true)}
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 text-sm transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {texts.addCountry[lang]}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
               {/* Topic Selector */}
               <div className="mb-6">
                 <p className="text-white/80 text-sm font-medium mb-3">
                   {texts.topics[lang]} ({selectedTopicIds.length}/5)
                 </p>
-                <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-1">
+                <div className="flex flex-wrap gap-2 max-h-[150px] overflow-y-auto p-1">
                   {topics.map((topic) => {
                     const isSelected = selectedTopicIds.includes(topic.id);
                     return (
@@ -305,7 +514,7 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
             </button>
             <button
               onClick={handleSave}
-              disabled={isLoading || isFetching || selectedTopicIds.length === 0}
+              disabled={isLoading || isFetching || selectedTopicIds.length === 0 || selectedCountries.length === 0}
               className="flex-1 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
@@ -322,5 +531,14 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
     </div>
   );
 };
+
+// Helper function to get flag emoji from country code
+function getFlagEmoji(countryCode: string): string {
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
 
 export default VideoEditModal;

@@ -451,6 +451,16 @@ serve(async (req) => {
       }
     }
 
+    // Get creator's country from their profile
+    const { data: creatorProfile } = await supabaseClient
+      .from('profiles')
+      .select('country_code')
+      .eq('id', userId)
+      .single();
+    
+    const creatorCountry = creatorProfile?.country_code || 'HU'; // Default to HU if not set
+    console.log("[SUBMIT-VIDEO] Creator country:", creatorCountry);
+
     // Create video record
     const videoData: Record<string, unknown> = {
       user_id: userId,
@@ -482,6 +492,23 @@ serve(async (req) => {
     }
 
     console.log("[SUBMIT-VIDEO] Video created:", newVideo.id);
+
+    // Add creator's country as the primary target country
+    const { error: countryError } = await supabaseClient
+      .from('creator_video_countries')
+      .insert({
+        creator_video_id: newVideo.id,
+        country_code: creatorCountry,
+        is_primary: true,
+        sort_order: 1,
+      });
+    
+    if (countryError) {
+      console.error("[SUBMIT-VIDEO] Country insert error:", countryError);
+      // Don't fail the whole request for country errors
+    } else {
+      console.log("[SUBMIT-VIDEO] Added primary country:", creatorCountry);
+    }
 
     // Add topic associations if provided
     if (topic_ids && Array.isArray(topic_ids) && topic_ids.length > 0) {

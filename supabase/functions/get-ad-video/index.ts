@@ -58,6 +58,16 @@ serve(async (req) => {
 
     console.log(`[get-ad-video] User ${userId}, context: ${context}`);
 
+    // Get user's country for country-specific filtering
+    const { data: userProfile } = await supabaseClient
+      .from('profiles')
+      .select('country_code')
+      .eq('id', userId)
+      .single();
+    
+    const userCountry = userProfile?.country_code || null;
+    console.log(`[get-ad-video] User country: ${userCountry || 'none'}`);
+
     // Step 1: Get user's top 3 topics (if they have 100+ answered questions)
     const { data: topicStats, error: topicError } = await supabaseClient
       .from('user_topic_stats')
@@ -134,6 +144,20 @@ serve(async (req) => {
 
     const activeCreatorIds = new Set(subscriptions?.map(s => s.user_id) || []);
     
+    // Get video IDs that target user's country (if user has country)
+    let countryTargetedVideoIds: Set<string> | null = null;
+    if (userCountry) {
+      const { data: countryVideos } = await supabaseClient
+        .from('creator_video_countries')
+        .select('creator_video_id')
+        .eq('country_code', userCountry);
+      
+      if (countryVideos && countryVideos.length > 0) {
+        countryTargetedVideoIds = new Set(countryVideos.map(cv => cv.creator_video_id));
+        console.log(`[get-ad-video] Found ${countryVideos.length} videos targeting ${userCountry}`);
+      }
+    }
+    
     // Filter by active creators AND valid embed_url (must contain /embed/ to be playable)
     const eligibleVideos = videos.filter(v => {
       if (!activeCreatorIds.has(v.user_id)) return false;
@@ -146,7 +170,23 @@ serve(async (req) => {
       return hasValidEmbed;
     });
 
-    if (eligibleVideos.length === 0) {
+    // First try country-specific videos, then fallback to global pool
+    let countryFilteredVideos = eligibleVideos;
+    let isGlobalFallback = false;
+    
+    if (countryTargetedVideoIds && countryTargetedVideoIds.size > 0) {
+      countryFilteredVideos = eligibleVideos.filter(v => countryTargetedVideoIds!.has(v.id));
+      console.log(`[get-ad-video] Country-filtered videos: ${countryFilteredVideos.length}`);
+    }
+    
+    // Fallback to global pool if no country-specific videos
+    if (countryFilteredVideos.length === 0) {
+      console.log('[get-ad-video] No country-specific videos, using global fallback');
+      countryFilteredVideos = eligibleVideos;
+      isGlobalFallback = true;
+    }
+
+    if (countryFilteredVideos.length === 0) {
       console.log('[get-ad-video] No videos with valid embed URLs from active creators');
       return new Response(
         JSON.stringify({ available: false, video: null }),
@@ -155,11 +195,11 @@ serve(async (req) => {
     }
 
     // Step 4: Prioritize by topic relevance
-    let selectedVideo: typeof eligibleVideos[0];
+    let selectedVideo: typeof countryFilteredVideos[0];
     
     if (userTopTopics.length > 0) {
       // Find videos matching user's interests
-      const relevantVideos = eligibleVideos.filter(v => {
+      const relevantVideos = countryFilteredVideos.filter(v => {
         const videoTopics = v.creator_video_topics?.map((t: any) => t.topic_id) || [];
         return videoTopics.some((tid: number) => userTopTopics.includes(tid));
       });
@@ -167,16 +207,16 @@ serve(async (req) => {
       if (relevantVideos.length > 0) {
         // Random selection from relevant videos
         selectedVideo = relevantVideos[Math.floor(Math.random() * relevantVideos.length)];
-        console.log(`[get-ad-video] Selected relevant video ${selectedVideo.id}`);
+        console.log(`[get-ad-video] Selected relevant video ${selectedVideo.id}${isGlobalFallback ? ' (global fallback)' : ''}`);
       } else {
         // Fallback: random from all eligible
-        selectedVideo = eligibleVideos[Math.floor(Math.random() * eligibleVideos.length)];
-        console.log(`[get-ad-video] No relevant videos, selected random ${selectedVideo.id}`);
+        selectedVideo = countryFilteredVideos[Math.floor(Math.random() * countryFilteredVideos.length)];
+        console.log(`[get-ad-video] No relevant videos, selected random ${selectedVideo.id}${isGlobalFallback ? ' (global fallback)' : ''}`);
       }
     } else {
       // No user preferences: random selection
-      selectedVideo = eligibleVideos[Math.floor(Math.random() * eligibleVideos.length)];
-      console.log(`[get-ad-video] User has no preferences, selected random ${selectedVideo.id}`);
+      selectedVideo = countryFilteredVideos[Math.floor(Math.random() * countryFilteredVideos.length)];
+      console.log(`[get-ad-video] User has no preferences, selected random ${selectedVideo.id}${isGlobalFallback ? ' (global fallback)' : ''}`);
     }
 
     // Check if video is relevant to user

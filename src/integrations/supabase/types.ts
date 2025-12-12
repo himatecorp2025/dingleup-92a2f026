@@ -798,6 +798,41 @@ export type Database = {
           },
         ]
       }
+      creator_video_countries: {
+        Row: {
+          country_code: string
+          created_at: string
+          creator_video_id: string
+          id: string
+          is_primary: boolean
+          sort_order: number
+        }
+        Insert: {
+          country_code: string
+          created_at?: string
+          creator_video_id: string
+          id?: string
+          is_primary?: boolean
+          sort_order?: number
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          creator_video_id?: string
+          id?: string
+          is_primary?: boolean
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_video_countries_creator_video_id_fkey"
+            columns: ["creator_video_id"]
+            isOneToOne: false
+            referencedRelation: "creator_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_video_impressions: {
         Row: {
           context: string
