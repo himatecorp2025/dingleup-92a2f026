@@ -23,10 +23,15 @@ const Game = () => {
   useNativeFullscreen();
 
   // CRITICAL: Game is MOBILE-ONLY - redirect desktop users
+  // Only check on mount, not on every resize
   useEffect(() => {
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < 768 || 
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) {
+      logger.log('[Game] Desktop detected, redirecting to landing page');
       navigate('/', { replace: true });
+    } else {
+      logger.log('[Game] Mobile device detected, allowing game access');
     }
   }, [navigate]);
 
