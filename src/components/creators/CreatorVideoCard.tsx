@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { RefreshCw, Clock, Play } from 'lucide-react';
+import { RefreshCw, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import PlatformEmbedFullscreen from '@/components/PlatformEmbedFullscreen';
 import type { CreatorVideo } from '@/hooks/useCreatorVideos';
 
 // Platform Icons
@@ -79,7 +77,6 @@ export const CreatorVideoCard = ({
   showDaysRemaining = false
 }: CreatorVideoCardProps) => {
   const [isReactivating, setIsReactivating] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
 
   const handleReactivate = async () => {
     setIsReactivating(true);
@@ -176,19 +173,6 @@ export const CreatorVideoCard = ({
           {getPlatformIcon(video.platform)}
         </div>
 
-        {/* Play Preview Button - center of thumbnail */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowPreview(true);
-          }}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
-            <Play className="w-6 h-6 text-white fill-white" />
-          </div>
-        </button>
-
         {/* Expired overlay */}
         {isExpired && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -240,24 +224,6 @@ export const CreatorVideoCard = ({
         </div>
       )}
 
-      {/* Video Preview Modal */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-md p-0 bg-black border-none overflow-hidden">
-          <div className="relative aspect-[9/16] w-full">
-            <PlatformEmbedFullscreen
-              platform={video.platform as 'tiktok' | 'youtube' | 'instagram' | 'facebook'}
-              originalUrl={video.video_url}
-              embedUrl={video.embed_url || undefined}
-            />
-          </div>
-          <button
-            onClick={() => setShowPreview(false)}
-            className="absolute top-2 right-2 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
-          >
-            ✕
-          </button>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

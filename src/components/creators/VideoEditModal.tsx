@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2, Power, PowerOff, Globe, Plus, Trash2 } from 'lucide-react';
+import { X, Check, Loader2, Power, PowerOff, Globe, Plus, Trash2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { CreatorVideo } from '@/hooks/useCreatorVideos';
 import { COUNTRIES } from '@/data/countries';
+import PlatformEmbedFullscreen from '@/components/PlatformEmbedFullscreen';
 
 interface Topic {
   id: number;
@@ -144,6 +145,7 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [showCountrySelector, setShowCountrySelector] = useState(false);
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
 
   // Fetch topics, countries and current video data on mount
   useEffect(() => {
@@ -322,24 +324,60 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative w-[90vw] max-w-md max-h-[85vh] bg-gradient-to-b from-[#0a0a2e] via-[#16213e] to-[#0f0f3d] rounded-2xl overflow-hidden border border-white/10 flex flex-col">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
-        >
-          <X className="w-5 h-5 text-white" />
-        </button>
+    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#0a0a2e] via-[#16213e] to-[#0f0f3d]">
+      {/* Video Preview Overlay */}
+      {showVideoPreview && (
+        <div className="fixed inset-0 z-[60] bg-black">
+          <PlatformEmbedFullscreen
+            platform={video.platform as 'tiktok' | 'youtube' | 'instagram' | 'facebook'}
+            originalUrl={video.video_url}
+            embedUrl={video.embed_url || undefined}
+          />
+          <button
+            onClick={() => setShowVideoPreview(false)}
+            className="absolute top-4 right-4 z-[70] w-10 h-10 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      )}
 
-        <div className="p-6 flex-1 overflow-y-auto">
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+      >
+        <X className="w-5 h-5 text-white" />
+      </button>
+
+      <div 
+        className="flex-1 overflow-y-auto px-6 py-6"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {/* Video Thumbnail with Play Button */}
+        <div className="relative w-full max-w-[200px] mx-auto aspect-[9/16] rounded-xl overflow-hidden mb-6">
+          {video.thumbnail_url ? (
+            <img
+              src={video.thumbnail_url}
+              alt={video.title || 'Video thumbnail'}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center">
+              <Play className="w-12 h-12 text-white/50" />
+            </div>
+          )}
+          {/* Play Button Overlay */}
+          <button
+            onClick={() => setShowVideoPreview(true)}
+            className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+          >
+            <div className="w-14 h-14 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
+              <Play className="w-7 h-7 text-white fill-white" />
+            </div>
+          </button>
+        </div>
           {/* Header */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold text-white mb-2">
@@ -504,28 +542,27 @@ const VideoEditModal = ({ isOpen, onClose, onSuccess, video, lang }: VideoEditMo
             </>
           )}
 
-          {/* Buttons */}
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
-            >
-              {texts.cancel[lang]}
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isLoading || isFetching || selectedTopicIds.length === 0 || selectedCountries.length === 0}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                </>
-              ) : (
-                texts.save[lang]
-              )}
-            </button>
-          </div>
+        {/* Buttons */}
+        <div className="flex gap-3 mt-6 px-6 pb-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
+          >
+            {texts.cancel[lang]}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isLoading || isFetching || selectedTopicIds.length === 0 || selectedCountries.length === 0}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </>
+            ) : (
+              texts.save[lang]
+            )}
+          </button>
         </div>
       </div>
     </div>
