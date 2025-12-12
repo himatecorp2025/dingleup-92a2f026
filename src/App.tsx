@@ -78,6 +78,7 @@ const AdminCreatorVideos = lazy(() => import("./pages/AdminCreatorVideos"));
 const AdminCreatorAnalytics = lazy(() => import("./pages/AdminCreatorAnalytics"));
 const AdminCreatorVideoDetail = lazy(() => import("./pages/AdminCreatorVideoDetail"));
 const AdminSubscribers = lazy(() => import("./pages/AdminSubscribers"));
+const AdminSessionAnalytics = lazy(() => import("./pages/AdminSessionAnalytics"));
 
 // Loading fallback component - uses fixed positioning to not affect layout
 const PageLoader = () => (
@@ -208,6 +209,7 @@ const AppCore = () => {
               <Route path="/admin/creator-videos" element={<ErrorBoundary><AdminCreatorVideos /></ErrorBoundary>} />
               <Route path="/admin/creator-videos/:videoId" element={<ErrorBoundary><AdminCreatorVideoDetail /></ErrorBoundary>} />
               <Route path="/admin/creator-analytics" element={<ErrorBoundary><AdminCreatorAnalytics /></ErrorBoundary>} />
+              <Route path="/admin/session-analytics" element={<ErrorBoundary><AdminSessionAnalytics /></ErrorBoundary>} />
               
               {/* Legal pages */}
               <Route path="/aszf" element={<ASZF />} />
