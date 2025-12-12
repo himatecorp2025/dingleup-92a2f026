@@ -229,75 +229,75 @@ const AdminCreatorAnalytics = () => {
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  {t('admin.creators.impressions')}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <CardHeader className="pb-1 px-3 pt-3">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 truncate">
+                  <Eye className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">{t('admin.creators.impressions')}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics?.totals.impressions.toLocaleString()}</div>
+              <CardContent className="px-3 pb-3">
+                <div className="text-xl font-bold truncate">{analytics?.totals.impressions.toLocaleString()}</div>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Video className="h-4 w-4" />
-                  {t('admin.creators.completions')}
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <CardHeader className="pb-1 px-3 pt-3">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 truncate">
+                  <Video className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">{t('admin.creators.completions')}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics?.totals.completions.toLocaleString()}</div>
+              <CardContent className="px-3 pb-3">
+                <div className="text-xl font-bold truncate">{analytics?.totals.completions.toLocaleString()}</div>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  {t('admin.creators.relevant_hits')}
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <CardHeader className="pb-1 px-3 pt-3">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 truncate">
+                  <Users className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">{t('admin.creators.relevant_hits')}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics?.totals.relevantHits.toLocaleString()}</div>
+              <CardContent className="px-3 pb-3">
+                <div className="text-xl font-bold truncate">{analytics?.totals.relevantHits.toLocaleString()}</div>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <MousePointer className="h-4 w-4" />
-                  {t('admin.creators.clicks')}
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <CardHeader className="pb-1 px-3 pt-3">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 truncate">
+                  <MousePointer className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">{t('admin.creators.clicks')}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{analytics?.totals.clicks.toLocaleString()}</div>
+              <CardContent className="px-3 pb-3">
+                <div className="text-xl font-bold truncate">{analytics?.totals.clicks.toLocaleString()}</div>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  CTR
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <CardHeader className="pb-1 px-3 pt-3">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 truncate">
+                  <TrendingUp className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">CTR</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
+              <CardContent className="px-3 pb-3">
+                <div className="text-xl font-bold truncate">
                   {analytics?.totals.impressions > 0 
                     ? ((analytics?.totals.clicks / analytics?.totals.impressions) * 100).toFixed(2) 
                     : 0}%
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Video className="h-4 w-4" />
-                  {t('admin.videos.active')}
+            <Card className="bg-card/50 border-border/50 overflow-hidden">
+              <CardHeader className="pb-1 px-3 pt-3">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 truncate">
+                  <Video className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate">{t('admin.videos.active')}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-400">
+              <CardContent className="px-3 pb-3">
+                <div className="text-xl font-bold text-green-400 truncate">
                   {analytics?.totals.activeVideos} / {analytics?.totals.totalVideos}
                 </div>
               </CardContent>
