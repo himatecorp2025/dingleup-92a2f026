@@ -27,8 +27,8 @@ interface VideoData {
 
 // === TUNING CONSTANTS - adjust these to hide bottom platform info ===
 const OVERSIZE_W_VW = 112;    // iframe width vs viewport
-const OVERSIZE_H_VH = 168;    // iframe height vs viewport (+20%)
-const SHIFT_DOWN_VH = -50;    // shift UP to hide bottom info bar (opposite direction)
+const OVERSIZE_H_VH = 202;    // iframe height vs viewport (+20%)
+const SHIFT_DOWN_VH = 0;      // vertically centered (no shift)
 const SEGMENT_DURATION = 15;  // seconds per video segment
 const LOAD_TIMEOUT_MS = 2500; // show fallback if iframe doesn't load in this time
 
