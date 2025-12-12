@@ -61,6 +61,20 @@ export const useDailyRankReward = (userId: string | undefined) => {
         return;
       }
 
+      // CRITICAL: Trigger on-demand daily winners processing before checking pending reward
+      // This ensures that even if cron didn't run, the user's rewards will be processed
+      console.log('[RANK-REWARD] Triggering on-demand daily winners processing...');
+      try {
+        const { error: processError } = await supabase.functions.invoke('process-daily-winners');
+        if (processError) {
+          console.warn('[RANK-REWARD] Daily winners processing returned error (non-blocking):', processError);
+        } else {
+          console.log('[RANK-REWARD] Daily winners processing completed');
+        }
+      } catch (processException) {
+        console.warn('[RANK-REWARD] Daily winners processing exception (non-blocking):', processException);
+      }
+
       // Call edge function to check pending reward
       const { data, error } = await supabase.functions.invoke('get-pending-rank-reward', {
         body: {}
