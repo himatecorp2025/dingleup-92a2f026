@@ -48,14 +48,17 @@ const AdminDashboard = () => {
   const [actionType, setActionType] = useState<'reviewing' | 'resolved' | 'dismissed'>('reviewing');
   const [isExportingSchema, setIsExportingSchema] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
+  const [isExportingFull, setIsExportingFull] = useState(false);
 
-  const handleDatabaseExport = async (exportType: 'schema' | 'data') => {
-    const isSchema = exportType === 'schema';
-    const setExporting = isSchema ? setIsExportingSchema : setIsExportingData;
+  const handleDatabaseExport = async (exportType: 'schema' | 'data' | 'full') => {
+    const setExporting = exportType === 'schema' ? setIsExportingSchema 
+      : exportType === 'data' ? setIsExportingData 
+      : setIsExportingFull;
     
     try {
       setExporting(true);
-      toast.info(isSchema ? 'Schema export indítása...' : 'Data export indítása...');
+      const startLabel = exportType === 'schema' ? 'Schema' : exportType === 'data' ? 'Data' : 'Full';
+      toast.info(`${startLabel} export indítása...`);
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -103,7 +106,8 @@ const AdminDashboard = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success(isSchema ? 'Schema sikeresen exportálva!' : 'Data sikeresen exportálva!');
+      const successLabel = exportType === 'schema' ? 'Schema' : exportType === 'data' ? 'Data' : 'Full backup';
+      toast.success(`${successLabel} sikeresen exportálva!`);
     } catch (error) {
       console.error('Unexpected export error:', error);
       toast.error('Váratlan hiba történt az export során');
@@ -363,13 +367,23 @@ const AdminDashboard = () => {
                 <div>
                   <h3 className="text-lg lg:text-xl font-bold text-white mb-2">Adatbázis export</h3>
                   <p className="text-white/60 text-sm lg:text-base">
-                    Töltsd le a teljes adatbázis sémát (CREATE TABLE) és az adatokat (INSERT) külön fájlokba
+                    Töltsd le a teljes adatbázist vagy válaszd külön a sémát és adatokat
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Button
+                    onClick={() => handleDatabaseExport('full')}
+                    disabled={isExportingSchema || isExportingData || isExportingFull}
+                    variant="outline"
+                    size="lg"
+                    className="gap-2 bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-white"
+                  >
+                    <Database className="h-5 w-5" />
+                    {isExportingFull ? 'Full export...' : '⭐ Teljes Export (Schema + Data)'}
+                  </Button>
+                  <Button
                     onClick={() => handleDatabaseExport('schema')}
-                    disabled={isExportingSchema || isExportingData}
+                    disabled={isExportingSchema || isExportingData || isExportingFull}
                     variant="outline"
                     size="lg"
                     className="gap-2 bg-purple-600/20 hover:bg-purple-600/30 border-purple-500/30 text-white"
@@ -379,7 +393,7 @@ const AdminDashboard = () => {
                   </Button>
                   <Button
                     onClick={() => handleDatabaseExport('data')}
-                    disabled={isExportingSchema || isExportingData}
+                    disabled={isExportingSchema || isExportingData || isExportingFull}
                     variant="outline"
                     size="lg"
                     className="gap-2 bg-green-600/20 hover:bg-green-600/30 border-green-500/30 text-white"
