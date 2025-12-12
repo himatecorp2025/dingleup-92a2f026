@@ -176,6 +176,19 @@ export const CreatorVideoCard = ({
           {getPlatformIcon(video.platform)}
         </div>
 
+        {/* Play Preview Button - center of thumbnail */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowPreview(true);
+          }}
+          className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
+            <Play className="w-6 h-6 text-white fill-white" />
+          </div>
+        </button>
+
         {/* Expired overlay */}
         {isExpired && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -219,20 +232,6 @@ export const CreatorVideoCard = ({
               </button>
             )}
           </div>
-
-          {/* Play Preview Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowPreview(true);
-            }}
-            className="w-full mt-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all"
-          >
-            <Play className="w-4 h-4 text-white" />
-            <span className="text-xs font-medium text-white">
-              {lang === 'hu' ? 'Előnézet' : 'Preview'}
-            </span>
-          </button>
 
           {/* Video title if available */}
           {video.title && (
