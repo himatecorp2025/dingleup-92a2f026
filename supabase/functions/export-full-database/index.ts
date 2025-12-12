@@ -3,13 +3,14 @@ import { getCorsHeaders, handleCorsPreflight } from '../_shared/cors.ts';
 
 const corsHeaders = getCorsHeaders('*');
 
-// Tables in STRICT foreign key dependency order
+// Tables in STRICT foreign key dependency order - updated 2025-12
 const TABLES = [
-  // Level 0: No foreign keys
+  // Level 0: No foreign keys - base tables
   'topics', 'booster_types', 'legal_documents', 'translations', 'daily_prize_table',
-  'data_collection_metadata', 'engagement_analytics', 'performance_summary', 'rpc_rate_limits',
-  'daily_winner_processing_log', 'app_download_links', 'weekly_prize_table', 'weekly_login_rewards',
-  'retention_analytics', 'tips_tricks_videos', 'subscription_promo_events',
+  'weekly_prize_table', 'weekly_login_rewards', 'data_collection_metadata', 
+  'engagement_analytics', 'performance_summary', 'rpc_rate_limits',
+  'daily_winner_processing_log', 'app_download_links', 'retention_analytics', 
+  'tips_tricks_videos', 'subscription_promo_events', 'creator_plans',
   
   // Level 1: Depends on Level 0
   'profiles', 'questions', 'question_pools',
@@ -20,8 +21,9 @@ const TABLES = [
   'lives_ledger', 'lives_ledger_archive', 'tutorial_progress', 'user_presence', 'speed_tokens',
   'user_sessions', 'user_game_settings', 'user_topic_stats', 'user_ad_interest_candidates',
   'user_cohorts', 'user_engagement_scores', 'user_journey_analytics',
-  'user_premium_booster_state', 'user_purchase_settings', 'user_activity_daily', 'user_activity_pings',
+  'user_activity_daily', 'user_activity_pings',
   'question_seen_history', 'subscribers', 'welcome_bonus_attempts', 'typing_status',
+  'creator_subscriptions', 'creator_channels', 'creator_admin_notes', 'creator_audit_log',
   
   // Level 3: Depends on Level 2
   'game_results', 'game_sessions', 'game_session_pools', 'friendships', 'invitations',
@@ -29,11 +31,14 @@ const TABLES = [
   'leaderboard_public_cache', 'daily_leaderboard_snapshot', 'weekly_leaderboard_snapshot',
   'daily_winner_awarded', 'weekly_winner_awarded', 'daily_winners_popup_views',
   'daily_winner_popup_shown', 'weekly_winner_popup_shown', 'weekly_login_state',
-  'purchases', 'booster_purchases',
-  'friend_request_rate_limit', 'admin_audit_log',
+  'booster_purchases', 'friend_request_rate_limit', 'admin_audit_log',
+  'creator_videos', 'video_ad_rewards',
   
   // Level 4: Depends on Level 3
-  'game_question_analytics', 'game_help_usage', 'dm_threads', 'conversations',
+  'game_question_analytics', 'game_question_analytics_archive', 'game_help_usage', 
+  'game_exit_events', 'dm_threads', 'conversations',
+  'creator_video_countries', 'creator_video_topics', 'creator_video_impressions',
+  'creator_analytics_daily', 'ad_events',
   
   // Level 5: Depends on Level 4
   'dm_messages', 'message_reads', 'conversation_members', 'messages', 'thread_participants',
@@ -41,10 +46,12 @@ const TABLES = [
   // Level 6: Depends on Level 5
   'message_media', 'message_reactions',
   
-  // Analytics tables
-  'app_session_events', 'navigation_events', 'feature_usage_events', 'game_exit_events',
-  'bonus_claim_events', 'chat_interaction_events', 'conversion_events', 'error_logs',
-  'performance_metrics', 'device_geo_analytics', 'session_details', 'reports',
+  // Analytics tables (no strict FK dependencies, can be at end)
+  'app_session_events', 'app_session_events_archive', 'navigation_events', 
+  'feature_usage_events', 'feature_usage_events_archive',
+  'bonus_claim_events', 'chat_interaction_events', 'conversion_events', 
+  'error_logs', 'performance_metrics', 'device_geo_analytics', 
+  'session_details', 'reports',
 ];
 
 // Map PostgreSQL data_type to SQL DDL type
@@ -170,12 +177,15 @@ Deno.serve(async (req) => {
     let output = '';
     const timestamp = new Date().toISOString();
     const PAGE_SIZE = 1000;
+    let tablesProcessed = 0;
+    let tablesSkipped = 0;
     
     if (exportType === 'schema') {
       // SCHEMA ONLY EXPORT (CREATE TABLE statements)
       output += `-- ============================================\n`;
       output += `-- DingleUP! Database Schema Export (CREATE TABLE)\n`;
       output += `-- Generated: ${timestamp}\n`;
+      output += `-- Tables: ${TABLES.length}\n`;
       output += `-- ============================================\n\n`;
       output += `-- Extensions\n`;
       output += `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";\n`;
@@ -191,6 +201,7 @@ Deno.serve(async (req) => {
         
         if (!schemaInfo || schemaInfo.length === 0) {
           output += `-- Table ${tableName}: skipped (not found in information_schema)\n\n`;
+          tablesSkipped++;
           continue;
         }
 
@@ -204,9 +215,13 @@ Deno.serve(async (req) => {
         output += `-- ============================================\n`;
         output += `DROP TABLE IF EXISTS public.${tableName} CASCADE;\n`;
         output += `CREATE TABLE public.${tableName} (\n${colDefs.join(',\n')}\n);\n\n`;
+        tablesProcessed++;
       }
 
       output += `-- Schema export complete\n`;
+      output += `-- Tables processed: ${tablesProcessed}, Skipped: ${tablesSkipped}\n`;
+      
+      console.log(`Schema export complete: ${tablesProcessed} tables, ${tablesSkipped} skipped`);
       
       return new Response(output, {
         status: 200,
@@ -222,6 +237,7 @@ Deno.serve(async (req) => {
       output += `-- ============================================\n`;
       output += `-- DingleUP! Database Data Export (INSERT)\n`;
       output += `-- Generated: ${timestamp}\n`;
+      output += `-- Tables: ${TABLES.length}\n`;
       output += `-- ============================================\n\n`;
       output += `-- IMPORT INSTRUCTIONS:\n`;
       output += `-- 1. First import the schema file\n`;
@@ -240,6 +256,7 @@ Deno.serve(async (req) => {
         
         if (firstError || !firstRow || firstRow.length === 0) {
           output += `-- Table ${tableName}: empty or not found\n\n`;
+          tablesSkipped++;
           continue;
         }
 
@@ -277,11 +294,16 @@ Deno.serve(async (req) => {
 
         output += `-- Rows: ${tableRows}\n\n`;
         totalRowsExported += tableRows;
+        tablesProcessed++;
       }
 
       output += `SET session_replication_role = 'origin';\n`;
       output += `COMMIT;\n\n`;
-      output += `-- Data export complete: ${totalRowsExported} total rows\n`;
+      output += `-- Data export complete\n`;
+      output += `-- Tables processed: ${tablesProcessed}, Skipped: ${tablesSkipped}\n`;
+      output += `-- Total rows: ${totalRowsExported}\n`;
+
+      console.log(`Data export complete: ${tablesProcessed} tables, ${totalRowsExported} rows`);
 
       return new Response(output, {
         status: 200,
@@ -297,6 +319,7 @@ Deno.serve(async (req) => {
       output += `-- ============================================\n`;
       output += `-- DingleUP! Full Database Export (Schema + Data)\n`;
       output += `-- Generated: ${timestamp}\n`;
+      output += `-- Tables: ${TABLES.length}\n`;
       output += `-- ============================================\n\n`;
       output += `-- IMPORT INSTRUCTIONS:\n`;
       output += `-- psql -U postgres -d dingleup -f this_file.sql\n`;
@@ -310,6 +333,8 @@ Deno.serve(async (req) => {
       output += `-- Enum Types\n`;
       output += `DO $$ BEGIN CREATE TYPE app_role AS ENUM ('admin', 'user'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;\n\n`;
 
+      let totalRowsExported = 0;
+
       for (const tableName of TABLES) {
         console.log(`Full export: ${tableName}`);
 
@@ -318,6 +343,7 @@ Deno.serve(async (req) => {
         
         if (!schemaInfo || schemaInfo.length === 0) {
           output += `-- Table ${tableName}: skipped (not found)\n\n`;
+          tablesSkipped++;
           continue;
         }
 
@@ -360,11 +386,17 @@ Deno.serve(async (req) => {
         }
 
         output += `-- Rows: ${totalRows}\n\n`;
+        totalRowsExported += totalRows;
+        tablesProcessed++;
       }
 
       output += `SET session_replication_role = 'origin';\n`;
       output += `COMMIT;\n\n`;
       output += `-- Export complete\n`;
+      output += `-- Tables processed: ${tablesProcessed}, Skipped: ${tablesSkipped}\n`;
+      output += `-- Total rows: ${totalRowsExported}\n`;
+
+      console.log(`Full export complete: ${tablesProcessed} tables, ${totalRowsExported} rows`);
 
       return new Response(output, {
         status: 200,
