@@ -52,6 +52,16 @@ serve(async (req) => {
 
     console.log(`[preload-reward-videos] User ${userId}, requesting ${requestedCount} videos`);
 
+    // Get user's country for filtering
+    const { data: userProfile } = await supabaseClient
+      .from('profiles')
+      .select('country_code')
+      .eq('id', userId)
+      .single();
+    
+    const userCountry = userProfile?.country_code || null;
+    console.log(`[preload-reward-videos] User country: ${userCountry || 'none'}`);
+
     const now = new Date().toISOString();
 
     // Get active creator videos with valid subscriptions
@@ -96,6 +106,20 @@ serve(async (req) => {
 
     const activeCreatorIds = new Set(subscriptions?.map(s => s.user_id) || []);
 
+    // Get video IDs that target user's country (if user has country)
+    let countryTargetedVideoIds: Set<string> | null = null;
+    if (userCountry) {
+      const { data: countryVideos } = await supabaseClient
+        .from('creator_video_countries')
+        .select('creator_video_id')
+        .eq('country_code', userCountry);
+      
+      if (countryVideos && countryVideos.length > 0) {
+        countryTargetedVideoIds = new Set(countryVideos.map(cv => cv.creator_video_id));
+        console.log(`[preload-reward-videos] Found ${countryVideos.length} videos targeting ${userCountry}`);
+      }
+    }
+
     // Filter by active creators AND valid embed URLs
     const eligibleVideos = videos.filter(v => {
       if (!activeCreatorIds.has(v.user_id)) return false;
@@ -105,7 +129,21 @@ serve(async (req) => {
       return hasValidEmbed;
     });
 
-    if (eligibleVideos.length === 0) {
+    // First try country-specific videos, then fallback to global pool
+    let countryFilteredVideos = eligibleVideos;
+    
+    if (countryTargetedVideoIds && countryTargetedVideoIds.size > 0) {
+      countryFilteredVideos = eligibleVideos.filter(v => countryTargetedVideoIds!.has(v.id));
+      console.log(`[preload-reward-videos] Country-filtered videos: ${countryFilteredVideos.length}`);
+    }
+    
+    // Fallback to global pool if no country-specific videos
+    if (countryFilteredVideos.length === 0) {
+      console.log('[preload-reward-videos] No country-specific videos, using global fallback');
+      countryFilteredVideos = eligibleVideos;
+    }
+
+    if (countryFilteredVideos.length === 0) {
       console.log('[preload-reward-videos] No eligible videos after filtering');
       return new Response(
         JSON.stringify({ videos: [] }),
@@ -114,7 +152,7 @@ serve(async (req) => {
     }
 
     // Shuffle and pick up to requestedCount videos
-    const shuffled = eligibleVideos.sort(() => Math.random() - 0.5);
+    const shuffled = countryFilteredVideos.sort(() => Math.random() - 0.5);
     
     // If we have fewer videos than requested, allow repetition
     const resultVideos: RewardVideo[] = [];
