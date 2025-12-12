@@ -31,6 +31,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Invitation from "./pages/Invitation";
 import CoinShop from "./pages/CoinShop";
 import Creators from "./pages/Creators";
+import CreatorsLanding from "./pages/CreatorsLanding";
 
 import CreatorHowItWorks from "./pages/CreatorHowItWorks";
 import CreatorAnalytics from "./pages/CreatorAnalytics";
@@ -161,6 +162,7 @@ const AppCore = () => {
               <Route path="/invitation" element={<ErrorBoundary><Invitation /></ErrorBoundary>} />
               <Route path="/about" element={<ErrorBoundary><About /></ErrorBoundary>} />
               <Route path="/creators" element={<ErrorBoundary><Creators /></ErrorBoundary>} />
+              <Route path="/creators-landing" element={<CreatorsLanding />} />
               
               <Route path="/creators/how-it-works" element={<ErrorBoundary><CreatorHowItWorks /></ErrorBoundary>} />
               <Route path="/creator/analytics" element={<ErrorBoundary><CreatorAnalytics /></ErrorBoundary>} />
