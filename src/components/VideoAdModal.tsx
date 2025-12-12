@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, AlertTriangle, ExternalLink, Play } from 'lucide-react';
+import { X, ExternalLink, Play } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import dingleupLogo from '@/assets/dingleup-logo-loading.png';
 
 interface VideoAdModalProps {
   isOpen: boolean;
@@ -24,39 +25,48 @@ interface VideoData {
   creator_name?: string;
 }
 
-const SEGMENT_DURATION = 15;
-
 // === TUNING CONSTANTS - adjust these to hide bottom platform info ===
-const CROP_Y_VH = 8;      // How much to push iframe DOWN (positive = down)
-const OVERSIZE_W = 110;   // Width percentage (110 = 110vw)
-const OVERSIZE_H = 115;   // Height percentage (115 = 115dvh)
+const OVERSIZE_W_VW = 175;    // iframe width vs viewport (175vw)
+const OVERSIZE_H_VH = 250;    // iframe height vs viewport (250vh)
+const SHIFT_DOWN_VH = 25;     // position from top where iframe center lands (75% = pushed down)
+const SEGMENT_DURATION = 15;  // seconds per video segment
+const LOAD_TIMEOUT_MS = 2500; // show fallback if iframe doesn't load in this time
 
 // Instagram doesn't reliably support autoplay - needs tap to play
 const NEEDS_TAP_TO_PLAY = ['instagram'];
 
 /**
- * Ensures autoplay parameters are added to embed URL
+ * Build embed URL with autoplay parameters per platform
  */
-const ensureAutoplayParams = (url: string): string => {
+const buildEmbedUrl = (url: string, platform: string): string => {
   if (!url) return url;
   
   try {
     const urlObj = new URL(url);
     
-    // Add autoplay params for various platforms
-    if (!urlObj.searchParams.has('autoplay')) {
-      urlObj.searchParams.set('autoplay', '1');
-    }
-    if (!urlObj.searchParams.has('muted') && !urlObj.searchParams.has('mute')) {
-      urlObj.searchParams.set('muted', '1');
-    }
-    if (!urlObj.searchParams.has('playsinline')) {
-      urlObj.searchParams.set('playsinline', '1');
+    // Common autoplay params
+    urlObj.searchParams.set('autoplay', '1');
+    urlObj.searchParams.set('muted', '1');
+    urlObj.searchParams.set('playsinline', '1');
+    
+    // Platform-specific params
+    switch (platform.toLowerCase()) {
+      case 'youtube':
+        urlObj.searchParams.set('controls', '0');
+        urlObj.searchParams.set('showinfo', '0');
+        urlObj.searchParams.set('rel', '0');
+        urlObj.searchParams.set('modestbranding', '1');
+        break;
+      case 'tiktok':
+        urlObj.searchParams.set('mute', '1');
+        break;
+      case 'facebook':
+        urlObj.searchParams.set('mute', '1');
+        break;
     }
     
     return urlObj.toString();
   } catch {
-    // If URL parsing fails, return original
     return url;
   }
 };
@@ -66,9 +76,11 @@ const ensureAutoplayParams = (url: string): string => {
  * 
  * Features:
  * - True fullscreen (covers entire device screen)
- * - Hides platform bottom info bar by pushing iframe DOWN
+ * - Hides platform bottom info bar via oversized iframe + black overlays
  * - Autoplay with muted + playsinline for iOS compatibility
- * - Countdown timer with reward on close
+ * - Single countdown timer (30s for 2 videos, switches at 15s)
+ * - Fallback screen with DingleUP logo if iframe fails/blocks
+ * - Reward credited only when user closes modal
  */
 export const VideoAdModal = ({
   isOpen,
@@ -84,71 +96,103 @@ export const VideoAdModal = ({
   const [countdown, setCountdown] = useState<number>(totalDurationSeconds);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [canClose, setCanClose] = useState(false);
-  const [videoError, setVideoError] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [showEndScreen, setShowEndScreen] = useState(false);
   const startTimeRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rewardShownRef = useRef(false);
 
   const texts = {
     hu: {
       seconds: 'mp',
-      noVideo: 'Nincs elérhető videó',
-      close: 'Bezárás',
       goToCreator: 'Tovább az alkotóhoz',
       tapToPlay: 'Koppints a lejátszáshoz',
-      loading: 'Betöltés...',
     },
     en: {
       seconds: 's',
-      noVideo: 'No video available',
-      close: 'Close',
       goToCreator: 'Go to creator',
       tapToPlay: 'Tap to play',
-      loading: 'Loading...',
     },
   };
   const t = texts[lang as 'hu' | 'en'] || texts.en;
 
-  const currentVideo = videos[currentVideoIndex];
+  // Build playlist - if only 1 video but need 2, duplicate it
+  const playlist = videos.length >= 2 
+    ? videos.slice(0, 2) 
+    : videos.length === 1 
+      ? (totalDurationSeconds >= 30 ? [videos[0], videos[0]] : [videos[0]])
+      : [];
+
+  const currentVideo = playlist[currentVideoIndex];
   const currentPlatform = currentVideo?.platform?.toLowerCase() || '';
   const needsTapToPlay = NEEDS_TAP_TO_PLAY.includes(currentPlatform);
+  const hasVideo = playlist.length > 0 && currentVideo?.embed_url;
 
-  // Lock body scroll
+  // Lock body scroll and prevent touch
   useEffect(() => {
     if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      const originalWidth = document.body.style.width;
+      const originalHeight = document.body.style.height;
+      const originalTouchAction = document.body.style.touchAction;
+      
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.body.style.touchAction = 'none';
       document.documentElement.style.overflow = 'hidden';
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.width = originalWidth;
+        document.body.style.height = originalHeight;
+        document.body.style.touchAction = originalTouchAction;
+        document.documentElement.style.overflow = '';
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
   }, [isOpen]);
 
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setCountdown(totalDurationSeconds);
+      const duration = totalDurationSeconds > 0 ? totalDurationSeconds : 15;
+      setCountdown(duration);
       setCurrentVideoIndex(0);
       setCanClose(false);
-      setVideoError(false);
-      setIsLoading(true);
+      setShowFallback(false);
+      setIsLoaded(false);
+      setShowEndScreen(false);
       rewardShownRef.current = false;
-      // Auto-start for platforms that support autoplay
       setIsPlaying(!needsTapToPlay);
       
-      // Log for debugging
-      if (currentVideo) {
-        logger.log('[VideoAdModal] Platform:', currentVideo.platform);
-        logger.log('[VideoAdModal] Using embed_url:', currentVideo.embed_url);
-      }
+      // Start load timeout - show fallback if iframe doesn't load
+      loadTimeoutRef.current = setTimeout(() => {
+        if (!isLoaded) {
+          logger.log('[VideoAdModal] Load timeout - showing fallback');
+          setShowFallback(true);
+        }
+      }, LOAD_TIMEOUT_MS);
+      
+      logger.log('[VideoAdModal] Opened with', playlist.length, 'videos, duration:', duration);
     }
-  }, [isOpen, totalDurationSeconds, needsTapToPlay, currentVideo]);
+    
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [isOpen, totalDurationSeconds, needsTapToPlay, playlist.length]);
 
-  // Start countdown function
-  const startCountdown = useCallback(() => {
+  // Main countdown timer - single timer for entire duration
+  useEffect(() => {
+    if (!isOpen || !isPlaying) return;
+
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -157,32 +201,32 @@ export const VideoAdModal = ({
     startTimeRef.current = Date.now();
 
     intervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      const remaining = Math.max(0, duration - elapsed);
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const remaining = Math.max(0, duration - Math.floor(elapsed));
       
       setCountdown(remaining);
 
-      // Switch videos every SEGMENT_DURATION seconds
-      const currentSegment = Math.floor(elapsed / SEGMENT_DURATION);
-      if (currentSegment < videos.length) {
-        setCurrentVideoIndex(currentSegment);
+      // Switch videos at 15s mark if we have 2 videos (30s total)
+      if (playlist.length >= 2 && duration >= 30) {
+        const newIndex = elapsed >= SEGMENT_DURATION ? 1 : 0;
+        setCurrentVideoIndex(newIndex);
       }
 
+      // Show end screen in last 3 seconds to prevent "recommended videos"
+      if (remaining <= 3 && remaining > 0 && !showEndScreen) {
+        setShowEndScreen(true);
+      }
+
+      // Timer finished
       if (remaining <= 0) {
         setCanClose(true);
+        setShowEndScreen(true);
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
       }
     }, 100);
-  }, [totalDurationSeconds, videos.length]);
-
-  // Countdown timer - only starts when isPlaying is true
-  useEffect(() => {
-    if (!isOpen || !isPlaying) return;
-
-    startCountdown();
 
     return () => {
       if (intervalRef.current) {
@@ -190,7 +234,7 @@ export const VideoAdModal = ({
         intervalRef.current = null;
       }
     };
-  }, [isOpen, isPlaying, startCountdown]);
+  }, [isOpen, isPlaying, totalDurationSeconds, playlist.length, showEndScreen]);
 
   // Handle tap to play (for Instagram)
   const handleTapToPlay = useCallback(() => {
@@ -198,10 +242,20 @@ export const VideoAdModal = ({
     setIsPlaying(true);
   }, []);
 
-  // Handle iframe load
+  // Handle iframe load success
   const handleIframeLoad = useCallback(() => {
-    setIsLoading(false);
-    logger.log('[VideoAdModal] Iframe loaded');
+    setIsLoaded(true);
+    setShowFallback(false);
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+    logger.log('[VideoAdModal] Iframe loaded successfully');
+  }, []);
+
+  // Handle iframe error
+  const handleIframeError = useCallback(() => {
+    logger.log('[VideoAdModal] Iframe error - showing fallback');
+    setShowFallback(true);
   }, []);
 
   // Handle close - ONLY HERE does the reward get credited
@@ -241,81 +295,79 @@ export const VideoAdModal = ({
       }
     }
     
-    // Now trigger the completion callback which credits the reward
     onComplete();
   }, [canClose, onComplete, context, lang, doubledAmount]);
 
-  // Handle force close (error state)
-  const handleForceClose = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    onCancel();
-    onClose();
-  }, [onCancel, onClose]);
-
   // Handle go to creator
   const handleGoToCreator = useCallback(() => {
-    if (currentVideo?.video_url) {
-      window.open(currentVideo.video_url, '_blank', 'noopener,noreferrer');
+    const video = playlist[currentVideoIndex];
+    if (video?.video_url) {
+      window.open(video.video_url, '_blank', 'noopener,noreferrer');
     }
-  }, [currentVideo]);
+  }, [playlist, currentVideoIndex]);
 
   if (!isOpen) return null;
 
   // Build embed URL with autoplay params
-  const rawEmbedUrl = currentVideo?.embed_url || '';
-  const embedUrl = ensureAutoplayParams(rawEmbedUrl);
-  const hasVideo = rawEmbedUrl.length > 0;
+  const embedUrl = currentVideo?.embed_url 
+    ? buildEmbedUrl(currentVideo.embed_url, currentVideo.platform) 
+    : '';
+
+  // Determine if we should show the iframe or fallback/end screen
+  const shouldShowIframe = hasVideo && !showFallback && !showEndScreen;
 
   return (
-    // ROOT: True fullscreen, black background, no wrapper box
+    // ROOT: True fullscreen, black background, covers everything
     <div 
-      className="fixed inset-0 z-[9999] overflow-hidden"
+      className="fixed inset-0 z-[9999]"
       style={{ 
-        width: '100vw', 
+        width: '100dvw', 
         height: '100dvh',
         backgroundColor: '#000000',
+        overflow: 'hidden',
+        touchAction: 'none',
+        overscrollBehavior: 'none',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {/* Solid black background layer */}
+      {/* Solid black background - always visible */}
       <div 
         className="absolute inset-0" 
         style={{ backgroundColor: '#000000', zIndex: 0 }}
       />
 
-      {/* Video content */}
-      {hasVideo && !videoError ? (
+      {/* Main content area */}
+      {shouldShowIframe ? (
         <>
-          {/* Black background container */}
+          {/* Overflow container - clips the oversized iframe */}
           <div 
-            className="absolute inset-0"
+            className="absolute inset-0 overflow-hidden"
             style={{ backgroundColor: '#000000', zIndex: 5 }}
-          />
+          >
+            {/* OVERSIZED IFRAME - shifted down to hide bottom platform info */}
+            <iframe
+              key={`${currentVideo?.id}-${currentVideoIndex}`}
+              src={embedUrl}
+              onLoad={handleIframeLoad}
+              onError={handleIframeError}
+              className="absolute border-0 pointer-events-none"
+              style={{
+                width: `${OVERSIZE_W_VW}vw`,
+                height: `${OVERSIZE_H_VH}vh`,
+                left: '50%',
+                top: `${SHIFT_DOWN_VH + 50}%`,
+                transform: 'translateX(-50%) translateY(-50%)',
+                zIndex: 10,
+                backgroundColor: '#000000',
+              }}
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
           
-          {/* Creator video iframe - SAME TECHNIQUE AS FullscreenRewardVideoView */}
-          {/* 175vw × 250vh, top: 75% + translateY(-50%) to hide bottom platform info */}
-          <iframe
-            key={embedUrl}
-            src={embedUrl}
-            onLoad={handleIframeLoad}
-            onError={() => setVideoError(true)}
-            className="absolute left-1/2 border-0 pointer-events-none"
-            style={{
-              width: '175vw',
-              height: '250vh',
-              top: '75%',
-              transform: 'translateX(-50%) translateY(-50%)',
-              zIndex: 10,
-              backgroundColor: '#000000',
-            }}
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-          
-          {/* Black overlay strips for sides */}
+          {/* Black overlay strips for sides - hide side UI */}
           <div 
             className="absolute top-0 left-0 h-full"
             style={{ width: '15vw', backgroundColor: '#000000', zIndex: 15 }}
@@ -325,48 +377,43 @@ export const VideoAdModal = ({
             style={{ width: '15vw', backgroundColor: '#000000', zIndex: 15 }}
           />
           
-          {/* Top black overlay - THICKER to hide more of creator profile */}
+          {/* Top black overlay - hide creator profile area */}
           <div 
             className="absolute top-0 left-0 right-0"
             style={{ height: '25vh', backgroundColor: '#000000', zIndex: 15 }}
           />
           
-          {/* Bottom black overlay */}
+          {/* Bottom black overlay - hide platform footer */}
           <div 
             className="absolute bottom-0 left-0 right-0"
             style={{ height: '15vh', backgroundColor: '#000000', zIndex: 15 }}
           />
           
-          {/* Loading indicator - shown while iframe loads */}
-          {isLoading && (
+          {/* Loading indicator - while iframe loads */}
+          {!isLoaded && (
             <div 
-              className="absolute inset-0 flex items-center justify-center"
-              style={{
-                backgroundColor: '#000000',
-                zIndex: 20,
-              }}
+              className="absolute inset-0 flex flex-col items-center justify-center"
+              style={{ backgroundColor: '#000000', zIndex: 20 }}
             >
-              <p style={{ color: '#fff', fontSize: '18px' }}>{t.loading}</p>
+              <img 
+                src={dingleupLogo} 
+                alt="DingleUP" 
+                className="animate-pulse"
+                style={{ width: 'min(200px, 50vw)', height: 'auto' }}
+              />
             </div>
           )}
           
-          {/* Tap to play overlay for platforms without autoplay (Instagram) */}
+          {/* Tap to play overlay for Instagram */}
           {!isPlaying && needsTapToPlay && (
             <div 
               onClick={handleTapToPlay}
               className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer"
-              style={{
-                backgroundColor: 'rgba(0,0,0,0.6)',
-                zIndex: 25,
-              }}
+              style={{ backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 25 }}
             >
               <div 
                 className="flex items-center justify-center rounded-full mb-4"
-                style={{
-                  width: '96px',
-                  height: '96px',
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                }}
+                style={{ width: '96px', height: '96px', backgroundColor: 'rgba(255,255,255,0.2)' }}
               >
                 <Play style={{ width: '48px', height: '48px', color: '#fff', marginLeft: '8px' }} fill="#fff" />
               </div>
@@ -375,124 +422,129 @@ export const VideoAdModal = ({
           )}
         </>
       ) : (
-        // No video or error state
+        // Fallback / End screen - DingleUP logo on black
         <div 
-          className="absolute inset-0 flex flex-col items-center justify-center gap-4"
-          style={{ backgroundColor: '#000000' }}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-6"
+          style={{ backgroundColor: '#000000', zIndex: 20 }}
         >
-          <AlertTriangle style={{ width: '64px', height: '64px', color: '#eab308' }} />
-          <p style={{ color: '#fff', fontSize: '18px', fontWeight: 500 }}>{t.noVideo}</p>
-          <button
-            onClick={handleForceClose}
-            className="px-6 py-3 rounded-full font-bold text-white"
-            style={{
-              backgroundColor: 'hsl(var(--primary))',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            {t.close}
-          </button>
+          <img 
+            src={dingleupLogo} 
+            alt="DingleUP" 
+            className={canClose ? '' : 'animate-pulse'}
+            style={{ width: 'min(200px, 50vw)', height: 'auto' }}
+          />
+          
+          {/* Go to creator button - always visible on fallback */}
+          {currentVideo?.video_url && (
+            <button
+              onClick={handleGoToCreator}
+              className="flex items-center gap-2 px-6 py-3 rounded-full"
+              style={{
+                backgroundColor: 'hsl(var(--primary))',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ color: '#fff', fontWeight: 600 }}>{t.goToCreator}</span>
+              <ExternalLink style={{ width: '16px', height: '16px', color: '#fff' }} />
+            </button>
+          )}
         </div>
       )}
 
       {/* Countdown timer overlay - top left */}
       {isPlaying && (
         <div 
+          className="absolute"
           style={{ 
-            position: 'absolute',
-            top: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            top: 'max(env(safe-area-inset-top, 0px), 16px)',
             left: '16px',
-            zIndex: 30,
+            zIndex: 60,
           }}
         >
           <div 
+            className="flex items-center justify-center rounded-full"
             style={{
-              backgroundColor: 'rgba(0,0,0,0.8)',
-              backdropFilter: 'blur(4px)',
-              borderRadius: '9999px',
-              padding: '10px 20px',
-              minWidth: '70px',
-              textAlign: 'center',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+              width: '56px',
+              height: '56px',
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              border: '2px solid rgba(255,255,255,0.4)',
+              fontWeight: 900,
+              fontSize: '24px',
+              color: '#fff',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
             }}
           >
-            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '24px', fontVariantNumeric: 'tabular-nums' }}>
-              {Math.max(0, countdown)}{t.seconds}
-            </span>
+            {countdown}
           </div>
         </div>
       )}
 
-      {/* Video progress indicator (if multiple videos) */}
-      {videos.length > 1 && isPlaying && (
+      {/* Video progress dots - top center (only if 2 videos) */}
+      {playlist.length > 1 && isPlaying && !showEndScreen && (
         <div 
+          className="absolute flex gap-2"
           style={{ 
-            position: 'absolute',
-            top: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            top: 'max(env(safe-area-inset-top, 0px), 16px)',
             left: '50%',
             transform: 'translateX(-50%)',
-            display: 'flex',
-            gap: '4px',
-            zIndex: 30,
+            zIndex: 60,
           }}
         >
-          {videos.map((_, idx) => (
+          {playlist.map((_, idx) => (
             <div
               key={idx}
+              className="transition-all duration-300"
               style={{
-                width: '32px',
-                height: '4px',
-                borderRadius: '9999px',
-                backgroundColor: idx === currentVideoIndex ? '#fff' : 'rgba(255,255,255,0.3)',
-                transition: 'background-color 0.2s',
+                width: idx === currentVideoIndex ? '24px' : '8px',
+                height: '8px',
+                borderRadius: '4px',
+                backgroundColor: idx <= currentVideoIndex ? '#fff' : 'rgba(255,255,255,0.3)',
               }}
             />
           ))}
         </div>
       )}
 
-      {/* Close button - top right, only visible after timer completed */}
+      {/* Close button - top right, only after timer ends */}
       {canClose && (
         <button
           onClick={handleClose}
-          style={{ 
-            position: 'absolute',
-            top: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+          className="absolute"
+          style={{
+            top: 'max(env(safe-area-inset-top, 0px), 16px)',
             right: '16px',
-            zIndex: 30,
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            backdropFilter: 'blur(4px)',
+            zIndex: 60,
+            width: '48px',
+            height: '48px',
+            backgroundColor: 'rgba(0,0,0,0.85)',
             borderRadius: '50%',
-            padding: '12px',
-            border: 'none',
+            border: '2px solid rgba(255,255,255,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
           }}
         >
-          <X style={{ width: '28px', height: '28px', color: '#fff' }} />
+          <X className="w-6 h-6 text-white" />
         </button>
       )}
 
-      {/* Go to creator CTA - bottom center, only visible after timer completed */}
-      {canClose && currentVideo?.video_url && (
+      {/* Go to creator CTA - bottom center, only after timer ends and iframe was shown */}
+      {canClose && currentVideo?.video_url && !showFallback && (
         <button
           onClick={handleGoToCreator}
+          className="absolute flex items-center gap-2 px-6 py-3 rounded-full"
           style={{ 
-            position: 'absolute',
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
+            bottom: 'max(env(safe-area-inset-bottom, 0px), 32px)',
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 30,
+            zIndex: 60,
             backgroundColor: 'hsl(var(--primary))',
-            borderRadius: '9999px',
-            padding: '12px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
           }}
         >
           <span style={{ color: '#fff', fontWeight: 600 }}>{t.goToCreator}</span>
