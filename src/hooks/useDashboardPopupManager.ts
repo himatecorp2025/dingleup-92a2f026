@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useDailyGift } from './useDailyGift';
 import { useWelcomeBonus } from './useWelcomeBonus';
 import { useDailyWinnersPopup } from './useDailyWinnersPopup';
 import { useDailyRankReward } from './useDailyRankReward';
 
 /**
- * PERFORMANCE OPTIMIZATION: Centralized Dashboard popup manager
- * Consolidates all popup hooks and state management into single source of truth
- * Eliminates race conditions, reduces code duplication by 40-50%
- * Ensures proper popup priority: Age Gate → Rank Reward → Welcome Bonus → Daily Gift → Daily Winners
- * CRITICAL: Rank Reward popup BLOCKS Daily Winners popup (mutually exclusive)
+ * SIMPLIFIED Dashboard popup manager
+ * Priority: Age Gate → Welcome Bonus → Daily Gift → Personal Winner OR Daily Winners
+ * 
+ * KEY LOGIC:
+ * - Personal Winner: shown if user has pending reward in daily_winner_awarded
+ * - Daily Winners: shown if user does NOT have pending reward (once per day)
  */
 
 export interface PopupState {
@@ -19,10 +18,10 @@ export interface PopupState {
   showWelcomeBonus: boolean;
   showDailyGift: boolean;
   showDailyWinners: boolean;
-  showPersonalWinner: boolean; // NEW: Personal winner popup (when user has pending reward)
+  showPersonalWinner: boolean;
   ageGateCompleted: boolean;
-  welcomeBonusCompleted: boolean; // Track if user interacted with Welcome Bonus (accepted or closed)
-  dailyGiftCompleted: boolean; // Track if user interacted with Daily Gift (accepted or closed)
+  welcomeBonusCompleted: boolean;
+  dailyGiftCompleted: boolean;
 }
 
 interface PopupManagerParams {
@@ -34,21 +33,16 @@ interface PopupManagerParams {
 }
 
 export const useDashboardPopupManager = (params: PopupManagerParams) => {
-  const {
-    canMountModals,
-    needsAgeVerification,
-    userId,
-    username,
-    profileLoading,
-  } = params;
+  const { canMountModals, needsAgeVerification, userId, profileLoading } = params;
 
-  // Integrate popup hooks internally (eliminates external duplication)
+  // Integrate popup hooks
   const dailyGift = useDailyGift(userId, false);
   const welcomeBonus = useWelcomeBonus(userId);
-  const dailyWinners = useDailyWinnersPopup(userId, username, false);
   const rankReward = useDailyRankReward(userId);
-
-  // Production behavior only - no test modes
+  
+  // Daily Winners depends on whether user has pending reward
+  const hasPendingReward = !!rankReward.pendingReward;
+  const dailyWinners = useDailyWinnersPopup(userId, hasPendingReward);
 
   const [popupState, setPopupState] = useState<PopupState>({
     showAgeGate: false,
@@ -61,12 +55,10 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     dailyGiftCompleted: false,
   });
 
-  // Priority 1: Age Gate (ABSOLUTE BLOCKING GATE)
-  // CRITICAL FIX: Only show if profile loaded AND verification needed
+  // Priority 1: Age Gate
   useEffect(() => {
     if (profileLoading || !userId) return;
     
-    // Set age gate state once when profile loads
     if (!popupState.ageGateCompleted) {
       setPopupState(prev => ({
         ...prev,
@@ -74,163 +66,93 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
         ageGateCompleted: !needsAgeVerification,
       }));
     }
-  }, [userId, needsAgeVerification, profileLoading]); // FIXED: Removed popupState from deps
+  }, [userId, needsAgeVerification, profileLoading]);
 
-  // Priority 2: Welcome Bonus (after age gate with 500ms delay)
+  // Priority 2: Welcome Bonus
   useEffect(() => {
     if (!canMountModals || !userId || profileLoading) return;
     if (!popupState.ageGateCompleted || popupState.showAgeGate) return;
     
-    // Only show if can claim and not already showing
     if (welcomeBonus.canClaim && !popupState.showWelcomeBonus) {
       const timer = setTimeout(() => {
-        setPopupState(prev => ({
-          ...prev,
-          showWelcomeBonus: true,
-          showDailyGift: false,
-        }));
+        setPopupState(prev => ({ ...prev, showWelcomeBonus: true }));
       }, 500);
-      
       return () => clearTimeout(timer);
     }
   }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, welcomeBonus.canClaim, popupState.showWelcomeBonus]);
 
-  // Priority 3: Daily Gift (after age gate + welcome bonus with 500ms delay)
+  // Priority 3: Daily Gift
   useEffect(() => {
     if (!canMountModals || !userId || profileLoading) return;
     if (!popupState.ageGateCompleted || popupState.showAgeGate || popupState.showWelcomeBonus) return;
-    
-    // CRITICAL: Daily Gift only appears AFTER Welcome Bonus is completed (accepted or closed)
-    // If Welcome Bonus can be claimed but not completed yet, wait
     if (welcomeBonus.canClaim && !popupState.welcomeBonusCompleted) return;
-    
-    // CRITICAL: Do NOT show if already completed today (prevents re-appearing after claim)
     if (popupState.dailyGiftCompleted) return;
     
-    // Only show if can claim and not already showing
     if (dailyGift.canClaim && !popupState.showDailyGift) {
       const timer = setTimeout(() => {
-        setPopupState(prev => ({
-          ...prev,
-          showDailyGift: true,
-        }));
+        setPopupState(prev => ({ ...prev, showDailyGift: true }));
       }, 500);
-      
       return () => clearTimeout(timer);
     }
-  }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, welcomeBonus.canClaim, popupState.welcomeBonusCompleted, dailyGift.canClaim, popupState.showDailyGift]);
+  }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, welcomeBonus.canClaim, popupState.welcomeBonusCompleted, dailyGift.canClaim, popupState.showDailyGift, popupState.dailyGiftCompleted]);
 
-  // Priority 4: Personal Winner OR Daily Winners (after Daily Gift interaction)
-  // CRITICAL: If user has pending reward (is winner) → show Personal Winner popup
-  // If user has NO pending reward (not winner) AND NOT in TOP 100 → show Daily Winners popup
+  // Priority 4: Personal Winner OR Daily Winners
   useEffect(() => {
     if (!canMountModals || !userId || profileLoading) return;
-    if (!popupState.ageGateCompleted || popupState.showAgeGate || popupState.showWelcomeBonus) return;
-    
-    // CRITICAL: Only show AFTER Daily Gift is completed (accepted or closed)
-    // If Daily Gift can be claimed but not completed yet, wait
-    if (popupState.showDailyGift) return;
+    if (!popupState.ageGateCompleted || popupState.showAgeGate || popupState.showWelcomeBonus || popupState.showDailyGift) return;
     if (dailyGift.canClaim && !popupState.dailyGiftCompleted) return;
 
-    // Decide which popup to show based on pending reward (winner status)
-    const activePendingReward = rankReward.pendingReward;
-    
-    if (activePendingReward) {
-      // User is a winner (or admin in test mode) → show Personal Winner popup
-      if (!popupState.showPersonalWinner) {
-        const timer = setTimeout(() => {
-          setPopupState(prev => ({
-            ...prev,
-            showPersonalWinner: true,
-            showDailyWinners: false, // Ensure Daily Winners is NOT shown
-          }));
-        }, 500);
-
-        return () => clearTimeout(timer);
-      }
-    } else {
-      // User is NOT a winner → show Daily Winners popup (if eligible AND not in TOP 100)
-      if (dailyWinners.canShowToday && !popupState.showDailyWinners) {
-        const timer = setTimeout(() => {
-          setPopupState(prev => ({
-            ...prev,
-            showDailyWinners: true,
-            showPersonalWinner: false, // Ensure Personal Winner is NOT shown
-          }));
-        }, 500);
-
-        return () => clearTimeout(timer);
-      }
+    // If user has pending reward → Personal Winner
+    if (hasPendingReward && !popupState.showPersonalWinner) {
+      const timer = setTimeout(() => {
+        setPopupState(prev => ({ ...prev, showPersonalWinner: true, showDailyWinners: false }));
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [
-    canMountModals,
-    userId,
-    profileLoading,
-    popupState.ageGateCompleted,
-    popupState.showAgeGate,
-    popupState.showWelcomeBonus,
-    popupState.showDailyGift,
-    rankReward.pendingReward,
-    dailyGift.canClaim,
-    popupState.dailyGiftCompleted,
-    dailyWinners.canShowToday,
-    popupState.showDailyWinners,
-    popupState.showPersonalWinner,
-  ]);
 
-  // Handlers for closing popups
+    // If no pending reward → Daily Winners (if should show)
+    if (!hasPendingReward && dailyWinners.showPopup && !popupState.showDailyWinners) {
+      const timer = setTimeout(() => {
+        setPopupState(prev => ({ ...prev, showDailyWinners: true, showPersonalWinner: false }));
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, popupState.showDailyGift, dailyGift.canClaim, popupState.dailyGiftCompleted, hasPendingReward, dailyWinners.showPopup, popupState.showDailyWinners, popupState.showPersonalWinner]);
+
+  // Handlers
   const closeAgeGate = () => {
-    setPopupState(prev => ({
-      ...prev,
-      showAgeGate: false,
-      ageGateCompleted: true,
-    }));
+    setPopupState(prev => ({ ...prev, showAgeGate: false, ageGateCompleted: true }));
   };
 
   const closeWelcomeBonus = () => {
-    setPopupState(prev => ({
-      ...prev,
-      showWelcomeBonus: false,
-      welcomeBonusCompleted: true, // Mark as completed when user closes/accepts
-    }));
+    setPopupState(prev => ({ ...prev, showWelcomeBonus: false, welcomeBonusCompleted: true }));
   };
 
   const closeDailyGift = () => {
-    setPopupState(prev => ({
-      ...prev,
-      showDailyGift: false,
-      dailyGiftCompleted: true, // Mark as completed when user closes/accepts
-    }));
+    setPopupState(prev => ({ ...prev, showDailyGift: false, dailyGiftCompleted: true }));
   };
 
   const closeDailyWinners = async () => {
-    // CRITICAL FIX: Call the actual closePopup function to update database
-    // This ensures the popup won't reappear on same day after closing
     await dailyWinners.closePopup();
-    setPopupState(prev => ({
-      ...prev,
-      showDailyWinners: false,
-    }));
+    setPopupState(prev => ({ ...prev, showDailyWinners: false }));
   };
 
   const closePersonalWinner = async () => {
     try {
       const result = await rankReward.claimReward();
-
       if (result?.success) {
-        setPopupState(prev => ({
-          ...prev,
-          showPersonalWinner: false,
-        }));
-      } else {
-        console.log('[PERSONAL-WINNER] Claim was unsuccessful, keeping popup open');
+        setPopupState(prev => ({ ...prev, showPersonalWinner: false }));
       }
-
       return result;
     } catch (error) {
-      console.error('[PERSONAL-WINNER] Error claiming reward:', error);
+      console.error('[PERSONAL-WINNER] Error:', error);
       return { success: false };
     }
+  };
+
+  const dismissPersonalWinner = async () => {
+    await rankReward.dismissReward();
+    setPopupState(prev => ({ ...prev, showPersonalWinner: false }));
   };
 
   return {
@@ -240,7 +162,7 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     closeDailyGift,
     closeDailyWinners,
     closePersonalWinner,
-    // Export popup hook data and actions (eliminates need for external hook calls)
+    dismissPersonalWinner,
     dailyGift: {
       canClaim: dailyGift.canClaim,
       weeklyEntryCount: dailyGift.weeklyEntryCount,
@@ -257,7 +179,6 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     },
     dailyWinners: {
       closePopup: dailyWinners.closePopup,
-      canShowToday: dailyWinners.canShowToday,
     },
     rankReward: {
       pendingReward: rankReward.pendingReward,
