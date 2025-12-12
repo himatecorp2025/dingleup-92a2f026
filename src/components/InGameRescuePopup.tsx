@@ -194,8 +194,8 @@ export const InGameRescuePopup: React.FC<InGameRescuePopupProps> = ({
     }
   };
 
-  // Debounced version to prevent double-click
-  const [handleGoldSaverPurchase] = useDebounce(handleGoldSaverPurchaseRaw, 500);
+  // Debounced version to prevent double-click - FAST 200ms
+  const [handleGoldSaverPurchase] = useDebounce(handleGoldSaverPurchaseRaw, 200);
 
   const hasEnoughGold = currentGold >= 500;
 

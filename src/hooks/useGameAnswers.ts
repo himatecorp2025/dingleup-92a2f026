@@ -85,16 +85,12 @@ export const useGameAnswers = (options: UseGameAnswersOptions) => {
     // Reset streak on wrong answer
     consecutiveCorrectRef.current = 0;
     
-    const timeoutId = setTimeout(() => {
-      setErrorBannerVisible(true);
-      setErrorBannerMessage(t('game.wrong_answer_banner_message').replace('{cost}', String(CONTINUE_AFTER_WRONG_COST)));
-    }, 500);
+    // INSTANT - show error immediately
+    setErrorBannerVisible(true);
+    setErrorBannerMessage(t('game.wrong_answer_banner_message').replace('{cost}', String(CONTINUE_AFTER_WRONG_COST)));
 
     // Trigger callback after answer is processed
     onAnswerProcessed?.();
-    
-    // Return cleanup function
-    return () => clearTimeout(timeoutId);
   }, [addResponseTime, recordAnswerResult, triggerHaptic, setSelectedAnswer, setContinueType, setErrorBannerVisible, setErrorBannerMessage, t, onAnswerProcessed]);
 
   const handleAnswer = useCallback((answerKey: string) => {
@@ -113,11 +109,8 @@ export const useGameAnswers = (options: UseGameAnswersOptions) => {
       setFirstAttempt(answerKey);
       
       if (isCorrect) {
-        // After 200ms, show correct answer in green
-        const timeoutId = setTimeout(() => {
-          handleCorrectAnswer(responseTime, answerKey);
-        }, 200);
-        timeouts.push(timeoutId);
+        // INSTANT - no delay
+        handleCorrectAnswer(responseTime, answerKey);
       }
       return;
     }
@@ -127,17 +120,11 @@ export const useGameAnswers = (options: UseGameAnswersOptions) => {
       const firstAnswerObj = currentQuestion.answers.find(a => a.key === firstAttempt);
       
       if (isCorrect || firstAnswerObj?.correct) {
-        // After 200ms, show correct answer in green
-        const timeoutId = setTimeout(() => {
-          handleCorrectAnswer(responseTime, isCorrect ? answerKey : firstAttempt!);
-        }, 200);
-        timeouts.push(timeoutId);
+        // INSTANT - no delay
+        handleCorrectAnswer(responseTime, isCorrect ? answerKey : firstAttempt!);
       } else {
-        // After 200ms, show wrong answer
-        const timeoutId = setTimeout(() => {
-          handleWrongAnswer(responseTime, answerKey);
-        }, 200);
-        timeouts.push(timeoutId);
+        // INSTANT - no delay
+        handleWrongAnswer(responseTime, answerKey);
       }
       return;
     }
