@@ -43,6 +43,10 @@ const DailyGiftDialog = ({
   const [burstKey, setBurstKey] = useState(0);
   const [claimed, setClaimed] = useState(false);
   
+  // Button press states for visual feedback
+  const [normalPressed, setNormalPressed] = useState(false);
+  const [videoPressed, setVideoPressed] = useState(false);
+  
   // NEW: Video reward system using Zustand store
   const [showVideoView, setShowVideoView] = useState(false);
   const [activeVideos, setActiveVideos] = useState<RewardVideo[]>([]);
@@ -515,10 +519,20 @@ const DailyGiftDialog = ({
                 {/* Show both options side by side if video available */}
                 <div className={`flex ${videoAdAvailable ? 'gap-[3%]' : ''} justify-center mb-[4%] w-full`}>
                   
-                  {/* Normal reward option - purple - CLICKABLE */}
+                  {/* Normal reward option - purple - CLICKABLE with press animation */}
                   <div 
-                    className={`relative rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95 ${(claiming || claimed) ? 'pointer-events-none opacity-70' : ''}`}
-                    style={{ padding: '2.5% 6%', flex: videoAdAvailable ? '1' : 'none' }}
+                    className={`relative rounded-xl cursor-pointer transition-all duration-150 ${(claiming || claimed) ? 'pointer-events-none opacity-70' : ''}`}
+                    style={{ 
+                      padding: '2.5% 6%', 
+                      flex: videoAdAvailable ? '1' : 'none',
+                      transform: normalPressed ? 'scale(0.92)' : 'scale(1)',
+                      filter: normalPressed ? 'brightness(0.85)' : 'brightness(1)',
+                    }}
+                    onTouchStart={() => setNormalPressed(true)}
+                    onTouchEnd={() => setNormalPressed(false)}
+                    onMouseDown={() => setNormalPressed(true)}
+                    onMouseUp={() => setNormalPressed(false)}
+                    onMouseLeave={() => setNormalPressed(false)}
                     onClick={handleClaim}
                   >
                     <div className="absolute inset-0 rounded-xl translate-y-0.5 translate-x-0.5"
@@ -597,11 +611,21 @@ const DailyGiftDialog = ({
                     </div>
                   </div>
 
-                  {/* Double reward option - RED - only show if video available */}
+                  {/* Double reward option - RED - only show if video available - with press animation */}
                   {videoAdAvailable && (
                     <div 
-                      className="relative rounded-xl cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                      style={{ padding: '2.5% 6%', flex: '1' }}
+                      className="relative rounded-xl cursor-pointer transition-all duration-150"
+                      style={{ 
+                        padding: '2.5% 6%', 
+                        flex: '1',
+                        transform: videoPressed ? 'scale(0.92)' : 'scale(1)',
+                        filter: videoPressed ? 'brightness(0.85)' : 'brightness(1)',
+                      }}
+                      onTouchStart={() => setVideoPressed(true)}
+                      onTouchEnd={() => setVideoPressed(false)}
+                      onMouseDown={() => setVideoPressed(true)}
+                      onMouseUp={() => setVideoPressed(false)}
+                      onMouseLeave={() => setVideoPressed(false)}
                       onClick={handleVideoAccept}
                     >
                       <div className="absolute inset-0 rounded-xl translate-y-0.5 translate-x-0.5"

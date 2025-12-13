@@ -10,9 +10,14 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
   const [nextReward, setNextReward] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  // NEW: Track if initial check has completed (prevents race condition with Daily Winners)
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const checkDailyGift = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setIsInitialized(true); // No user, mark as initialized
+      return;
+    }
 
     try {
       // Call backend edge function to get status (timezone-aware)
@@ -20,6 +25,7 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
 
       if (error) {
         logger.error('Daily gift status error:', error);
+        setIsInitialized(true); // Error occurred, but still mark as initialized
         return;
       }
 
@@ -33,8 +39,12 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
         setCanClaim(false);
         setShowPopup(false);
       }
+      
+      // CRITICAL: Mark as initialized AFTER setting all state
+      setIsInitialized(true);
     } catch (error) {
       logger.error('Daily gift check error:', error);
+      setIsInitialized(true); // Error occurred, but still mark as initialized
     }
   };
 
@@ -150,6 +160,7 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
     weeklyEntryCount,
     nextReward,
     claiming,
+    isInitialized, // NEW: Expose initialization state
     claimDailyGift,
     checkDailyGift,
     handleLater,
