@@ -330,6 +330,7 @@ export const VideoAdModal = ({
 
   return (
     // ROOT: TRUE FULLSCREEN - fixed inset 0, 100dvw × 100dvh
+    // z-index: 9999999 - MUST be above everything including toasts, dialogs, popups
     <div 
       style={{ 
         position: 'fixed',
@@ -338,7 +339,7 @@ export const VideoAdModal = ({
         width: '100dvw', 
         height: '100dvh',
         backgroundColor: '#000000',
-        zIndex: 999999,
+        zIndex: 9999999,
         overflow: 'hidden',
       }}
     >
@@ -406,14 +407,14 @@ export const VideoAdModal = ({
         </div>
       )}
 
-      {/* Countdown timer - top left */}
+      {/* Countdown timer - top left - z-index 100 to be above blocking overlay */}
       {isPlaying && (
         <div 
           style={{ 
             position: 'absolute',
             top: '16px',
             left: '16px',
-            zIndex: 50,
+            zIndex: 100,
             width: '48px',
             height: '48px',
             backgroundColor: 'rgba(0,0,0,0.85)',
@@ -432,7 +433,7 @@ export const VideoAdModal = ({
         </div>
       )}
 
-      {/* Video progress dots - top center (only if 2 videos) */}
+      {/* Video progress dots - top center (only if 2 videos) - z-index 100 */}
       {playlist.length > 1 && isPlaying && (
         <div 
           style={{ 
@@ -440,7 +441,7 @@ export const VideoAdModal = ({
             top: '16px',
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 50,
+            zIndex: 100,
             display: 'flex',
             gap: '8px',
           }}
@@ -460,7 +461,7 @@ export const VideoAdModal = ({
         </div>
       )}
 
-      {/* Close button - top right, ONLY when timer = 0 */}
+      {/* Close button - top right, ONLY when timer = 0 - z-index 100 */}
       {canClose && (
         <button
           onClick={handleClose}
@@ -468,7 +469,7 @@ export const VideoAdModal = ({
             position: 'absolute',
             top: '16px',
             right: '16px',
-            zIndex: 50,
+            zIndex: 100,
             width: '48px',
             height: '48px',
             backgroundColor: 'rgba(0,0,0,0.85)',
@@ -485,7 +486,7 @@ export const VideoAdModal = ({
         </button>
       )}
 
-      {/* Go to creator CTA - bottom left - must be above BottomNav (z-9999) */}
+      {/* Go to creator CTA - bottom left - z-index 100 (relative to parent which has 9999999) */}
       {isPlaying && videoUrl && (
         <button
           onClick={handleGoToCreator}
@@ -493,7 +494,7 @@ export const VideoAdModal = ({
             position: 'absolute',
             bottom: '16px',
             left: '16px',
-            zIndex: 1000000,
+            zIndex: 100,
             backgroundColor: 'rgba(0,0,0,0.75)',
             border: '1px solid rgba(255,255,255,0.3)',
             borderRadius: '20px',
