@@ -202,9 +202,10 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
   const ctaCreatorName = activeVideoForCTA ? getCreatorDisplayName(activeVideoForCTA) : null;
 
   return (
+    // z-index: 9999999 - MUST be above everything including toasts, dialogs, popups
     <div 
       className="fixed inset-0 bg-black"
-      style={{ width: '100vw', height: '100dvh', zIndex: 1000000 }}
+      style={{ width: '100vw', height: '100dvh', zIndex: 9999999 }}
     >
       {/* Video embed - lowest layer */}
       <div className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
@@ -225,7 +226,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         }}
       />
 
-      {/* Timer - top left */}
+      {/* Timer - top left - z-index 100 to be above blocking overlay */}
       <div 
         className="absolute flex items-center justify-center rounded-full bg-black/80 border-2 border-white/40"
         style={{ 
@@ -233,13 +234,13 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
           left: '16px',
           width: '56px',
           height: '56px',
-          zIndex: 60,
+          zIndex: 100,
         }}
       >
         <span className="text-white font-bold text-2xl">{secondsLeft}</span>
       </div>
 
-      {/* Progress dots for multi-video */}
+      {/* Progress dots for multi-video - z-index 100 */}
       {videos.length > 1 && (
         <div 
           className="absolute flex gap-2"
@@ -247,7 +248,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             top: 'max(env(safe-area-inset-top, 0px), 16px)', 
             left: '50%', 
             transform: 'translateX(-50%)',
-            zIndex: 60,
+            zIndex: 100,
           }}
         >
           {videos.map((_, idx) => (
@@ -265,7 +266,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         </div>
       )}
 
-      {/* Creator CTA link - bottom left, only in last 5 seconds of each segment - must be above BottomNav (z-9999) */}
+      {/* Creator CTA link - bottom left, only in last 5 seconds of each segment - z-index 100 */}
       {showCTA && activeVideoForCTA && (
         <button
           onClick={handleCreatorClick}
@@ -273,7 +274,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
           style={{ 
             bottom: 'max(env(safe-area-inset-bottom, 0px), 24px)', 
             left: '16px',
-            zIndex: 1000000,
+            zIndex: 100,
           }}
         >
           <PlatformIcon platform={activeVideoForCTA.platform} />
@@ -284,7 +285,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
         </button>
       )}
 
-      {/* Close button - top right, only when timer finished */}
+      {/* Close button - top right, only when timer finished - z-index 100 */}
       {canClose && (
         <button
           onClick={handleClose}
@@ -294,7 +295,7 @@ export const FullscreenRewardVideoView: React.FC<FullscreenRewardVideoViewProps>
             right: '16px',
             width: '56px',
             height: '56px',
-            zIndex: 60,
+            zIndex: 100,
           }}
         >
           <X className="w-7 h-7" />
