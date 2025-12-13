@@ -12,8 +12,9 @@ import { lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GameErrorBoundary } from "@/components/GameErrorBoundary";
-import { OfflineDetector } from "@/components/OfflineDetector";
+import { NetworkStatusIndicator } from "@/components/NetworkStatusIndicator";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
+import { useConnectionRecovery } from "@/hooks/useConnectionRecovery";
 
 import { useBackButton } from "@/hooks/useBackButton";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
@@ -87,22 +88,23 @@ const PageLoader = () => (
   </div>
 );
 
-// PERFORMANCE OPTIMIZED QueryClient for 1000+ users/minute
+// PERFORMANCE OPTIMIZED QueryClient for 1000+ users/minute with network resilience
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 2 * 60 * 1000, // 2 minutes - balanced freshness vs performance
       gcTime: 5 * 60 * 1000, // 5 minutes - shorter GC for memory efficiency
-      retry: 1, // Single retry for faster failures
-      retryDelay: 1000, // 1 second between retries
+      retry: 3, // More retries for network resilience
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
       refetchOnWindowFocus: false, // Disable for mobile battery/performance
-      refetchOnReconnect: true, // Essential for offline->online sync
+      refetchOnReconnect: 'always', // Essential for offline->online sync
       refetchOnMount: 'always', // Always check cache validity on mount
       networkMode: 'offlineFirst', // Use cache while fetching for instant UI
     },
     mutations: {
-      retry: 1,
-      retryDelay: 1000,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+      networkMode: 'offlineFirst',
     },
   },
 });
@@ -120,6 +122,9 @@ const AppWithAnalytics = () => {
 const AppCore = () => {
   // Automatic timezone detection for authenticated users
   useTimezoneDetection();
+  
+  // Connection recovery for network transitions
+  useConnectionRecovery();
 
   // App lifecycle management
   useAppLifecycle({
@@ -135,7 +140,7 @@ const AppCore = () => {
     <>
       <Toaster />
       <Sonner />
-      <OfflineDetector />
+      <NetworkStatusIndicator />
       <UpdatePrompt />
       <BrowserRouter
         future={{
