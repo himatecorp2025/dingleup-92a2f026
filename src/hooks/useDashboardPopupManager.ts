@@ -100,20 +100,34 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     }
   }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, welcomeBonus.canClaim, popupState.welcomeBonusCompleted, dailyGift.canClaim, popupState.showDailyGift, popupState.dailyGiftCompleted]);
 
-  // Priority 4: Personal Winner OR Daily Winners (instant after Daily Gift completion)
+  // Priority 4: Personal Winner OR Daily Winners (ONLY after Daily Gift is FULLY resolved)
   useEffect(() => {
     if (!canMountModals || !userId || profileLoading) return;
     if (!popupState.ageGateCompleted || popupState.showAgeGate || popupState.showWelcomeBonus || popupState.showDailyGift) return;
+    
+    // CRITICAL FIX: Wait for Daily Gift to be INITIALIZED first
+    // This prevents the race condition where Daily Winners appeared before Daily Gift was checked
+    if (!dailyGift.isInitialized) {
+      // Daily Gift status hasn't been fetched yet - DO NOT proceed
+      return;
+    }
     
     // CRITICAL: Wait for Daily Gift to be fully completed (not just canClaim false)
     // This ensures video reward flow is complete before showing next popup
     if (dailyGift.canClaim && !popupState.dailyGiftCompleted) return;
     
-    // Only proceed if dailyGiftCompleted is true (meaning user closed/claimed Daily Gift)
-    if (!popupState.dailyGiftCompleted && dailyGift.canClaim === false) {
-      // Daily Gift was never shown (already claimed today) - proceed immediately
-    } else if (!popupState.dailyGiftCompleted) {
-      return;
+    // Only proceed if:
+    // 1. dailyGiftCompleted is true (user closed/claimed Daily Gift), OR
+    // 2. Daily Gift isInitialized AND canClaim is false (already claimed today - no popup needed)
+    if (!popupState.dailyGiftCompleted) {
+      if (dailyGift.isInitialized && dailyGift.canClaim === false) {
+        // Daily Gift was already claimed today - proceed to next popup
+        // Mark as "completed" since there's nothing to show
+        setPopupState(prev => ({ ...prev, dailyGiftCompleted: true }));
+      } else {
+        // Still waiting for Daily Gift interaction
+        return;
+      }
     }
 
     // If user has pending reward → Personal Winner (instant)
@@ -126,7 +140,7 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     if (!hasPendingReward && dailyWinners.showPopup && !popupState.showDailyWinners) {
       setPopupState(prev => ({ ...prev, showDailyWinners: true, showPersonalWinner: false }));
     }
-  }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, popupState.showDailyGift, dailyGift.canClaim, popupState.dailyGiftCompleted, hasPendingReward, dailyWinners.showPopup, popupState.showDailyWinners, popupState.showPersonalWinner]);
+  }, [canMountModals, userId, profileLoading, popupState.ageGateCompleted, popupState.showAgeGate, popupState.showWelcomeBonus, popupState.showDailyGift, dailyGift.canClaim, dailyGift.isInitialized, popupState.dailyGiftCompleted, hasPendingReward, dailyWinners.showPopup, popupState.showDailyWinners, popupState.showPersonalWinner]);
 
   // Handlers
   const closeAgeGate = () => {
@@ -174,6 +188,7 @@ export const useDashboardPopupManager = (params: PopupManagerParams) => {
     dismissPersonalWinner,
     dailyGift: {
       canClaim: dailyGift.canClaim,
+      isInitialized: dailyGift.isInitialized,
       weeklyEntryCount: dailyGift.weeklyEntryCount,
       nextReward: dailyGift.nextReward,
       claiming: dailyGift.claiming,

@@ -56,8 +56,8 @@ interface RewardVideoStore {
   reset: () => void;
 }
 
-const PRELOAD_COUNT = 10;
-const REFILL_THRESHOLD = 3;
+const PRELOAD_COUNT = 20; // Increased from 10 for instant video availability
+const REFILL_THRESHOLD = 5; // Increased from 3 to maintain buffer
 
 export const useRewardVideoStore = create<RewardVideoStore>((set, get) => ({
   videoQueue: [],
