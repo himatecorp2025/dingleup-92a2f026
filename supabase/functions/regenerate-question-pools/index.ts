@@ -87,6 +87,30 @@ serve(async (req) => {
 
     console.log(`Total questions available: ${questions.length}`);
 
+    // Fetch ALL English translations
+    const { data: enTranslations, error: transError } = await supabase
+      .from('question_translations')
+      .select('question_id, question_text, answer_a, answer_b, answer_c')
+      .eq('lang', 'en')
+      .limit(10000);
+
+    if (transError) {
+      console.error('Failed to fetch translations:', transError);
+    }
+
+    // Create lookup map for English translations
+    const enTransMap = new Map<string, { question_text: string; answer_a: string; answer_b: string; answer_c: string }>();
+    (enTranslations || []).forEach((t: any) => {
+      enTransMap.set(t.question_id, {
+        question_text: t.question_text,
+        answer_a: t.answer_a,
+        answer_b: t.answer_b,
+        answer_c: t.answer_c,
+      });
+    });
+
+    console.log(`English translations loaded: ${enTransMap.size}`);
+
     // Group questions by topic_id
     const questionsByTopic = new Map<number, Question[]>();
     questions.forEach((q: Question) => {
@@ -158,10 +182,28 @@ serve(async (req) => {
         [poolQuestions[i], poolQuestions[j]] = [poolQuestions[j], poolQuestions[i]];
       }
 
+      // Create English version of pool questions
+      const poolQuestionsEn = poolQuestions.map((q: Question) => {
+        const enTrans = enTransMap.get(q.id);
+        if (enTrans) {
+          return {
+            ...q,
+            question: enTrans.question_text,
+            answers: q.answers.map((a: any, idx: number) => ({
+              ...a,
+              text: idx === 0 ? enTrans.answer_a : idx === 1 ? enTrans.answer_b : enTrans.answer_c,
+            })),
+          };
+        }
+        return q; // Fallback to Hungarian if no translation
+      });
+
       if (poolQuestions.length >= MIN_QUESTIONS_PER_POOL) {
         pools.push({
           pool_order: poolOrder,
           questions: poolQuestions,
+          questions_en: poolQuestionsEn,
+          question_count: poolQuestions.length,
           version: 1,
         });
         console.log(`[regenerate-pools] ✓ Pool ${poolOrder}: ${poolQuestions.length} questions (${topicIds.length} topics mixed)`);
