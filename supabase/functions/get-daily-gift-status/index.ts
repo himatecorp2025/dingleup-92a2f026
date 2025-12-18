@@ -59,6 +59,8 @@ Deno.serve(async (req) => {
           timeZone: profile.user_timezone || 'UTC',
           streak: 0,
           nextReward: 0,
+          yesterdayRank: null,
+          isTop10Yesterday: false,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -75,6 +77,16 @@ Deno.serve(async (req) => {
       day: '2-digit',
     });
 
+    // Calculate yesterday's date in user's timezone
+    const yesterdayUtc = new Date(nowUtc);
+    yesterdayUtc.setDate(yesterdayUtc.getDate() - 1);
+    const yesterdayDateString = yesterdayUtc.toLocaleDateString('en-CA', {
+      timeZone: userTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+
     // Check if user has seen the popup today (either claimed or dismissed)
     const lastSeenDate = profile.daily_gift_last_seen;
     const canShow = !lastSeenDate || lastSeenDate !== localDateString;
@@ -82,15 +94,40 @@ Deno.serve(async (req) => {
     // Calculate reward based on streak
     const currentStreak = profile.daily_gift_streak ?? 0;
     const cyclePosition = currentStreak % 7;
-    const rewardCoins = [50, 75, 110, 160, 220, 300, 500][cyclePosition];
+    const baseRewardCoins = [50, 75, 110, 160, 220, 300, 500][cyclePosition];
+
+    // TASK 7: Fetch yesterday's rank from daily_rankings
+    let yesterdayRank: number | null = null;
+    let isTop10Yesterday = false;
+
+    const { data: yesterdayRankData, error: rankError } = await supabase
+      .from('daily_rankings')
+      .select('rank')
+      .eq('user_id', user.id)
+      .eq('day_date', yesterdayDateString)
+      .maybeSingle();
+
+    if (!rankError && yesterdayRankData?.rank) {
+      yesterdayRank = yesterdayRankData.rank;
+      isTop10Yesterday = yesterdayRank !== null && yesterdayRank <= 10;
+    }
+
+    // Apply TOP10 multiplier: 2x if user was in TOP10 yesterday
+    const multiplier = isTop10Yesterday ? 2 : 1;
+    const rewardCoins = baseRewardCoins * multiplier;
 
     console.log('Daily Gift Status:', {
       userId: user.id,
       localDate: localDateString,
+      yesterdayDate: yesterdayDateString,
       lastSeenDate,
       canShow,
       streak: currentStreak,
+      baseReward: baseRewardCoins,
+      multiplier,
       nextReward: rewardCoins,
+      yesterdayRank,
+      isTop10Yesterday,
     });
 
     return new Response(
@@ -100,6 +137,10 @@ Deno.serve(async (req) => {
         timeZone: userTimezone,
         streak: currentStreak,
         nextReward: rewardCoins,
+        baseReward: baseRewardCoins,
+        multiplier,
+        yesterdayRank,
+        isTop10Yesterday,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -557,14 +557,18 @@ const Dashboard = () => {
  
        {/* Daily gift dialog - THIRD - manual trigger (only after age gate completed) */}
        <DailyGiftDialog
-        open={popupManager.popupState.showDailyGift}
-        onClaim={handleClaimDailyGift}
-        onLater={handleCloseDailyGift}
-        weeklyEntryCount={popupManager.dailyGift.weeklyEntryCount}
-        nextReward={popupManager.dailyGift.nextReward}
-        canClaim={popupManager.dailyGift.canClaim}
-        claiming={popupManager.dailyGift.claiming}
-      />
+         open={popupManager.popupState.showDailyGift}
+         onClaim={handleClaimDailyGift}
+         onLater={handleCloseDailyGift}
+         weeklyEntryCount={popupManager.dailyGift.weeklyEntryCount}
+         nextReward={popupManager.dailyGift.nextReward}
+         baseReward={popupManager.dailyGift.baseReward}
+         multiplier={popupManager.dailyGift.multiplier}
+         yesterdayRank={popupManager.dailyGift.yesterdayRank}
+         isTop10Yesterday={popupManager.dailyGift.isTop10Yesterday}
+         canClaim={popupManager.dailyGift.canClaim}
+         claiming={popupManager.dailyGift.claiming}
+       />
 
       {/* Daily Winners and Personal Winners - REMOVED */}
 
