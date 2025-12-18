@@ -182,69 +182,24 @@ const DailyRewards = ({ topPlayers, userRank, userUsername, userCorrectAnswers, 
                     </div>
                   </div>
                   
-                  {/* JOBB OLDAL: 3D jutalmak SVG ikonokkal */}
-                  <div className="flex flex-col items-end flex-shrink-0" style={{ minWidth: 'clamp(90px, 18vw, 100px)', gap: 'clamp(6px, 1vh, 8px)' }}>
-                    <div className="flex items-center justify-end w-full" style={{ gap: 'clamp(6px, 1vw, 8px)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))', width: 'clamp(18px, 3.5vw, 22px)', height: 'clamp(18px, 3.5vw, 22px)' }}>
-                        <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="hsl(45 100% 30%)" strokeWidth="2.5"/>
-                        <circle cx="12" cy="12" r="7" fill="url(#goldInner)" opacity="0.85"/>
-                        <circle cx="9" cy="9" r="2.5" fill="rgba(255, 255, 255, 0.5)"/>
-                        <defs>
-                          <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="hsl(45 100% 70%)" />
-                            <stop offset="50%" stopColor="hsl(45 100% 58%)" />
-                            <stop offset="100%" stopColor="hsl(45 95% 48%)" />
-                          </linearGradient>
-                          <radialGradient id="goldInner">
-                            <stop offset="0%" stopColor="hsl(45 100% 75%)" />
-                            <stop offset="100%" stopColor="hsl(45 100% 55%)" />
-                          </radialGradient>
-                        </defs>
-                      </svg>
-                      <span 
-                        className="font-black tabular-nums" 
+                  {/* JOBB OLDAL: TOP10 Daily Gift 2x bonus badge */}
+                  <div className="flex flex-col items-end flex-shrink-0" style={{ minWidth: 'clamp(80px, 16vw, 95px)', gap: 'clamp(4px, 0.8vh, 6px)' }}>
+                    {place <= 10 && (
+                      <div 
+                        className="flex items-center justify-center px-3 py-1 rounded-lg"
                         style={{ 
-                          color: 'hsl(45 100% 80%)',
-                          textShadow: '0 2px 6px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 215, 0, 0.5)',
-                          minWidth: 'clamp(55px, 12vw, 65px)',
-                          textAlign: 'right',
-                          fontSize: 'clamp(0.875rem, 2.2vw, 1rem)'
+                          background: 'linear-gradient(135deg, hsl(45 100% 50%), hsl(45 90% 40%))',
+                          boxShadow: '0 2px 8px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
                         }}
                       >
-                        +{reward.coins.toLocaleString()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-end w-full" style={{ gap: 'clamp(6px, 1vw, 8px)' }}>
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))', width: 'clamp(18px, 3.5vw, 22px)', height: 'clamp(18px, 3.5vw, 22px)' }}>
-                        <path 
-                          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
-                          fill="url(#heartGradient)" 
-                          stroke="hsl(0 85% 40%)" 
-                          strokeWidth="2.5"
-                        />
-                        <ellipse cx="9" cy="8" rx="2.5" ry="2" fill="rgba(255, 255, 255, 0.5)"/>
-                        <defs>
-                          <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="hsl(0 92% 68%)" />
-                            <stop offset="50%" stopColor="hsl(0 87% 58%)" />
-                            <stop offset="100%" stopColor="hsl(0 82% 48%)" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                      <span 
-                        className="font-black tabular-nums" 
-                        style={{ 
-                          color: 'hsl(0 88% 75%)',
-                          textShadow: '0 2px 6px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 0, 0, 0.4)',
-                          minWidth: 'clamp(55px, 12vw, 65px)',
-                          textAlign: 'right',
-                          fontSize: 'clamp(0.875rem, 2.2vw, 1rem)'
-                        }}
-                      >
-                        +{reward.lives}
-                      </span>
-                    </div>
+                        <span className="font-black text-white" style={{ 
+                          fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
+                          textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)'
+                        }}>
+                          2× Daily Gift
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -324,39 +279,21 @@ const DailyRewards = ({ topPlayers, userRank, userUsername, userCorrectAnswers, 
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end flex-shrink-0" style={{ minWidth: 'clamp(90px, 18vw, 100px)', gap: 'clamp(6px, 1vh, 8px)' }}>
-                      <div className="flex items-center justify-end w-full" style={{ gap: 'clamp(6px, 1vw, 8px)' }}>
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))', width: 'clamp(18px, 3.5vw, 22px)', height: 'clamp(18px, 3.5vw, 22px)' }}>
-                          <circle cx="12" cy="12" r="10" fill="url(#goldGradient3)" stroke="hsl(45 100% 30%)" strokeWidth="2.5"/>
-                          <circle cx="12" cy="12" r="7" fill="url(#goldInner3)" opacity="0.85"/>
-                          <circle cx="9" cy="9" r="2.5" fill="rgba(255, 255, 255, 0.5)"/>
-                          <defs>
-                            <linearGradient id="goldGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="hsl(45 100% 70%)" />
-                              <stop offset="50%" stopColor="hsl(45 100% 58%)" />
-                              <stop offset="100%" stopColor="hsl(45 95% 48%)" />
-                            </linearGradient>
-                            <radialGradient id="goldInner3">
-                              <stop offset="0%" stopColor="hsl(45 100% 75%)" />
-                              <stop offset="100%" stopColor="hsl(45 100% 55%)" />
-                            </radialGradient>
-                          </defs>
-                        </svg>
-                        <span className="font-black tabular-nums" style={{ color: 'hsl(45 100% 80%)', textShadow: '0 2px 6px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 215, 0, 0.5)', minWidth: 'clamp(55px, 12vw, 65px)', textAlign: 'right', fontSize: 'clamp(0.875rem, 2.2vw, 1rem)' }}>+{reward.coins.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center justify-end w-full" style={{ gap: 'clamp(6px, 1vw, 8px)' }}>
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))', width: 'clamp(18px, 3.5vw, 22px)', height: 'clamp(18px, 3.5vw, 22px)' }}>
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="url(#heartGradient2)" stroke="hsl(0 85% 40%)" strokeWidth="2.5"/>
-                          <ellipse cx="9" cy="8" rx="2.5" ry="2" fill="rgba(255, 255, 255, 0.5)"/>
-                          <defs>
-                            <linearGradient id="heartGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="hsl(0 92% 68%)" />
-                              <stop offset="50%" stopColor="hsl(0 87% 58%)" />
-                              <stop offset="100%" stopColor="hsl(0 82% 48%)" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                        <span className="font-black tabular-nums" style={{ color: 'hsl(0 88% 75%)', textShadow: '0 2px 6px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 0, 0, 0.4)', minWidth: 'clamp(55px, 12vw, 65px)', textAlign: 'right', fontSize: 'clamp(0.875rem, 2.2vw, 1rem)' }}>+{reward.lives}</span>
+                    {/* RIGHT SIDE: TOP10 Daily Gift 2x bonus badge */}
+                    <div className="flex flex-col items-end flex-shrink-0" style={{ minWidth: 'clamp(80px, 16vw, 95px)', gap: 'clamp(4px, 0.8vh, 6px)' }}>
+                      <div 
+                        className="flex items-center justify-center px-3 py-1 rounded-lg"
+                        style={{ 
+                          background: 'linear-gradient(135deg, hsl(45 100% 50%), hsl(45 90% 40%))',
+                          boxShadow: '0 2px 8px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+                        }}
+                      >
+                        <span className="font-black text-white" style={{ 
+                          fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
+                          textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)'
+                        }}>
+                          2× Daily Gift
+                        </span>
                       </div>
                     </div>
                   </div>

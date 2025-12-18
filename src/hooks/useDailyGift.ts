@@ -3,35 +3,42 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n';
 import { logger } from '@/lib/logger';
+
 export const useDailyGift = (userId: string | undefined, isPremium: boolean = false) => {
   const { t } = useI18n();
   const [canClaim, setCanClaim] = useState(false);
   const [weeklyEntryCount, setWeeklyEntryCount] = useState(0);
   const [nextReward, setNextReward] = useState(0);
+  const [baseReward, setBaseReward] = useState(0);
+  const [multiplier, setMultiplier] = useState(1);
+  const [yesterdayRank, setYesterdayRank] = useState<number | null>(null);
+  const [isTop10Yesterday, setIsTop10Yesterday] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  // NEW: Track if initial check has completed (prevents race condition with Daily Winners)
   const [isInitialized, setIsInitialized] = useState(false);
 
   const checkDailyGift = async () => {
     if (!userId) {
-      setIsInitialized(true); // No user, mark as initialized
+      setIsInitialized(true);
       return;
     }
 
     try {
-      // Call backend edge function to get status (timezone-aware)
       const { data, error } = await supabase.functions.invoke('get-daily-gift-status');
 
       if (error) {
         logger.error('Daily gift status error:', error);
-        setIsInitialized(true); // Error occurred, but still mark as initialized
+        setIsInitialized(true);
         return;
       }
 
       if (data.canShow) {
         setWeeklyEntryCount(data.streak ?? 0);
         setNextReward(data.nextReward ?? 0);
+        setBaseReward(data.baseReward ?? data.nextReward ?? 0);
+        setMultiplier(data.multiplier ?? 1);
+        setYesterdayRank(data.yesterdayRank ?? null);
+        setIsTop10Yesterday(data.isTop10Yesterday ?? false);
         setCanClaim(true);
         setShowPopup(true);
         trackEvent('popup_impression', 'daily');
@@ -40,11 +47,10 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
         setShowPopup(false);
       }
       
-      // CRITICAL: Mark as initialized AFTER setting all state
       setIsInitialized(true);
     } catch (error) {
       logger.error('Daily gift check error:', error);
-      setIsInitialized(true); // Error occurred, but still mark as initialized
+      setIsInitialized(true);
     }
   };
 
@@ -129,7 +135,6 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
     if (!userId) return;
     
     try {
-      // Call backend to mark as dismissed (timezone-aware)
       const { error } = await supabase.functions.invoke('dismiss-daily-gift');
       
       if (error) {
@@ -159,8 +164,12 @@ export const useDailyGift = (userId: string | undefined, isPremium: boolean = fa
     showPopup,
     weeklyEntryCount,
     nextReward,
+    baseReward,
+    multiplier,
+    yesterdayRank,
+    isTop10Yesterday,
     claiming,
-    isInitialized, // NEW: Expose initialization state
+    isInitialized,
     claimDailyGift,
     checkDailyGift,
     handleLater,

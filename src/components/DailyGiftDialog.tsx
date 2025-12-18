@@ -15,6 +15,10 @@ interface DailyGiftDialogProps {
   onLater: () => void;
   weeklyEntryCount: number;
   nextReward: number;
+  baseReward?: number;
+  multiplier?: number;
+  yesterdayRank?: number | null;
+  isTop10Yesterday?: boolean;
   canClaim: boolean;
   claiming: boolean;
   isPremium?: boolean;
@@ -28,6 +32,10 @@ const DailyGiftDialog = ({
   onLater,
   weeklyEntryCount, 
   nextReward, 
+  baseReward = nextReward,
+  multiplier = 1,
+  yesterdayRank = null,
+  isTop10Yesterday = false,
   canClaim,
   claiming,
   isPremium = false 
@@ -291,7 +299,7 @@ const DailyGiftDialog = ({
               }}
             >
               <HexShieldFrame showShine={true}>
-              {/* Top Hex Badge - "DAILY GIFT" */}
+              {/* Top Hex Badge - "DAILY GIFT" - Gold if TOP10, otherwise Blue */}
               <div 
                 ref={badgeRef}
                 className="relative -mt-12 mb-3 mx-auto z-20" 
@@ -323,10 +331,13 @@ const DailyGiftDialog = ({
                      style={{
                        clipPath: 'path("M 12% 0 L 88% 0 L 100% 50% L 88% 100% L 12% 100% L 0 50% Z")',
                      }}>
+                  {/* Inner background - GOLD if TOP10, RED otherwise */}
                   <div className="absolute inset-[6px]"
                        style={{
                          clipPath: 'path("M 12% 0 L 88% 0 L 100% 50% L 88% 100% L 12% 100% L 0 50% Z")',
-                         background: 'radial-gradient(ellipse 100% 80% at 50% -10%, hsl(220 95% 75%) 0%, hsl(225 90% 65%) 30%, hsl(230 85% 55%) 60%, hsl(235 78% 48%) 100%)',
+                         background: isTop10Yesterday 
+                           ? 'radial-gradient(ellipse 100% 80% at 50% -10%, hsl(45 100% 65%) 0%, hsl(45 90% 50%) 30%, hsl(45 85% 40%) 60%, hsl(45 80% 30%) 100%)'
+                           : 'radial-gradient(ellipse 100% 80% at 50% -10%, hsl(0 85% 60%) 0%, hsl(0 80% 50%) 30%, hsl(0 75% 40%) 60%, hsl(0 70% 32%) 100%)',
                          boxShadow: 'inset 0 6px 12px rgba(255,255,255,0.125), inset 0 -6px 12px rgba(0,0,0,0.2)'
                        }} />
                   
@@ -352,6 +363,34 @@ const DailyGiftDialog = ({
                   </h1>
                 </div>
               </div>
+
+              {/* Yesterday's Rank Banner - shown below the badge, above content */}
+              {yesterdayRank !== null && (
+                <div className="text-center mb-2" style={{ marginTop: '-8px' }}>
+                  <p className="font-bold"
+                     style={{ 
+                       fontSize: 'clamp(0.75rem, 3.5vw, 1rem)',
+                       color: isTop10Yesterday ? 'hsl(45 100% 70%)' : 'hsl(0 0% 85%)',
+                       textShadow: isTop10Yesterday 
+                         ? '0 0 10px rgba(255, 215, 0, 0.6), 0 2px 4px rgba(0,0,0,0.8)' 
+                         : '0 2px 4px rgba(0,0,0,0.8)'
+                     }}>
+                    {lang === 'hu' 
+                      ? `🏆 Gratulálunk! Tegnapi helyezésed: ${yesterdayRank}.` 
+                      : `🏆 Congrats! Yesterday's rank: ${yesterdayRank}.`}
+                  </p>
+                  {isTop10Yesterday && (
+                    <p className="font-semibold mt-1"
+                       style={{ 
+                         fontSize: 'clamp(0.65rem, 3vw, 0.85rem)',
+                         color: 'hsl(45 100% 80%)',
+                         textShadow: '0 0 8px rgba(255, 215, 0, 0.5)'
+                       }}>
+                      {lang === 'hu' ? '✨ TOP10 bónusz: 2× jutalom!' : '✨ TOP10 bonus: 2× reward!'}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Content Area */}
               <div className="relative z-10 flex flex-col items-center justify-between flex-1 px-[8%] pb-[8%] pt-[2%]">
