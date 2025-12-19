@@ -49,6 +49,7 @@ const AdminDashboard = () => {
   const [isExportingSchema, setIsExportingSchema] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isExportingFull, setIsExportingFull] = useState(false);
+  const [isExportingZip, setIsExportingZip] = useState(false);
 
   const handleDatabaseExport = async (exportType: 'schema' | 'data' | 'full') => {
     const setExporting = exportType === 'schema' ? setIsExportingSchema 
@@ -113,6 +114,71 @@ const AdminDashboard = () => {
       toast.error('Váratlan hiba történt az export során');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleZipExport = async () => {
+    try {
+      setIsExportingZip(true);
+      toast.info('📦 ZIP export indítása (schema.json + táblák)...');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Nincs bejelentkezve');
+        setIsExportingZip(false);
+        return;
+      }
+
+      const response = await fetch(
+        'https://wdpxmwsxhckazwxufttk.supabase.co/functions/v1/export-database-zip',
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('ZIP Export error:', errorText);
+        toast.error('ZIP Export hiba: ' + errorText);
+        setIsExportingZip(false);
+        return;
+      }
+
+      const jsonContent = await response.text();
+      
+      if (!jsonContent || jsonContent.length < 100) {
+        console.error('ZIP Export error: no data returned');
+        toast.error('ZIP Export hiba: üres válasz érkezett');
+        setIsExportingZip(false);
+        return;
+      }
+
+      // Get stats from headers
+      const tablesCount = response.headers.get('X-Export-Tables') || '?';
+      const rowsCount = response.headers.get('X-Export-Rows') || '?';
+      const duration = response.headers.get('X-Export-Duration') || '?';
+
+      const blob = new Blob([jsonContent], { type: 'application/json; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `dingleup_export_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`📦 ZIP Export kész! ${tablesCount} tábla, ${rowsCount} sor (${duration}s)`);
+    } catch (error) {
+      console.error('Unexpected ZIP export error:', error);
+      toast.error('Váratlan hiba történt a ZIP export során');
+    } finally {
+      setIsExportingZip(false);
     }
   };
 
@@ -372,18 +438,28 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Button
+                    onClick={handleZipExport}
+                    disabled={isExportingSchema || isExportingData || isExportingFull || isExportingZip}
+                    variant="outline"
+                    size="lg"
+                    className="gap-2 bg-amber-600/20 hover:bg-amber-600/30 border-amber-500/30 text-white"
+                  >
+                    <Database className="h-5 w-5" />
+                    {isExportingZip ? '📦 ZIP export...' : '📦 JSON Export (schema + data)'}
+                  </Button>
+                  <Button
                     onClick={() => handleDatabaseExport('full')}
-                    disabled={isExportingSchema || isExportingData || isExportingFull}
+                    disabled={isExportingSchema || isExportingData || isExportingFull || isExportingZip}
                     variant="outline"
                     size="lg"
                     className="gap-2 bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-white"
                   >
                     <Database className="h-5 w-5" />
-                    {isExportingFull ? 'Full export...' : '⭐ Teljes Export (Schema + Data)'}
+                    {isExportingFull ? 'Full export...' : '⭐ SQL Export (Schema + Data)'}
                   </Button>
                   <Button
                     onClick={() => handleDatabaseExport('schema')}
-                    disabled={isExportingSchema || isExportingData || isExportingFull}
+                    disabled={isExportingSchema || isExportingData || isExportingFull || isExportingZip}
                     variant="outline"
                     size="lg"
                     className="gap-2 bg-purple-600/20 hover:bg-purple-600/30 border-purple-500/30 text-white"
@@ -393,7 +469,7 @@ const AdminDashboard = () => {
                   </Button>
                   <Button
                     onClick={() => handleDatabaseExport('data')}
-                    disabled={isExportingSchema || isExportingData || isExportingFull}
+                    disabled={isExportingSchema || isExportingData || isExportingFull || isExportingZip}
                     variant="outline"
                     size="lg"
                     className="gap-2 bg-green-600/20 hover:bg-green-600/30 border-green-500/30 text-white"

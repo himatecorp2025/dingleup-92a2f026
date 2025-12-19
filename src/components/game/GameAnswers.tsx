@@ -30,6 +30,9 @@ export const GameAnswers = memo(({
   // CRITICAL: Check if any answer is selected (means user answered)
   const hasAnswered = selectedAnswer !== null;
   
+  // Find the correct answer for this question
+  const correctAnswerKey = question.answers.find(a => a.correct === true)?.key;
+  
   // Find if the selected answer was wrong
   const selectedWasWrong = hasAnswered && question.answers.find(a => a.key === selectedAnswer)?.correct === false;
   
@@ -38,13 +41,17 @@ export const GameAnswers = memo(({
       {question.answers.map((answer) => {
         const isRemoved = removedAnswer === answer.key;
         const isSelected = selectedAnswer === answer.key;
-        const isCorrectAnswer = answer.correct;
+        const isCorrectAnswer = answer.correct === true;
         
-        // BUG FIX: Show correct answer (green + pulse) when:
-        // 1. User selected THIS correct answer OR
-        // 2. User selected a WRONG answer (show correct in green)
+        // CRITICAL BUG FIX: Show correct answer in GREEN when:
+        // 1. This is the correct answer AND
+        // 2. User has answered (regardless of whether their answer was right or wrong)
+        // This ensures the correct answer ALWAYS shows in green after any selection
         const showAsCorrect = isCorrectAnswer && hasAnswered;
-        const showCorrectPulse = isCorrectAnswer && hasAnswered;
+        
+        // PULSE: Show pulse animation ONLY when user selected wrong (to highlight correct)
+        // OR when user selected this correct answer
+        const showCorrectPulse = isCorrectAnswer && hasAnswered && (selectedWasWrong || isSelected);
         
         // Show as wrong only if user selected THIS wrong answer
         const isWrongAnswer = isSelected && !isCorrectAnswer;
