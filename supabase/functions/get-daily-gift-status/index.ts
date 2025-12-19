@@ -112,8 +112,9 @@ Deno.serve(async (req) => {
       isTop10Yesterday = yesterdayRank !== null && yesterdayRank <= 10;
     }
 
-    // Apply TOP10 multiplier: 2x if user was in TOP10 yesterday
-    const multiplier = isTop10Yesterday ? 2 : 1;
+    // Apply TOP10 multiplier: 3x base if user was in TOP10 yesterday, otherwise 1x
+    // Ads multiplier: TOP10 = 5x, normal = 2x (calculated on frontend)
+    const multiplier = isTop10Yesterday ? 3 : 1;
     const rewardCoins = baseRewardCoins * multiplier;
 
     console.log('Daily Gift Status:', {

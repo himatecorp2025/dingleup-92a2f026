@@ -386,7 +386,7 @@ const DailyGiftDialog = ({
                          color: 'hsl(45 100% 80%)',
                          textShadow: '0 0 8px rgba(255, 215, 0, 0.5)'
                        }}>
-                      {lang === 'hu' ? '✨ TOP10 bónusz: 2× jutalom!' : '✨ TOP10 bonus: 2× reward!'}
+                      {lang === 'hu' ? '✨ TOP10 bónusz: 3× alap / 5× reklámmal!' : '✨ TOP10 bonus: 3× base / 5× with ads!'}
                     </p>
                   )}
                 </div>

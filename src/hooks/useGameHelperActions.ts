@@ -178,18 +178,36 @@ export const useGameHelperActions = (options: UseGameHelperActionsOptions) => {
       const currentQuestion = questions[currentQuestionIndex];
       const correctKey = currentQuestion.answers.find(a => a.correct)?.key || 'A';
       
-      const correctVote = 65 + Math.floor(Math.random() * 20);
+      // FIXED: Generate audience votes for ALL answers, correct >= 65%, sum = 100%
+      const correctVote = 65 + Math.floor(Math.random() * 26); // 65-90%
       const remaining = 100 - correctVote;
       
       const wrongKeys = currentQuestion.answers.filter(a => !a.correct).map(a => a.key);
       const votes: Record<string, number> = {};
       
-      if (wrongKeys.length === 2) {
-        const first = Math.floor(Math.random() * (remaining - 1)) + 1;
+      // Distribute remaining percentage among wrong answers
+      if (wrongKeys.length === 1) {
+        // Only 1 wrong answer (e.g., after 50/50 removed one)
+        votes[wrongKeys[0]] = remaining;
+      } else if (wrongKeys.length === 2) {
+        // 2 wrong answers - split remaining randomly
+        const first = Math.floor(Math.random() * (remaining + 1));
         const second = remaining - first;
-        votes[wrongKeys[0]] = Math.min(first, second);
-        votes[wrongKeys[1]] = Math.max(first, second);
+        votes[wrongKeys[0]] = first;
+        votes[wrongKeys[1]] = second;
+      } else if (wrongKeys.length >= 3) {
+        // 3+ wrong answers - split remaining
+        let left = remaining;
+        for (let i = 0; i < wrongKeys.length - 1; i++) {
+          const maxForThis = Math.max(0, left - (wrongKeys.length - 1 - i));
+          const val = Math.floor(Math.random() * (maxForThis + 1));
+          votes[wrongKeys[i]] = val;
+          left -= val;
+        }
+        votes[wrongKeys[wrongKeys.length - 1]] = left;
       }
+      
+      // Set correct vote
       votes[correctKey] = correctVote;
       
       if (helpAudienceUsageCount === 0 && profile?.help_audience_active) {
