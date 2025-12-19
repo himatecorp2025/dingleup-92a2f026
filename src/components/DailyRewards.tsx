@@ -196,7 +196,7 @@ const DailyRewards = ({ topPlayers, userRank, userUsername, userCorrectAnswers, 
                           fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
                           textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)'
                         }}>
-                          2× Daily Gift
+                          3× Daily Gift
                         </span>
                       </div>
                     )}
@@ -292,7 +292,7 @@ const DailyRewards = ({ topPlayers, userRank, userUsername, userCorrectAnswers, 
                           fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
                           textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)'
                         }}>
-                          2× Daily Gift
+                          3× Daily Gift
                         </span>
                       </div>
                     </div>
