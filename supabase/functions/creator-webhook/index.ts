@@ -37,6 +37,52 @@ serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         
+        // Handle coin purchase
+        if (session.mode === "payment" && session.metadata?.type === "coin_purchase") {
+          const userId = session.metadata?.user_id;
+          const coins = parseInt(session.metadata?.coins || "0");
+          const lives = parseInt(session.metadata?.lives || "0");
+          
+          console.log(`[CREATOR-WEBHOOK] Coin purchase completed for user: ${userId}, coins: ${coins}, lives: ${lives}`);
+
+          if (userId && coins > 0) {
+            const idempotencyKey = `coin-checkout:${session.id}`;
+            
+            // Credit coins
+            const { error: walletError } = await supabase.rpc('credit_wallet', {
+              p_user_id: userId,
+              p_delta_coins: coins,
+              p_source: 'coin_purchase',
+              p_idempotency_key: idempotencyKey + ':coins',
+              p_metadata: { sessionId: session.id, coins, lives }
+            });
+            
+            if (walletError) {
+              console.error("[CREATOR-WEBHOOK] Error crediting coins:", walletError);
+            } else {
+              console.log(`[CREATOR-WEBHOOK] Coins credited: ${coins}`);
+            }
+            
+            // Credit lives if any
+            if (lives > 0) {
+              const { error: livesError } = await supabase.rpc('credit_lives', {
+                p_user_id: userId,
+                p_delta_lives: lives,
+                p_source: 'coin_purchase',
+                p_idempotency_key: idempotencyKey + ':lives',
+                p_metadata: { sessionId: session.id, coins, lives }
+              });
+              
+              if (livesError) {
+                console.error("[CREATOR-WEBHOOK] Error crediting lives:", livesError);
+              } else {
+                console.log(`[CREATOR-WEBHOOK] Lives credited: ${lives}`);
+              }
+            }
+          }
+          break;
+        }
+        
         // Check if this is a creator subscription checkout
         if (session.mode === "subscription" && session.metadata?.type === "creator_subscription") {
           const customerId = session.customer as string;
@@ -204,11 +250,11 @@ serve(async (req) => {
             let newExpiry: Date;
 
             if (video.status === "expired" || new Date(video.expires_at!) < now) {
-              // Expired video: start from now
-              newExpiry = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+              // Expired video: start from now - 30 days
+              newExpiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
             } else {
-              // Active video: extend from current expiry
-              newExpiry = new Date(new Date(video.expires_at!).getTime() + 90 * 24 * 60 * 60 * 1000);
+              // Active video: extend from current expiry - 30 days
+              newExpiry = new Date(new Date(video.expires_at!).getTime() + 30 * 24 * 60 * 60 * 1000);
             }
 
             await supabase

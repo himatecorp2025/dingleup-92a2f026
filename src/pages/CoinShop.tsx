@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Loader2 } from 'lucide-react';
 import { useI18n } from '@/i18n';
@@ -33,11 +33,12 @@ const CoinShop = () => {
     setPurchasingCoins(coins);
     
     try {
-      // Step 1: Create payment intent (authenticated)
+      // Get auth session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       if (!session?.access_token) throw new Error('NOT_AUTHENTICATED');
 
+      // Create Stripe Checkout session
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-coin-payment', {
         body: { coins },
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -47,31 +48,12 @@ const CoinShop = () => {
         throw new Error(paymentError.message || 'Failed to create payment');
       }
 
-      if (!paymentData?.clientSecret) {
-        throw new Error('No client secret received');
+      if (!paymentData?.url) {
+        throw new Error('No checkout URL received');
       }
 
-      // Step 2: For now, simulate successful payment (in production, use Stripe Elements or Payment Sheet)
-      // This would normally open Apple Pay / Google Pay sheet
-      toast.info(lang === 'hu' 
-        ? `Fizetés feldolgozása: ${coins} aranyérme - $${price.toFixed(2)}` 
-        : `Processing payment: ${coins} coins - $${price.toFixed(2)}`
-      );
-
-      // Step 3: In real implementation, after payment sheet completes successfully:
-      // const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-coin-payment', {
-      //   body: { paymentIntentId: paymentData.paymentIntentId }
-      // });
-      
-      // For demo purposes, show success message
-      toast.success(lang === 'hu'
-        ? `Fizetési rendszer aktiválva! ${coins} aranyérme csomag`
-        : `Payment system activated! ${coins} coin package`
-      );
-
-      // Invalidate wallet queries to refresh balance
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      queryClient.invalidateQueries({ queryKey: ['user-game-profile'] });
+      // Redirect to Stripe Checkout
+      window.location.href = paymentData.url;
 
     } catch (error) {
       console.error('Purchase error:', error);
@@ -79,10 +61,34 @@ const CoinShop = () => {
         ? 'A vásárlás sikertelen volt. Kérlek próbáld újra.' 
         : 'Purchase failed. Please try again.'
       );
-    } finally {
       setPurchasingCoins(null);
     }
   };
+
+  // Handle checkout success from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutStatus = params.get('checkout');
+    const purchasedCoins = params.get('coins');
+    
+    if (checkoutStatus === 'success') {
+      toast.success(lang === 'hu'
+        ? `Sikeres vásárlás! ${purchasedCoins || ''} aranyérme jóváírva.`
+        : `Purchase successful! ${purchasedCoins || ''} coins credited.`
+      );
+      // Invalidate wallet queries to refresh balance
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      queryClient.invalidateQueries({ queryKey: ['user-game-profile'] });
+      // Clean URL
+      window.history.replaceState({}, '', '/coin-shop');
+    } else if (checkoutStatus === 'cancelled') {
+      toast.info(lang === 'hu'
+        ? 'A vásárlás megszakítva.'
+        : 'Purchase cancelled.'
+      );
+      window.history.replaceState({}, '', '/coin-shop');
+    }
+  }, [lang, queryClient]);
 
   return (
     <div className="h-dvh w-screen fixed inset-0 overflow-y-auto overflow-x-hidden flex flex-col" style={{

@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Coin package price IDs from Stripe
+// Coin package price IDs from Stripe (one-time prices)
 const COIN_PACKAGES: Record<number, { priceId: string; coins: number; lives: number }> = {
   300: { priceId: "price_1ScYcsKKw7HPC0ZDnFUoZWCI", coins: 300, lives: 0 },
   500: { priceId: "price_1ScYd8KKw7HPC0ZDkc2WexS9", coins: 500, lives: 0 },
@@ -39,7 +39,7 @@ serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     const authHeader = req.headers.get("Authorization");
@@ -62,55 +62,60 @@ serve(async (req) => {
     }
     logStep("Package found", packageInfo);
 
+    // Get user profile for email
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('email')
+      .eq('id', user.id)
+      .single();
+
+    const userEmail = profile?.email || `${user.id}@dingleup.app`;
+    logStep("User email", { email: userEmail });
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check for existing Stripe customer
+    // Check for existing Stripe customer by email
     const customers = await stripe.customers.list({ 
+      email: userEmail,
       limit: 1,
-      metadata: { supabase_user_id: user.id }
     });
     
     let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Found existing customer", { customerId });
-    } else {
-      // Create new customer
-      const newCustomer = await stripe.customers.create({
-        metadata: { supabase_user_id: user.id }
-      });
-      customerId = newCustomer.id;
-      logStep("Created new customer", { customerId });
     }
 
-    // Create PaymentIntent for native payment sheet
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Get origin for redirect URLs
+    const origin = req.headers.get("origin") || "https://dingleup.app";
+
+    // Create Checkout Session for one-time payment
+    const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      amount: Math.round(packageInfo.coins === 300 ? 139 : 
-               packageInfo.coins === 500 ? 219 :
-               packageInfo.coins === 700 ? 299 :
-               packageInfo.coins === 900 ? 379 :
-               packageInfo.coins === 1000 ? 399 :
-               packageInfo.coins === 1500 ? 549 :
-               packageInfo.coins === 2500 ? 849 :
-               packageInfo.coins === 3000 ? 999 : 1499),
-      currency: "usd",
+      customer_email: customerId ? undefined : userEmail,
+      mode: "payment",
       payment_method_types: ["card"],
+      line_items: [
+        {
+          price: packageInfo.priceId,
+          quantity: 1,
+        },
+      ],
       metadata: {
-        supabase_user_id: user.id,
-        product_type: "coins",
+        user_id: user.id,
+        type: "coin_purchase",
         coins: packageInfo.coins.toString(),
         lives: packageInfo.lives.toString(),
       },
-    });
-    logStep("PaymentIntent created", { 
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret ? "present" : "missing"
+      success_url: `${origin}/coin-shop?checkout=success&coins=${packageInfo.coins}`,
+      cancel_url: `${origin}/coin-shop?checkout=cancelled`,
     });
 
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+
     return new Response(JSON.stringify({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
+      url: session.url,
+      sessionId: session.id,
       coins: packageInfo.coins,
       lives: packageInfo.lives,
     }), {
