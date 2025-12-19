@@ -44,6 +44,17 @@ serve(async (req) => {
     const userId = userData.user.id;
     console.log("[REACTIVATE-VIDEO] User authenticated:", userId);
 
+    // Check if user is admin (admins get free reactivation)
+    const { data: adminRole } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    const isAdmin = !!adminRole;
+    console.log("[REACTIVATE-VIDEO] Is admin:", isAdmin);
+
     // Get request body
     const { video_id } = await req.json();
 
@@ -54,19 +65,21 @@ serve(async (req) => {
       );
     }
 
-    // Check subscription status
-    const { data: subscription } = await supabaseClient
-      .from('creator_subscriptions')
-      .select('*, stripe_customer_id')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // Check subscription status (admins bypass this check)
+    if (!isAdmin) {
+      const { data: subscription } = await supabaseClient
+        .from('creator_subscriptions')
+        .select('*, stripe_customer_id')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (!subscription || !['active', 'active_trial', 'cancel_at_period_end'].includes(subscription.status)) {
-      console.log("[REACTIVATE-VIDEO] No active subscription for user:", userId);
-      return new Response(
-        JSON.stringify({ success: false, error: "NO_ACTIVE_SUBSCRIPTION" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
+      if (!subscription || !['active', 'active_trial', 'cancel_at_period_end'].includes(subscription.status)) {
+        console.log("[REACTIVATE-VIDEO] No active subscription for user:", userId);
+        return new Response(
+          JSON.stringify({ success: false, error: "NO_ACTIVE_SUBSCRIPTION" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
     }
 
     // Get the video
@@ -84,6 +97,57 @@ serve(async (req) => {
       );
     }
 
+    // Admin bypass: free reactivation without Stripe
+    if (isAdmin) {
+      console.log("[REACTIVATE-VIDEO] Admin bypass - free reactivation for video:", video_id);
+      
+      const now = new Date();
+      let newExpiresAt: Date;
+      
+      if (video.expires_at && new Date(video.expires_at) > now) {
+        newExpiresAt = new Date(new Date(video.expires_at).getTime() + 30 * 24 * 60 * 60 * 1000);
+      } else {
+        newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      }
+
+      const { error: updateError } = await supabaseClient
+        .from('creator_videos')
+        .update({
+          expires_at: newExpiresAt.toISOString(),
+          is_active: true,
+          status: 'active',
+          updated_at: now.toISOString(),
+        })
+        .eq('id', video_id);
+
+      if (updateError) {
+        console.error("[REACTIVATE-VIDEO] Admin update error:", updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: "UPDATE_FAILED" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+
+      console.log("[REACTIVATE-VIDEO] Admin reactivation complete, new expiry:", newExpiresAt);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          admin_bypass: true,
+          new_expires_at: newExpiresAt.toISOString(),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    // Regular user: need to pay via Stripe
+    // Get subscription for Stripe customer ID
+    const { data: subscription } = await supabaseClient
+      .from('creator_subscriptions')
+      .select('stripe_customer_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
@@ -95,7 +159,7 @@ serve(async (req) => {
     });
 
     // Get or find Stripe customer
-    let stripeCustomerId = subscription.stripe_customer_id;
+    let stripeCustomerId = subscription?.stripe_customer_id;
 
     if (!stripeCustomerId) {
       // Get user email
@@ -116,10 +180,12 @@ serve(async (req) => {
       if (customers.data.length > 0) {
         stripeCustomerId = customers.data[0].id;
         // Update subscription record
-        await supabaseClient
-          .from('creator_subscriptions')
-          .update({ stripe_customer_id: stripeCustomerId })
-          .eq('user_id', userId);
+        if (subscription) {
+          await supabaseClient
+            .from('creator_subscriptions')
+            .update({ stripe_customer_id: stripeCustomerId })
+            .eq('user_id', userId);
+        }
       }
     }
 

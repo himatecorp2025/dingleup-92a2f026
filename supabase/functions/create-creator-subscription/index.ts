@@ -20,7 +20,7 @@ serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Authenticate user
@@ -40,6 +40,17 @@ serve(async (req) => {
     const user = userData.user;
     console.log("[CREATE-CREATOR-SUB] User authenticated:", user.id);
 
+    // Check if user is admin (admins get free subscription)
+    const { data: adminRole } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    const isAdmin = !!adminRole;
+    console.log("[CREATE-CREATOR-SUB] Is admin:", isAdmin);
+
     // Get user profile for email
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -49,6 +60,58 @@ serve(async (req) => {
 
     const userEmail = profile?.email || user.email || `${user.id}@dingleup.app`;
     console.log("[CREATE-CREATOR-SUB] User email:", userEmail);
+
+    // If admin, create subscription directly without Stripe
+    if (isAdmin) {
+      console.log("[CREATE-CREATOR-SUB] Admin bypass - creating free subscription");
+      
+      const now = new Date();
+      const periodEnd = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year
+
+      // Upsert creator subscription
+      const { error: upsertError } = await supabaseClient
+        .from("creator_subscriptions")
+        .upsert({
+          user_id: user.id,
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+          status: "active",
+          trial_ends_at: null,
+          current_period_ends_at: periodEnd.toISOString(),
+          package_type: "admin_free",
+          max_videos: 999,
+        }, { onConflict: "user_id" });
+
+      if (upsertError) {
+        console.error("[CREATE-CREATOR-SUB] Admin subscription error:", upsertError);
+        throw new Error("Failed to create admin subscription");
+      }
+
+      // Update profile
+      await supabaseClient
+        .from("profiles")
+        .update({
+          is_creator: true,
+          creator_subscription_status: "active",
+        })
+        .eq("id", user.id);
+
+      console.log("[CREATE-CREATOR-SUB] Admin subscription created successfully");
+
+      // Return success without redirect (frontend handles this)
+      const origin = req.headers.get("origin") || "https://dingleup.app";
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          admin_bypass: true,
+          url: `${origin}/creators?checkout=success` 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
