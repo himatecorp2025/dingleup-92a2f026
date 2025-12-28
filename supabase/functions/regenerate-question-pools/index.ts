@@ -70,6 +70,7 @@ serve(async (req) => {
     }
 
     // Get ALL questions with proper pagination (PostgREST default limit is 1000)
+    // CRITICAL: Only fetch questions that have correct_answer set (exclude broken questions)
     const batchSize = 1000;
     let allQuestions: any[] = [];
     let offset = 0;
@@ -78,6 +79,8 @@ serve(async (req) => {
       const { data: batch, error: batchError } = await supabase
         .from('questions')
         .select('*')
+        .not('correct_answer', 'is', null)
+        .neq('correct_answer', '')
         .range(offset, offset + batchSize - 1);
 
       if (batchError) {
@@ -96,12 +99,12 @@ serve(async (req) => {
 
     if (!questions || questions.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'No questions found in database' }),
+        JSON.stringify({ error: 'No valid questions found (all missing correct_answer)' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    console.log(`Total questions available: ${questions.length}`);
+    console.log(`Total VALID questions available: ${questions.length} (with correct_answer set)`);
 
     // Fetch ALL English translations with pagination
     let allEnTranslations: any[] = [];
@@ -214,25 +217,46 @@ serve(async (req) => {
       }
 
       // Create English version of pool questions
+      // CRITICAL: Ensure correct answer flag is properly set based on correct_answer field
       const poolQuestionsEn = poolQuestions.map((q: Question) => {
         const enTrans = enTransMap.get(q.id);
+        const correctKey = q.correct_answer; // 'A', 'B', 'C', or 'D'
+        
+        // Fix answers with correct flag based on correct_answer
+        const fixedAnswers = q.answers.map((a: any) => ({
+          ...a,
+          correct: a.key === correctKey,
+        }));
+        
         if (enTrans) {
           return {
             ...q,
             question: enTrans.question_text,
-            answers: q.answers.map((a: any, idx: number) => ({
+            answers: fixedAnswers.map((a: any, idx: number) => ({
               ...a,
               text: idx === 0 ? enTrans.answer_a : idx === 1 ? enTrans.answer_b : enTrans.answer_c,
             })),
           };
         }
-        return q; // Fallback to Hungarian if no translation
+        return { ...q, answers: fixedAnswers }; // Hungarian with fixed correct flags
+      });
+      
+      // Also fix Hungarian version's correct flags
+      const poolQuestionsFixed = poolQuestions.map((q: Question) => {
+        const correctKey = q.correct_answer;
+        return {
+          ...q,
+          answers: q.answers.map((a: any) => ({
+            ...a,
+            correct: a.key === correctKey,
+          })),
+        };
       });
 
-      if (poolQuestions.length >= MIN_QUESTIONS_PER_POOL) {
+      if (poolQuestionsFixed.length >= MIN_QUESTIONS_PER_POOL) {
         pools.push({
           pool_order: poolOrder,
-          questions: poolQuestions,
+          questions: poolQuestionsFixed,
           questions_en: poolQuestionsEn,
           question_count: poolQuestions.length,
           version: 1,
