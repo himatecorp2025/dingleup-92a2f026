@@ -8,8 +8,8 @@ import { startMetrics, measureStage, incDbQuery, logSuccess, logError, shouldSam
 // OPTIMIZED GAME SESSION START - CENTRALIZED METRICS & STRUCTURED LOGGING
 // ============================================================================
 
-const TOTAL_POOLS = 20;
-const MIN_QUESTIONS_PER_POOL = 300;
+const TOTAL_POOLS = 25;
+const MIN_QUESTIONS_PER_POOL = 15; // Lowered - pools now have 150+ questions
 const QUESTIONS_PER_GAME = 15;
 
 interface Question {
@@ -213,16 +213,39 @@ serve(async (req) => {
       nextPoolOrder = (lastPoolOrder % TOTAL_POOLS) + 1;
     }
 
-    // Select language-specific questions from cache
+    // Select language-specific questions from cache with fallback
     const selectedQuestions = await measureStage(ctx, 'question_selection', async () => {
       const poolCache = userLang === 'en' ? POOLS_CACHE_EN : POOLS_CACHE_HU;
       const poolQuestions = poolCache.get(nextPoolOrder);
 
-      if (!poolQuestions || poolQuestions.length < MIN_QUESTIONS_PER_POOL) {
-        throw new Error(`Pool ${nextPoolOrder} (${userLang}) insufficient questions`);
+      if (poolQuestions && poolQuestions.length >= QUESTIONS_PER_GAME) {
+        return selectRandomQuestions(poolQuestions, QUESTIONS_PER_GAME);
       }
 
-      return selectRandomQuestions(poolQuestions, QUESTIONS_PER_GAME);
+      // Fallback: fetch random questions directly from database
+      console.log(`[start-game-session] Pool ${nextPoolOrder} (${userLang}) insufficient, using fallback`);
+      incDbQuery(ctx);
+      const { data: fallbackQuestions, error: fallbackError } = await supabaseClient
+        .from('questions')
+        .select('id, question, answers, audience, third, topic_id, source_category, correct_answer')
+        .not('correct_answer', 'is', null)
+        .neq('correct_answer', '')
+        .limit(100);
+
+      if (fallbackError || !fallbackQuestions || fallbackQuestions.length < QUESTIONS_PER_GAME) {
+        throw new Error('Failed to load fallback questions');
+      }
+
+      // Apply correct flag to answers
+      const processedQuestions = fallbackQuestions.map((q: any) => ({
+        ...q,
+        answers: q.answers.map((a: any) => ({
+          ...a,
+          correct: a.key === q.correct_answer
+        }))
+      }));
+
+      return selectRandomQuestions(processedQuestions, QUESTIONS_PER_GAME);
     });
 
     // Update pool session
