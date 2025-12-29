@@ -14,8 +14,8 @@ interface VideoRequest {
 
 interface CreatorVideo {
   id: string;
-  video_url: string;
-  embed_url: string | null;
+  video_file_path: string;
+  channel_url: string;
   platform: string;
   duration_seconds: number | null;
   creator_id: string;
@@ -28,8 +28,9 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
+      supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
@@ -58,7 +59,7 @@ serve(async (req) => {
 
     console.log(`[get-ad-video] User ${userId}, context: ${context}`);
 
-    // Get user's country for country-specific filtering
+    // Get user's country for filtering
     const { data: userProfile } = await supabaseClient
       .from('profiles')
       .select('country_code')
@@ -68,7 +69,7 @@ serve(async (req) => {
     const userCountry = userProfile?.country_code || null;
     console.log(`[get-ad-video] User country: ${userCountry || 'none'}`);
 
-    // Step 1: Get user's top 3 topics (if they have 100+ answered questions)
+    // Get user's top 3 topics (if they have 100+ answered questions)
     const { data: topicStats, error: topicError } = await supabaseClient
       .from('user_topic_stats')
       .select('topic_id, correct_count')
@@ -88,24 +89,25 @@ serve(async (req) => {
 
     console.log(`[get-ad-video] User has ${totalAnswered} correct answers, top topics: ${userTopTopics.join(',')}`);
 
-    // Step 2: Get active creator videos with valid subscriptions
+    // Get active creator videos with valid file paths
     const now = new Date().toISOString();
     
     let query = supabaseClient
       .from('creator_videos')
       .select(`
         id,
-        video_url,
-        embed_url,
+        video_file_path,
+        channel_url,
         platform,
         duration_seconds,
         user_id,
         creator_video_topics(topic_id)
       `)
       .eq('is_active', true)
-      .gt('expires_at', now);
+      .gt('expires_at', now)
+      .not('video_file_path', 'is', null);
 
-    // Exclude already shown videos in this sequence
+    // Exclude already shown videos
     if (exclude_video_ids.length > 0) {
       query = query.not('id', 'in', `(${exclude_video_ids.join(',')})`);
     }
@@ -133,18 +135,18 @@ serve(async (req) => {
       );
     }
 
-    // Step 3: Filter videos by creator subscription status
+    // Filter by active creator subscriptions
     const creatorIds = [...new Set(videos.map(v => v.user_id))];
     
     const { data: subscriptions } = await supabaseClient
       .from('creator_subscriptions')
       .select('user_id, status')
       .in('user_id', creatorIds)
-      .in('status', ['active', 'trial', 'cancel_at_period_end']);
+      .in('status', ['active', 'trial', 'active_trial', 'cancel_at_period_end']);
 
     const activeCreatorIds = new Set(subscriptions?.map(s => s.user_id) || []);
     
-    // Get video IDs that target user's country (if user has country)
+    // Get country-targeted videos
     let countryTargetedVideoIds: Set<string> | null = null;
     if (userCountry) {
       const { data: countryVideos } = await supabaseClient
@@ -158,19 +160,14 @@ serve(async (req) => {
       }
     }
     
-    // Filter by active creators AND valid embed_url (must contain /embed/ to be playable)
+    // Filter eligible videos
     const eligibleVideos = videos.filter(v => {
       if (!activeCreatorIds.has(v.user_id)) return false;
-      if (!v.embed_url) return false;
-      // Valid embed URLs must contain /embed/ or plugins/video for Facebook
-      const hasValidEmbed = v.embed_url.includes('/embed/') || v.embed_url.includes('plugins/video');
-      if (!hasValidEmbed) {
-        console.log(`[get-ad-video] Skipping video ${v.id} with invalid embed_url: ${v.embed_url}`);
-      }
-      return hasValidEmbed;
+      if (!v.video_file_path) return false;
+      return true;
     });
 
-    // First try country-specific videos, then fallback to global pool
+    // Country filtering with fallback
     let countryFilteredVideos = eligibleVideos;
     let isGlobalFallback = false;
     
@@ -179,7 +176,6 @@ serve(async (req) => {
       console.log(`[get-ad-video] Country-filtered videos: ${countryFilteredVideos.length}`);
     }
     
-    // Fallback to global pool if no country-specific videos
     if (countryFilteredVideos.length === 0) {
       console.log('[get-ad-video] No country-specific videos, using global fallback');
       countryFilteredVideos = eligibleVideos;
@@ -187,39 +183,38 @@ serve(async (req) => {
     }
 
     if (countryFilteredVideos.length === 0) {
-      console.log('[get-ad-video] No videos with valid embed URLs from active creators');
+      console.log('[get-ad-video] No eligible videos');
       return new Response(
         JSON.stringify({ available: false, video: null }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 4: Prioritize by topic relevance
+    // Prioritize by topic relevance
     let selectedVideo: typeof countryFilteredVideos[0];
     
     if (userTopTopics.length > 0) {
-      // Find videos matching user's interests
       const relevantVideos = countryFilteredVideos.filter(v => {
         const videoTopics = v.creator_video_topics?.map((t: any) => t.topic_id) || [];
         return videoTopics.some((tid: number) => userTopTopics.includes(tid));
       });
 
       if (relevantVideos.length > 0) {
-        // Random selection from relevant videos
         selectedVideo = relevantVideos[Math.floor(Math.random() * relevantVideos.length)];
-        console.log(`[get-ad-video] Selected relevant video ${selectedVideo.id}${isGlobalFallback ? ' (global fallback)' : ''}`);
+        console.log(`[get-ad-video] Selected relevant video ${selectedVideo.id}`);
       } else {
-        // Fallback: random from all eligible
         selectedVideo = countryFilteredVideos[Math.floor(Math.random() * countryFilteredVideos.length)];
-        console.log(`[get-ad-video] No relevant videos, selected random ${selectedVideo.id}${isGlobalFallback ? ' (global fallback)' : ''}`);
+        console.log(`[get-ad-video] No relevant videos, selected random ${selectedVideo.id}`);
       }
     } else {
-      // No user preferences: random selection
       selectedVideo = countryFilteredVideos[Math.floor(Math.random() * countryFilteredVideos.length)];
-      console.log(`[get-ad-video] User has no preferences, selected random ${selectedVideo.id}${isGlobalFallback ? ' (global fallback)' : ''}`);
+      console.log(`[get-ad-video] User has no preferences, selected random ${selectedVideo.id}`);
     }
 
-    // Check if video is relevant to user
+    // Build video URL from storage
+    const videoUrl = `${supabaseUrl}/storage/v1/object/public/creator-videos/${selectedVideo.video_file_path}`;
+
+    // Check if video is relevant
     const videoTopics = selectedVideo.creator_video_topics?.map((t: any) => t.topic_id) || [];
     const isRelevant = userTopTopics.length > 0 && videoTopics.some((tid: number) => userTopTopics.includes(tid));
 
@@ -228,8 +223,8 @@ serve(async (req) => {
         available: true,
         video: {
           id: selectedVideo.id,
-          video_url: selectedVideo.video_url,
-          embed_url: selectedVideo.embed_url,
+          video_url: videoUrl,
+          channel_url: selectedVideo.channel_url,
           platform: selectedVideo.platform,
           duration_seconds: selectedVideo.duration_seconds,
           creator_id: selectedVideo.user_id,

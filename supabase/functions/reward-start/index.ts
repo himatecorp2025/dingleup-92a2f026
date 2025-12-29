@@ -13,7 +13,8 @@ interface RewardStartRequest {
 
 interface RewardVideo {
   id: string;
-  embedUrl: string;
+  videoUrl: string;      // Full storage URL
+  channelUrl: string;    // Redirect URL
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
 }
 
@@ -23,8 +24,9 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
+      supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
@@ -56,13 +58,10 @@ serve(async (req) => {
 
     console.log(`[reward-start] User ${userId}, event: ${eventType}, videosRequired: ${videosRequired}`);
 
-    // Generate unique session ID
     const rewardSessionId = `${userId}-${eventType}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
     const now = new Date().toISOString();
 
-    // STEP 1: Try to get topic-based videos first
-    // Get user's top topics for targeting (if available)
+    // Get user's top topics for targeting
     let topicVideos: any[] = [];
     
     const { data: userStats } = await supabaseClient
@@ -75,19 +74,19 @@ serve(async (req) => {
     if (userStats && userStats.length > 0) {
       const topTopicIds = userStats.map(s => s.topic_id);
       
-      // Get videos matching user's top topics
       const { data: topicVideoData } = await supabaseClient
         .from('creator_videos')
         .select(`
           id,
-          embed_url,
+          video_file_path,
+          channel_url,
           platform,
           user_id,
           creator_video_topics!inner(topic_id)
         `)
         .eq('is_active', true)
         .gt('expires_at', now)
-        .not('embed_url', 'is', null)
+        .not('video_file_path', 'is', null)
         .in('creator_video_topics.topic_id', topTopicIds);
 
       if (topicVideoData) {
@@ -95,18 +94,19 @@ serve(async (req) => {
       }
     }
 
-    // STEP 2: Get all active videos as fallback
+    // Get all active videos as fallback
     const { data: allVideos, error: videosError } = await supabaseClient
       .from('creator_videos')
       .select(`
         id,
-        embed_url,
+        video_file_path,
+        channel_url,
         platform,
         user_id
       `)
       .eq('is_active', true)
       .gt('expires_at', now)
-      .not('embed_url', 'is', null);
+      .not('video_file_path', 'is', null);
 
     if (videosError) {
       console.error('[reward-start] Error fetching videos:', videosError);
@@ -121,7 +121,7 @@ serve(async (req) => {
       );
     }
 
-    // STEP 3: Get active creator subscriptions
+    // Get active creator subscriptions
     const allVideosList = allVideos || [];
     const creatorIds = [...new Set(allVideosList.map(v => v.user_id))];
     
@@ -137,13 +137,12 @@ serve(async (req) => {
       activeCreatorIds = new Set(subscriptions?.map(s => s.user_id) || []);
     }
 
-    // STEP 4: Filter eligible videos (active creator + valid embed)
+    // Filter eligible videos
     const filterEligible = (videos: any[]) => {
       return videos.filter(v => {
         if (!activeCreatorIds.has(v.user_id)) return false;
-        if (!v.embed_url) return false;
-        const hasValidEmbed = v.embed_url.includes('/embed/') || v.embed_url.includes('plugins/video');
-        return hasValidEmbed;
+        if (!v.video_file_path) return false;
+        return true;
       });
     };
 
@@ -152,11 +151,9 @@ serve(async (req) => {
 
     console.log(`[reward-start] Found ${eligibleTopicVideos.length} topic videos, ${eligibleAllVideos.length} total eligible videos`);
 
-    // STEP 5: Select videos with repetition logic
-    // Priority: topic-based videos first, then fallback to all videos
+    // Select source videos
     let sourceVideos = eligibleTopicVideos.length > 0 ? eligibleTopicVideos : eligibleAllVideos;
 
-    // If no videos at all, return error
     if (sourceVideos.length === 0) {
       console.log('[reward-start] No eligible videos in entire system');
       return new Response(
@@ -170,23 +167,23 @@ serve(async (req) => {
       );
     }
 
-    // Shuffle source videos
+    // Shuffle and select
     const shuffled = sourceVideos.sort(() => Math.random() - 0.5);
 
-    // Build result array with repetition if needed
     const selectedVideos: RewardVideo[] = [];
     for (let i = 0; i < videosRequired; i++) {
-      const video = shuffled[i % shuffled.length]; // Cycle through if not enough
+      const video = shuffled[i % shuffled.length];
       selectedVideos.push({
         id: video.id,
-        embedUrl: video.embed_url!,
+        videoUrl: `${supabaseUrl}/storage/v1/object/public/creator-videos/${video.video_file_path}`,
+        channelUrl: video.channel_url,
         platform: video.platform as RewardVideo['platform'],
       });
     }
 
-    console.log(`[reward-start] Selected ${selectedVideos.length} videos (source had ${sourceVideos.length})`);
+    console.log(`[reward-start] Selected ${selectedVideos.length} videos`);
 
-    // Store session in database for validation on complete
+    // Store session
     const { error: sessionError } = await supabaseClient
       .from('reward_sessions')
       .insert({
@@ -201,10 +198,8 @@ serve(async (req) => {
       });
 
     if (sessionError) {
-      console.log('[reward-start] Could not store session (table may not exist):', sessionError.message);
+      console.log('[reward-start] Could not store session:', sessionError.message);
     }
-
-    console.log(`[reward-start] Session ${rewardSessionId} created with ${selectedVideos.length} videos`);
 
     return new Response(
       JSON.stringify({
