@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import defaultProfileImage from '@/assets/default-profile.png';
 import { useAudioStore } from '@/stores/audioStore';
 import PackageSelectorModal from '@/components/creators/PackageSelectorModal';
-import VideoLinkModal from '@/components/creators/VideoLinkModal';
+import VideoUploadModal from '@/components/creators/VideoUploadModal';
 import VideoEditModal from '@/components/creators/VideoEditModal';
 import { useCreatorSubscription } from '@/hooks/useCreatorSubscription';
 import { useCreatorVideos, CreatorVideo } from '@/hooks/useCreatorVideos';
@@ -542,8 +542,8 @@ const Creators = () => {
         lang={lang as 'hu' | 'en'}
       />
 
-      {/* Video Link Modal */}
-      <VideoLinkModal
+      {/* Video Upload Modal */}
+      <VideoUploadModal
         isOpen={showVideoLinkModal}
         onClose={() => setShowVideoLinkModal(false)}
         onSuccess={handleVideoAdded}
