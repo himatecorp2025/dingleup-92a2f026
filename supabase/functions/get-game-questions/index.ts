@@ -6,9 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// CRITICAL: 20 GLOBAL POOLS (pool_1 ... pool_20)
-const TOTAL_POOLS = 20;
-const MIN_QUESTIONS_PER_POOL = 300;
+// CRITICAL: 25 GLOBAL POOLS (pool_1 ... pool_25)
+const TOTAL_POOLS = 25;
+const MIN_QUESTIONS_PER_POOL = 15; // Lowered - pools now have 150+ questions
 const QUESTIONS_PER_GAME = 15;
 
 // PERSONALIZATION: 70-20-10 ratio after 100 answers
