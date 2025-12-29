@@ -265,7 +265,7 @@ const AdminCreatorVideos = () => {
                             <span className="capitalize">{video.platform}</span>
                           </span>
                         </TableCell>
-                        <TableCell className="max-w-[200px] truncate">{video.title || video.video_url}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{video.title || video.channel_url}</TableCell>
                         <TableCell>{getStatusBadge(video.status)}</TableCell>
                         <TableCell className="text-center">{video.total_impressions?.toLocaleString() || 0}</TableCell>
                         <TableCell className="text-center">{video.total_video_completions?.toLocaleString() || 0}</TableCell>

@@ -853,11 +853,12 @@ export type Database = {
       }
       creator_videos: {
         Row: {
+          channel_url: string
           created_at: string
           creator_name: string | null
           duration_seconds: number | null
-          embed_url: string | null
           expires_at: string | null
+          file_size_bytes: number | null
           first_activated_at: string | null
           id: string
           is_active: boolean
@@ -871,14 +872,16 @@ export type Database = {
           total_video_completions: number
           updated_at: string
           user_id: string
-          video_url: string
+          video_file_path: string | null
+          video_group_id: string | null
         }
         Insert: {
+          channel_url: string
           created_at?: string
           creator_name?: string | null
           duration_seconds?: number | null
-          embed_url?: string | null
           expires_at?: string | null
+          file_size_bytes?: number | null
           first_activated_at?: string | null
           id?: string
           is_active?: boolean
@@ -892,14 +895,16 @@ export type Database = {
           total_video_completions?: number
           updated_at?: string
           user_id: string
-          video_url: string
+          video_file_path?: string | null
+          video_group_id?: string | null
         }
         Update: {
+          channel_url?: string
           created_at?: string
           creator_name?: string | null
           duration_seconds?: number | null
-          embed_url?: string | null
           expires_at?: string | null
+          file_size_bytes?: number | null
           first_activated_at?: string | null
           id?: string
           is_active?: boolean
@@ -913,7 +918,8 @@ export type Database = {
           total_video_completions?: number
           updated_at?: string
           user_id?: string
-          video_url?: string
+          video_file_path?: string | null
+          video_group_id?: string | null
         }
         Relationships: [
           {

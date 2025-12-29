@@ -184,17 +184,17 @@ const AdminCreatorVideoDetail = () => {
                 <DialogHeader>
                   <DialogTitle>{t('admin.videos.preview')}</DialogTitle>
                 </DialogHeader>
-                <div className="aspect-video w-full">
-                  {video.embed_url ? (
-                    <iframe
-                      src={video.embed_url}
-                      className="w-full h-full rounded-lg"
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
+                <div className="aspect-[9/16] max-h-[70vh] mx-auto">
+                  {video.video_file_path ? (
+                    <video
+                      src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/creator-videos/${video.video_file_path}`}
+                      className="w-full h-full rounded-lg object-contain bg-black"
+                      controls
+                      playsInline
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center rounded-lg">
-                      <p className="text-muted-foreground">{t('admin.videos.no_embed')}</p>
+                      <p className="text-muted-foreground">{t('admin.videos.no_video')}</p>
                     </div>
                   )}
                 </div>
@@ -322,18 +322,18 @@ const AdminCreatorVideoDetail = () => {
               </div>
 
               <div className="pt-4 border-t border-border/50">
-                <label className="text-sm text-muted-foreground">Original URL</label>
+                <label className="text-sm text-muted-foreground">Channel URL</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <p className="font-mono text-sm truncate flex-1">{video.video_url}</p>
-                  <Button variant="ghost" size="icon" onClick={() => window.open(video.video_url, '_blank')}>
+                  <p className="font-mono text-sm truncate flex-1">{video.channel_url}</p>
+                  <Button variant="ghost" size="icon" onClick={() => window.open(video.channel_url, '_blank')}>
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm text-muted-foreground">Embed URL</label>
-                <p className="font-mono text-sm truncate">{video.embed_url || '-'}</p>
+                <label className="text-sm text-muted-foreground">Video File</label>
+                <p className="font-mono text-sm truncate">{video.video_file_path || '-'}</p>
               </div>
 
               {/* Topics */}
