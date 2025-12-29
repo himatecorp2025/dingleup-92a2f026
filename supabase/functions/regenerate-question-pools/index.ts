@@ -6,12 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// CRITICAL: 20 GLOBAL POOLS (pool_1 through pool_20)
-// Each pool contains 300 questions (30 topics × 10 questions/topic)
-// 6000 questions total => 20 pools
-const TOTAL_POOLS = 20;
-const MIN_QUESTIONS_PER_POOL = 300;
-const QUESTIONS_PER_TOPIC_PER_POOL = 10; // Each pool gets max 10 questions from each topic
+// CRITICAL: Dynamic pools based on available questions
+// With ~4000 valid questions and 29 topics, create pools of ~145 questions each
+// This ensures maximum pools with proper topic distribution
+const TOTAL_POOLS = 25;
+const MIN_QUESTIONS_PER_POOL = 100; // Lowered from 300 to allow more pools with current question count
+const QUESTIONS_PER_TOPIC_PER_POOL = 5; // Each pool gets max 5 questions from each topic
 
 interface Question {
   id: string;
