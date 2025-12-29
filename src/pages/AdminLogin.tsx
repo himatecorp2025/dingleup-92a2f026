@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '@/i18n';
-
+import gameBackground from '@/assets/game-background.png';
 const AdminLogin = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -100,13 +100,21 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-dvh min-h-svh relative overflow-hidden bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#0f0a1f] flex items-center justify-center p-4">
-      {/* Animated glowing orbs background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-      </div>
+    <div 
+      className="w-screen fixed inset-0 overflow-hidden bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#0f0a1f] flex items-center justify-center p-4"
+      style={{ height: '100dvh' }}
+    >
+      {/* Background image with 75% opacity */}
+      <div 
+        className="fixed inset-0 z-0 will-change-transform pointer-events-none" 
+        style={{
+          backgroundImage: `url(${gameBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          opacity: 0.75,
+          transform: 'translateZ(0)',
+        }}
+      />
 
       <div className="w-full max-w-[clamp(20rem,90vw,28rem)] relative z-10">
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[clamp(1.5rem,4vw,3rem)] p-[clamp(1.5rem,4vw,2rem)] shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
