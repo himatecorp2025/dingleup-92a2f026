@@ -1,10 +1,42 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, ExternalLink, Play } from 'lucide-react';
+import { X, Volume2, VolumeX } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import dingleupLogo from '@/assets/dingleup-logo-loading.png';
-import PlatformEmbedFullscreen from './PlatformEmbedFullscreen';
+import { supabase } from '@/integrations/supabase/client';
+
+// Platform Icons
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+  </svg>
+);
+
+const YouTubeIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="#FF0000">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
+    <path fill="#fff" d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+  </svg>
+);
+
+const InstagramIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="url(#ig-grad-modal)">
+    <defs>
+      <linearGradient id="ig-grad-modal" x1="0" y1="24" x2="24" y2="0">
+        <stop offset="0%" stopColor="#FD5"/>
+        <stop offset="50%" stopColor="#FF543E"/>
+        <stop offset="100%" stopColor="#C837AB"/>
+      </linearGradient>
+    </defs>
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/>
+  </svg>
+);
+
+const FacebookIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="#1877F2">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
 
 interface VideoAdModalProps {
   isOpen: boolean;
@@ -19,10 +51,10 @@ interface VideoAdModalProps {
 
 interface VideoData {
   id: string;
-  video_url?: string;
-  videoUrl?: string;
-  embed_url?: string | null;
-  embedUrl?: string | null;
+  video_file_path?: string | null;
+  videoFilePath?: string | null;
+  channel_url?: string | null;
+  channelUrl?: string | null;
   platform: string;
   duration_seconds?: number | null;
   durationSeconds?: number | null;
@@ -30,67 +62,19 @@ interface VideoData {
   creatorName?: string;
 }
 
-const SEGMENT_DURATION = 15; // seconds per video segment
+const SEGMENT_DURATION = 15;
 
-// Instagram doesn't reliably support autoplay - needs tap to play
-const NEEDS_TAP_TO_PLAY = ['instagram'];
-
-/**
- * Add autoplay parameters to embed URL
- */
-const addAutoplayParams = (url: string, platform: string): string => {
-  if (!url) return '';
-  
-  try {
-    const urlObj = new URL(url);
-    const p = platform.toLowerCase();
-    
-    // Common autoplay params
-    if (!urlObj.searchParams.has('autoplay')) {
-      urlObj.searchParams.set('autoplay', '1');
-    }
-    if (!urlObj.searchParams.has('playsinline')) {
-      urlObj.searchParams.set('playsinline', '1');
-    }
-    
-    // Platform-specific mute param
-    switch (p) {
-      case 'youtube':
-        if (!urlObj.searchParams.has('mute')) {
-          urlObj.searchParams.set('mute', '1');
-        }
-        urlObj.searchParams.set('controls', '0');
-        urlObj.searchParams.set('rel', '0');
-        urlObj.searchParams.set('modestbranding', '1');
-        break;
-      case 'instagram':
-        if (!urlObj.searchParams.has('muted')) {
-          urlObj.searchParams.set('muted', '1');
-        }
-        break;
-      default:
-        if (!urlObj.searchParams.has('mute')) {
-          urlObj.searchParams.set('mute', '1');
-        }
-    }
-    
-    return urlObj.toString();
-  } catch {
-    return url;
+const getPlatformIcon = (platform: string) => {
+  const p = platform?.toLowerCase() || '';
+  switch (p) {
+    case 'tiktok': return <TikTokIcon className="w-6 h-6" />;
+    case 'youtube': return <YouTubeIcon className="w-6 h-6" />;
+    case 'instagram': return <InstagramIcon className="w-6 h-6" />;
+    case 'facebook': return <FacebookIcon className="w-6 h-6" />;
+    default: return null;
   }
 };
 
-/**
- * VideoAdModal - TRUE FULLSCREEN video ad player
- * 
- * Features:
- * - True fullscreen: 100dvw × 100dvh, black background
- * - Autoplay with mute + playsinline
- * - Single countdown timer (15s or 30s continuous)
- * - Auto-switch to video 2 at 15s mark (for 30s sessions)
- * - Close button only appears when timer reaches 0
- * - Reward credited only when user closes modal
- */
 export const VideoAdModal = ({
   isOpen,
   onClose,
@@ -104,54 +88,51 @@ export const VideoAdModal = ({
   const { lang } = useI18n();
   const [secondsLeft, setSecondsLeft] = useState<number>(totalDurationSeconds);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   
+  const videoRef = useRef<HTMLVideoElement>(null);
   const startTsRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const rewardShownRef = useRef(false);
 
   const texts = {
     hu: {
-      seconds: 'mp',
       goToCreator: 'Tovább az alkotóhoz',
-      tapToPlay: 'Koppints a lejátszáshoz',
     },
     en: {
-      seconds: 's',
       goToCreator: 'Go to creator',
-      tapToPlay: 'Tap to play',
     },
   };
   const t = texts[lang as 'hu' | 'en'] || texts.en;
 
-  // Calculate total duration and required segments
   const totalDuration = totalDurationSeconds > 0 ? totalDurationSeconds : 15;
   const requiredSegments = totalDuration >= 30 ? 2 : 1;
 
-  // Build playlist based on required segments
   const playlist = (() => {
     if (videos.length === 0) return [];
     if (requiredSegments === 1) return [videos[0]];
     if (requiredSegments === 2) {
       if (videos.length >= 2) return [videos[0], videos[1]];
-      return [videos[0], videos[0]]; // Duplicate if only 1 video
+      return [videos[0], videos[0]];
     }
     return [videos[0]];
   })();
 
   const currentVideo = playlist[activeIndex];
   const currentPlatform = currentVideo?.platform?.toLowerCase() || '';
-  const needsTapToPlay = NEEDS_TAP_TO_PLAY.includes(currentPlatform);
   
-  // Handle both snake_case (from database) and camelCase (from preload-reward-videos)
-  const videoUrl = currentVideo?.video_url || currentVideo?.videoUrl || '';
-  const rawEmbedUrl = currentVideo?.embed_url || currentVideo?.embedUrl || '';
+  // Get video file URL from Supabase Storage
+  const videoFilePath = currentVideo?.video_file_path || currentVideo?.videoFilePath || '';
+  const channelUrl = currentVideo?.channel_url || currentVideo?.channelUrl || '';
   
-  // Get embed URL with autoplay params
-  const embedUrl = rawEmbedUrl 
-    ? addAutoplayParams(rawEmbedUrl, currentVideo?.platform || '')
-    : '';
+  const getVideoUrl = useCallback((filePath: string) => {
+    if (!filePath) return '';
+    const { data } = supabase.storage.from('creator-videos').getPublicUrl(filePath);
+    return data?.publicUrl || '';
+  }, []);
+
+  const videoUrl = videoFilePath ? getVideoUrl(videoFilePath) : '';
 
   // Lock body scroll
   useEffect(() => {
@@ -172,9 +153,9 @@ export const VideoAdModal = ({
     if (isOpen) {
       setSecondsLeft(totalDuration);
       setActiveIndex(0);
-      setIsLoaded(false);
+      setIsVideoLoaded(false);
+      setIsMuted(false);
       rewardShownRef.current = false;
-      setIsPlaying(!needsTapToPlay);
       startTsRef.current = performance.now();
       
       logger.log('[VideoAdModal] Opened - playlist:', playlist.length, 'videos, duration:', totalDuration);
@@ -186,17 +167,16 @@ export const VideoAdModal = ({
         intervalRef.current = null;
       }
     };
-  }, [isOpen, totalDuration, needsTapToPlay, playlist.length]);
+  }, [isOpen, totalDuration, playlist.length]);
 
-  // Main timer - stable tick using performance.now()
+  // Main timer
   useEffect(() => {
-    if (!isOpen || !isPlaying) return;
+    if (!isOpen || !isVideoLoaded) return;
 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
 
-    // Use the startTsRef that was set when modal opened
     if (startTsRef.current === 0) {
       startTsRef.current = performance.now();
     }
@@ -214,14 +194,13 @@ export const VideoAdModal = ({
         setActiveIndex(newIndex);
       }
 
-      // Stop timer when done
       if (remaining <= 0) {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
       }
-    }, 200); // 200ms tick for stability
+    }, 200);
 
     return () => {
       if (intervalRef.current) {
@@ -229,31 +208,38 @@ export const VideoAdModal = ({
         intervalRef.current = null;
       }
     };
-  }, [isOpen, isPlaying, totalDuration, playlist.length]);
+  }, [isOpen, isVideoLoaded, totalDuration, playlist.length]);
 
-  // Handle tap to play (for Instagram)
-  const handleTapToPlay = useCallback(() => {
-    logger.log('[VideoAdModal] Tap to play');
+  // Handle video loaded
+  const handleVideoLoaded = useCallback(() => {
+    setIsVideoLoaded(true);
+    if (videoRef.current) {
+      videoRef.current.play().catch(err => {
+        logger.log('[VideoAdModal] Autoplay failed:', err);
+      });
+    }
     startTsRef.current = performance.now();
-    setIsPlaying(true);
   }, []);
 
-  // Handle iframe load
-  const handleIframeLoad = useCallback(() => {
-    setIsLoaded(true);
-    logger.log('[VideoAdModal] Iframe loaded');
+  // Toggle mute
+  const handleToggleMute = useCallback(() => {
+    setIsMuted(prev => {
+      if (videoRef.current) {
+        videoRef.current.muted = !prev;
+      }
+      return !prev;
+    });
   }, []);
 
-  // Handle close - ONLY HERE does the reward get credited
+  // Handle close
   const handleClose = useCallback(() => {
-    if (secondsLeft > 0) return; // Only allow close when timer is done
+    if (secondsLeft > 0) return;
     
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
     
-    // Show reward toast ONLY when closing
     if (!rewardShownRef.current) {
       rewardShownRef.current = true;
       
@@ -265,9 +251,7 @@ export const VideoAdModal = ({
               {lang === 'hu' ? 'Gratulálunk!' : 'Congratulations!'}
             </div>
             <div className="text-sm text-foreground/90">
-              {lang === 'hu' 
-                ? 'Jutalmad jóváíródott!' 
-                : 'Reward credited!'}
+              {lang === 'hu' ? 'Jutalmad jóváíródott!' : 'Reward credited!'}
             </div>
             <div className="flex items-center gap-3 mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/40 shadow-lg shadow-yellow-500/20">
               <span className="font-bold text-yellow-400 text-lg">+500 🪙</span>
@@ -285,27 +269,10 @@ export const VideoAdModal = ({
               {lang === 'hu' ? 'Gratulálunk!' : 'Congratulations!'}
             </div>
             <div className="text-sm text-foreground/90">
-              {lang === 'hu' 
-                ? 'Duplázott jutalmad!' 
-                : 'Doubled reward!'}
+              {lang === 'hu' ? 'Duplázott jutalmad!' : 'Doubled reward!'}
             </div>
             <div className="flex items-center gap-2 mt-1 px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-500/20 via-amber-500/30 to-yellow-500/20 border border-yellow-500/40 shadow-lg shadow-yellow-500/20">
               <span className="font-bold text-yellow-400 text-lg">+{doubledAmount} 🪙</span>
-            </div>
-          </div>,
-          { duration: 4000, position: 'top-center' }
-        );
-      } else {
-        toast.success(
-          <div className="flex flex-col items-center gap-2 text-center max-w-[75vw]">
-            <div className="text-2xl">🎉</div>
-            <div className="font-bold text-lg bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent drop-shadow-lg">
-              {lang === 'hu' ? 'Gratulálunk!' : 'Congratulations!'}
-            </div>
-            <div className="text-sm text-foreground/90">
-              {lang === 'hu' 
-                ? 'Jutalmad duplázódott!' 
-                : 'Your reward has been doubled!'}
             </div>
           </div>,
           { duration: 4000, position: 'top-center' }
@@ -316,21 +283,18 @@ export const VideoAdModal = ({
     onComplete();
   }, [secondsLeft, onComplete, context, lang, doubledAmount]);
 
-  // Handle go to creator - use videoUrl (supports both formats)
+  // Handle go to creator
   const handleGoToCreator = useCallback(() => {
-    const url = currentVideo?.video_url || currentVideo?.videoUrl;
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+    if (channelUrl) {
+      window.open(channelUrl, '_blank', 'noopener,noreferrer');
     }
-  }, [currentVideo]);
+  }, [channelUrl]);
 
   if (!isOpen || playlist.length === 0) return null;
 
   const canClose = secondsLeft === 0;
 
   return (
-    // ROOT: TRUE FULLSCREEN - fixed inset 0, 100dvw × 100dvh
-    // z-index: 9999999 - MUST be above everything including toasts, dialogs, popups
     <div 
       style={{ 
         position: 'fixed',
@@ -343,16 +307,28 @@ export const VideoAdModal = ({
         overflow: 'hidden',
       }}
     >
-      {/* Platform-specific embed - fills entire screen */}
-      {currentVideo ? (
-        <PlatformEmbedFullscreen
+      {/* Native video player - 9:16 aspect ratio, fullscreen */}
+      {videoUrl ? (
+        <video
+          ref={videoRef}
           key={`${currentVideo.id}-${activeIndex}`}
-          platform={currentPlatform as 'tiktok' | 'youtube' | 'instagram' | 'facebook'}
-          originalUrl={videoUrl}
-          embedUrl={rawEmbedUrl || undefined}
+          src={videoUrl}
+          autoPlay
+          loop
+          playsInline
+          muted={isMuted}
+          onLoadedData={handleVideoLoaded}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
         />
       ) : (
-        // No video - show logo
         <div 
           style={{
             position: 'absolute',
@@ -361,54 +337,33 @@ export const VideoAdModal = ({
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: '#000000',
+            color: '#fff',
           }}
         >
-          <img 
-            src={dingleupLogo} 
-            alt="DingleUP" 
-            style={{ width: 'min(160px, 40vw)', height: 'auto' }}
-          />
+          <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-white rounded-full" />
         </div>
       )}
 
-      {/* Loading overlay removed - PlatformEmbedFullscreen handles its own loading */}
-
-      {/* Tap to play overlay for Instagram */}
-      {!isPlaying && needsTapToPlay && (
+      {/* Platform icon - top right corner */}
+      {currentPlatform && isVideoLoaded && (
         <div 
-          onClick={handleTapToPlay}
-          style={{
+          style={{ 
             position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            zIndex: 20,
-            cursor: 'pointer',
+            top: '16px',
+            right: canClose ? '80px' : '16px',
+            zIndex: 100,
+            padding: '10px',
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.2)',
           }}
         >
-          <div 
-            style={{ 
-              width: '80px', 
-              height: '80px', 
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-            }}
-          >
-            <Play style={{ width: '40px', height: '40px', color: '#fff', marginLeft: '6px' }} fill="#fff" />
-          </div>
-          <p style={{ color: '#fff', fontSize: '16px', fontWeight: 500 }}>{t.tapToPlay}</p>
+          {getPlatformIcon(currentPlatform)}
         </div>
       )}
 
-      {/* Countdown timer - top left - z-index 100 to be above blocking overlay */}
-      {isPlaying && (
+      {/* Countdown timer - top left */}
+      {isVideoLoaded && (
         <div 
           style={{ 
             position: 'absolute',
@@ -433,8 +388,36 @@ export const VideoAdModal = ({
         </div>
       )}
 
-      {/* Video progress dots - top center (only if 2 videos) - z-index 100 */}
-      {playlist.length > 1 && isPlaying && (
+      {/* Mute/Unmute button - below timer */}
+      {isVideoLoaded && (
+        <button
+          onClick={handleToggleMute}
+          style={{ 
+            position: 'absolute',
+            top: '76px',
+            left: '16px',
+            zIndex: 100,
+            width: '48px',
+            height: '48px',
+            backgroundColor: 'rgba(0,0,0,0.75)',
+            borderRadius: '50%',
+            border: '1px solid rgba(255,255,255,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {isMuted ? (
+            <VolumeX style={{ width: '20px', height: '20px', color: '#fff' }} />
+          ) : (
+            <Volume2 style={{ width: '20px', height: '20px', color: '#fff' }} />
+          )}
+        </button>
+      )}
+
+      {/* Video progress dots - top center (only if 2 videos) */}
+      {playlist.length > 1 && isVideoLoaded && (
         <div 
           style={{ 
             position: 'absolute',
@@ -461,7 +444,7 @@ export const VideoAdModal = ({
         </div>
       )}
 
-      {/* Close button - top right, ONLY when timer = 0 - z-index 100 */}
+      {/* Close button - top right, ONLY when timer = 0 */}
       {canClose && (
         <button
           onClick={handleClose}
@@ -480,35 +463,46 @@ export const VideoAdModal = ({
             justifyContent: 'center',
             cursor: 'pointer',
             boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+            animation: 'pulse 1.5s ease-in-out infinite',
           }}
         >
           <X style={{ width: '20px', height: '20px', color: '#fff' }} />
         </button>
       )}
 
-      {/* Go to creator CTA - bottom left - z-index 100 (relative to parent which has 9999999) */}
-      {isPlaying && videoUrl && (
+      {/* Go to creator CTA - bottom left */}
+      {isVideoLoaded && channelUrl && (
         <button
           onClick={handleGoToCreator}
           style={{ 
             position: 'absolute',
-            bottom: '16px',
+            bottom: 'max(24px, env(safe-area-inset-bottom))',
             left: '16px',
             zIndex: 100,
             backgroundColor: 'rgba(0,0,0,0.75)',
             border: '1px solid rgba(255,255,255,0.3)',
             borderRadius: '20px',
-            padding: '8px 12px',
+            padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
             cursor: 'pointer',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 500,
           }}
         >
-          <ExternalLink style={{ width: '14px', height: '14px', color: '#fff' }} />
-          <span style={{ color: '#fff', fontWeight: 500, fontSize: '12px' }}>{t.goToCreator}</span>
+          {getPlatformIcon(currentPlatform)}
+          <span>{t.goToCreator}</span>
         </button>
       )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+      `}</style>
     </div>
   );
 };
