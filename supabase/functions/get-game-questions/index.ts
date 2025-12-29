@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // CRITICAL: 25 GLOBAL POOLS (pool_1 ... pool_25)
 const TOTAL_POOLS = 25;
-const MIN_QUESTIONS_PER_POOL = 15; // Lowered - pools now have 150+ questions
+const MIN_QUESTIONS_PER_POOL = 150; // Minimum for cache loading
 const QUESTIONS_PER_GAME = 15;
 
 // PERSONALIZATION: 70-20-10 ratio after 100 answers
@@ -71,10 +71,10 @@ async function initializePoolsCache(supabase: any): Promise<void> {
     const startTime = Date.now();
 
     try {
+      // Load ALL pools - don't filter by question_count, we'll check at selection time
       const { data: pools, error } = await supabase
         .from('question_pools')
         .select('*')
-        .gte('question_count', MIN_QUESTIONS_PER_POOL)
         .order('pool_order');
 
       if (error) {
