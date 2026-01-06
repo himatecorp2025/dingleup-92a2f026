@@ -142,7 +142,10 @@ const BottomNav = () => {
 
   return (
     <div ref={containerRef} className="fixed bottom-0 left-0 right-0 bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#0f0a1f] border-t border-white/10 z-[9999]"
-      style={{ padding: 'clamp(0.08rem, 0.4vh, 0.2rem)' }}
+      style={{ 
+        padding: 'clamp(0.08rem, 0.4vh, 0.2rem)',
+        paddingBottom: 'calc(clamp(0.08rem, 0.4vh, 0.2rem) + env(safe-area-inset-bottom, 0px))'
+      }}
     >
       <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-60"
         style={{ height: 'clamp(1px, 0.2vh, 2px)' }}
