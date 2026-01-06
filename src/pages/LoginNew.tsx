@@ -135,19 +135,37 @@ const LoginNew = () => {
       className="w-screen fixed inset-0 overflow-hidden bg-gradient-to-br from-[#1a0033] via-[#2d1b69] to-[#0f0033] animate-fade-in flex items-center justify-center"
       style={{
         height: '100dvh',
-        paddingTop: isStandalone ? 'env(safe-area-inset-top)' : '0',
-        paddingBottom: isStandalone ? 'env(safe-area-inset-bottom)' : '0'
       }}
     >
+      {/* Full-screen background that extends behind safe areas */}
+      <div 
+        className="fixed z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #1a0033 0%, #2d1b69 50%, #0f0033 100%)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
+
       {/* Background image with 75% opacity - optimized for mobile performance */}
       <div 
-        className="fixed inset-0 z-0 will-change-transform pointer-events-none" 
+        className="fixed z-0 will-change-transform pointer-events-none" 
         style={{
           backgroundImage: `url(${gameBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           opacity: 0.75,
           transform: 'translateZ(0)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         }}
       />
 

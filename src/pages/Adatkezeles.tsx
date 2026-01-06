@@ -42,12 +42,25 @@ export default function Adatkezeles() {
   }
   
   return (
-    <div className="h-dvh w-screen overflow-y-auto overflow-x-hidden bg-gradient-to-br from-[#0a0a2e] via-[#16213e] to-[#0f0f3d] flex flex-col" style={{
+    <div className="h-dvh w-screen overflow-y-auto overflow-x-hidden flex flex-col" style={{
       maxWidth: '100vw',
       maxHeight: '100vh',
       padding: 'clamp(12px, 2vh, 24px)'
     }}>
-      <div className="bg-white/5 backdrop-blur-xl rounded-lg relative flex-1 overflow-y-auto" style={{
+      {/* Full-screen background that extends behind safe areas */}
+      <div 
+        className="fixed z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
+      <div className="bg-white/5 backdrop-blur-xl rounded-lg relative flex-1 overflow-y-auto z-10" style={{
         width: '90vw',
         maxWidth: '90vw',
         margin: '0 auto',
