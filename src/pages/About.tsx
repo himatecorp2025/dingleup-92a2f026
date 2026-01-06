@@ -71,7 +71,7 @@ const About = () => {
       paddingTop: 'max(calc(env(safe-area-inset-top) + 2%), env(safe-area-inset-top) + 8px)',
       paddingBottom: 'env(safe-area-inset-bottom)',
       maxWidth: '100vw',
-      maxHeight: '100vh'
+      maxHeight: '100dvh'
     }}>
       {/* Full-screen background that covers status bar */}
       <div 
@@ -82,7 +82,7 @@ const About = () => {
           top: 'calc(-1 * env(safe-area-inset-top, 0px))',
           bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
           width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
           pointerEvents: 'none'
         }}
       />

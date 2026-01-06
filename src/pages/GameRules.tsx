@@ -11,7 +11,7 @@ const GameRules = () => {
   return (
     <div className="h-dvh w-screen overflow-y-auto overflow-x-hidden relative flex flex-col" style={{
       maxWidth: '100vw',
-      maxHeight: '100vh'
+      maxHeight: '100dvh'
     }}>
       {/* Background extends beyond safe-area */}
       <div 
@@ -24,7 +24,7 @@ const GameRules = () => {
           top: 'calc(-1 * env(safe-area-inset-top, 0px))',
           bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
           width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         }}
       />
       
