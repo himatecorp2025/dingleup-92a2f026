@@ -258,7 +258,6 @@ const Profile = () => {
   if (loading || !profile) {
     return (
       <div className="profile-container min-h-dvh min-h-svh w-screen fixed inset-0 overflow-y-auto overflow-x-hidden" style={{
-        background: 'linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
         paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
       }}>
         <div className="max-w-2xl mx-auto p-6 space-y-6" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}>
@@ -346,19 +345,7 @@ const Profile = () => {
       touchAction: 'pan-y',
       overscrollBehaviorX: 'none'
     }}>
-      {/* Full-screen background that extends behind ALL safe areas */}
-      <div 
-        className="fixed pointer-events-none"
-        style={{
-          background: 'linear-gradient(to bottom, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
       
       {/* Casino lights removed per user requirement */}
       

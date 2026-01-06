@@ -13,7 +13,7 @@ import { getCountryFromTimezone } from "@/lib/utils";
 import type { LangCode } from "@/i18n/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import loadingLogo from '@/assets/dingleup-loading-logo.png';
-import gameBackground from '@/assets/game-background.png';
+
 
 const createRegisterSchema = (t: (key: string) => string) => z.object({
   username: z.string()
@@ -219,36 +219,7 @@ const RegisterNew = () => {
         height: '100dvh',
       }}
     >
-      {/* Full-screen gradient that extends behind ALL safe areas */}
-      <div 
-        className="fixed z-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(135deg, #1a0033 0%, #2d1b69 50%, #0f0033 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
-
-      {/* Background image with 75% opacity - extends behind ALL safe areas */}
-      <div 
-        className="fixed z-0 pointer-events-none" 
-        style={{
-          backgroundImage: `url(${gameBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          opacity: 0.75,
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
 
       <div className="w-[90vw] max-w-[500px] relative z-10" style={{ maxHeight: '90dvh' }}>
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 relative w-full flex flex-col"

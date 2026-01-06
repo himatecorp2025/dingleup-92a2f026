@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Trophy, Zap, Heart, HelpCircle, Timer, Coins } from "lucide-react";
 import { useI18n } from "@/i18n";
-import gameBackground from "@/assets/game-background.png";
+
 
 const GameRules = () => {
   const navigate = useNavigate();
@@ -13,20 +13,7 @@ const GameRules = () => {
       maxWidth: '100vw',
       maxHeight: '100dvh'
     }}>
-      {/* Background extends beyond safe-area */}
-      <div 
-        className="fixed bg-cover bg-no-repeat pointer-events-none z-0"
-        style={{ 
-          backgroundImage: `url(${gameBackground})`,
-          backgroundPosition: '50% 50%',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
       
       <div className="relative z-10 flex-1 overflow-y-auto" style={{
         width: '90vw',

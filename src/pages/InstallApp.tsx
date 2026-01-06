@@ -52,19 +52,7 @@ const InstallApp = () => {
 
   return (
     <div className="min-h-screen p-4 relative">
-      {/* Full-screen background that extends behind safe areas */}
-      <div 
-        className="fixed z-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
       <button
         onClick={() => navigate('/dashboard')}
         className="absolute top-4 left-4 p-3 rounded-full hover:scale-110 transition-all"

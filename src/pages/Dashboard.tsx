@@ -55,7 +55,7 @@ import { TutorialManager } from '@/components/tutorial/TutorialManager';
 import { IdleWarning } from '@/components/IdleWarning';
 
 import BottomNav from '@/components/BottomNav';
-import gameBackground from '@/assets/game-background.png';
+
 import { toast } from 'sonner';
 import { useBroadcastChannel } from '@/hooks/useBroadcastChannel';
 
@@ -343,22 +343,7 @@ const Dashboard = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
         </div>
       )}
-      {/* Background image - EXTENDS BEYOND safe-area to cover status bar AND home indicator */}
-      <div 
-        className="fixed z-0 pointer-events-none" 
-        style={{
-          backgroundImage: `url(${gameBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: '50% 50%',
-          /* Extend beyond all safe areas */
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
     {/* Age-gate modal (ABSOLUTE PRIORITY - blocks ALL popups until completed) */}
     {userId && (
       <AgeGateModal 
