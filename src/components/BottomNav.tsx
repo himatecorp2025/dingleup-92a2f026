@@ -2,14 +2,20 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useI18n } from '@/i18n';
 import { Users, Zap, Plus } from 'lucide-react';
 
 const BottomNav = () => {
   const [isDesktop, setIsDesktop] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { t } = useI18n();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const checkDesktop = () => {
@@ -136,26 +142,31 @@ const BottomNav = () => {
   ];
 
   // Don't render on desktop/laptop
-  if (isDesktop) {
+  if (isDesktop || !isMounted) {
     return null;
   }
 
-  return (
-    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
-      style={{ 
+  const nav = (
+    <div
+      ref={containerRef}
+      className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
+      style={{
         /* Dark gradient background to cover safe-area-inset-bottom */
-        background: 'linear-gradient(180deg, rgba(10, 10, 46, 0.98) 0%, rgba(10, 10, 46, 1) 100%)',
+        background:
+          'linear-gradient(180deg, rgba(10, 10, 46, 0.98) 0%, rgba(10, 10, 46, 1) 100%)',
         paddingTop: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         paddingLeft: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         paddingRight: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         /* Explicit safe-area padding for home indicator */
-        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))'
+        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-60"
+      <div
+        className="absolute top-0 left-0 w-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-60"
         style={{ height: 'clamp(1px, 0.2vh, 2px)' }}
       ></div>
-      <div className="flex justify-around items-center max-w-screen-sm mx-auto"
+      <div
+        className="flex justify-around items-center max-w-screen-sm mx-auto"
         style={{ gap: 'clamp(0.08rem, 0.4vh, 0.2rem)' }}
       >
         {navItems.map((item, index) => {
@@ -164,7 +175,7 @@ const BottomNav = () => {
           const isCreatorsItem = (item as any).isCreators;
           const isOnCreatorsPage = location.pathname.startsWith('/creators');
           const showPlusIcon = isCreatorsItem && isOnCreatorsPage;
-          
+
           const handleClick = () => {
             if (isCreatorsItem && isOnCreatorsPage) {
               // Dispatch custom event for Creators page to handle
@@ -175,7 +186,7 @@ const BottomNav = () => {
               handleNavigation(item.path!);
             }
           };
-          
+
           return (
             <button
               key={index}
@@ -183,15 +194,16 @@ const BottomNav = () => {
               className={`
                 flex flex-col items-center justify-center rounded-lg
                 transition-all duration-200 relative overflow-hidden flex-1
-                ${isGold 
-                  ? 'bg-gradient-to-r from-yellow-600/30 to-amber-500/30 text-yellow-400 shadow-lg shadow-yellow-500/20 border border-yellow-500/30' 
-                  : isActive 
-                    ? 'bg-gradient-to-r from-purple-600/30 to-blue-600/30 text-white shadow-lg shadow-purple-500/20' 
+                ${isGold
+                  ? 'bg-gradient-to-r from-yellow-600/30 to-amber-500/30 text-yellow-400 shadow-lg shadow-yellow-500/20 border border-yellow-500/30'
+                  : isActive
+                    ? 'bg-gradient-to-r from-purple-600/30 to-blue-600/30 text-white shadow-lg shadow-purple-500/20'
                     : 'text-white/60 hover:bg-white/5'}
               `}
               style={{
-                padding: 'clamp(0.2rem, 0.7vh, 0.35rem) clamp(0.2rem, 0.7vh, 0.35rem)',
-                minHeight: 'clamp(32px, 5vh, 42px)'
+                padding:
+                  'clamp(0.2rem, 0.7vh, 0.35rem) clamp(0.2rem, 0.7vh, 0.35rem)',
+                minHeight: 'clamp(32px, 5vh, 42px)',
               }}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
@@ -202,13 +214,19 @@ const BottomNav = () => {
               {isGold && (
                 <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/20 to-transparent animate-pulse"></div>
               )}
-              <div className={`relative z-10 ${isGold ? 'text-yellow-400' : 'text-purple-400'}`} style={{ marginBottom: showPlusIcon ? '0' : 'clamp(2px, 0.5vh, 4px)' }}>
+              <div
+                className={`relative z-10 ${isGold ? 'text-yellow-400' : 'text-purple-400'}`}
+                style={{ marginBottom: showPlusIcon ? '0' : 'clamp(2px, 0.5vh, 4px)' }}
+              >
                 {isCreatorsItem ? item.icon(isOnCreatorsPage) : item.icon(false)}
               </div>
               {!showPlusIcon && (
-                <span className={`font-medium relative z-10 leading-tight ${isGold ? 'text-yellow-400' : ''}`}
+                <span
+                  className={`font-medium relative z-10 leading-tight ${isGold ? 'text-yellow-400' : ''}`}
                   style={{ fontSize: 'clamp(0.625rem, 1.4vh, 0.6875rem)' }}
-                >{item.label}</span>
+                >
+                  {item.label}
+                </span>
               )}
             </button>
           );
@@ -216,6 +234,10 @@ const BottomNav = () => {
       </div>
     </div>
   );
+
+  // Portal to <body> so iOS Safari/PWA can't “trap” fixed positioning inside transformed parents
+  return createPortal(nav, document.body);
+
 };
 
 export default BottomNav;
