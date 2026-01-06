@@ -25,7 +25,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden py-12 sm:py-20">
+    <section className="relative min-h-svh flex items-center justify-center overflow-hidden py-12 sm:py-20">
       {/* Language Selector - Top Right */}
       <div className="absolute top-4 right-4 z-50">
         <LanguageSelector />

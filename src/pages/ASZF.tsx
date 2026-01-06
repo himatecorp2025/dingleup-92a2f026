@@ -44,7 +44,7 @@ export default function ASZF() {
   return (
     <div className="h-dvh w-screen overflow-y-auto overflow-x-hidden flex flex-col" style={{
       maxWidth: '100vw',
-      maxHeight: '100vh',
+      maxHeight: '100dvh',
       padding: 'clamp(12px, 2vh, 24px)'
     }}>
       {/* Full-screen background that extends behind safe areas */}

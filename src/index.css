@@ -21,16 +21,20 @@
   background: #000 !important;
 }
 
-/* Chat layout variables */
+/* Chat layout variables + iOS safe-area */
 :root {
   --appbar-h: 56px;
   --composer-h: 68px;
   --bottom-nav-h: 72px; /* Fixed: unified value */
+  /* iOS safe-area insets */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 .app-bottom-nav{
   position: fixed;
   left: 0; right: 0; bottom: 0;
-  /* ha kell 6–10px érintési puffer: padding-bottom: 6px; */
 }
 
 /* Mobile & touch optimizations + Status bar hiding */
@@ -40,9 +44,11 @@ html, body {
   margin: 0;
   padding: 0;
 
-  /* Full-viewport height on mobile/PWA (avoid iOS "black bar") */
+  /* iOS-barát viewport: svh > dvh > vh fallback */
+  min-height: 100vh;
   min-height: 100dvh;
-  height: 100dvh;
+  min-height: 100svh;
+  height: 100%;
   /* iOS Safari/PWA fallback */
   min-height: -webkit-fill-available;
 
@@ -69,24 +75,30 @@ body::before {
   content: "";
   position: fixed;
   z-index: -1;
-  left: calc(-1 * env(safe-area-inset-left, 0px));
-  right: calc(-1 * env(safe-area-inset-right, 0px));
-  top: calc(-1 * env(safe-area-inset-top, 0px));
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  inset: 0;
+  /* Extend beyond safe-areas to fill entire screen including notch/home indicator */
+  margin-top: calc(-1 * var(--safe-top));
+  margin-bottom: calc(-1 * var(--safe-bottom));
+  margin-left: calc(-1 * var(--safe-left));
+  margin-right: calc(-1 * var(--safe-right));
   background: hsl(var(--background));
   pointer-events: none;
 }
 
-#root {
+#root, .app-root, .page-root {
+  min-height: 100vh;
   min-height: 100dvh;
-  height: 100dvh;
+  min-height: 100svh;
+  width: 100%;
   background-color: hsl(var(--background));
 }
 
-/* PWA fullscreen - hide status bar */
+/* PWA fullscreen mode */
 @media all and (display-mode: standalone) {
-  html, body {
-    height: 100dvh;
+  html, body, #root {
+    min-height: 100svh;
+    min-height: 100dvh;
+    height: 100%;
   }
 }
 
@@ -98,6 +110,35 @@ body::before {
   body {
     min-height: -webkit-fill-available;
   }
+  #root {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Global safe-area utility classes */
+.safe-area {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+.safe-area-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Bottom nav/footer/tabbar safe-area support */
+.bottom-nav, .footer, .tabbar, .app-bottom-nav {
+  padding-bottom: calc(12px + var(--safe-bottom));
+}
+
+/* Main content wrapper safe-area support */
+.main-content, .content {
+  padding-bottom: var(--safe-bottom);
 }
 
 
@@ -137,13 +178,15 @@ body::before {
 
 /* Page scroll wrapper for mobile layouts */
 .page-scroll {
+  min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  /* NINCS env(...) – az alsó csíkot a háttér tölti ki */
-  padding-bottom: calc(var(--bottom-nav-h) + 16px);
-  scroll-padding-bottom: calc(var(--bottom-nav-h) + 16px);
+  /* Bottom nav + safe-area + breathing room */
+  padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 16px);
+  scroll-padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 16px);
   scroll-behavior: smooth;
   /* Keep scrolling responsive; DO NOT use transform here (iOS fullscreen/fixed bugs) */
   will-change: scroll-position;
