@@ -222,7 +222,7 @@ const CreatorAnalytics: React.FC = () => {
           top: 'calc(-1 * env(safe-area-inset-top, 0px))',
           bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
           width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         }}
       />
       <div className="max-w-6xl mx-auto px-4 py-6 relative z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}>

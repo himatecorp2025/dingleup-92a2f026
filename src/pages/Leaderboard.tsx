@@ -94,18 +94,17 @@ const Leaderboard = () => {
         }}
       />
       
-      {/* Background Gradient - FULL SCREEN coverage */}
+      {/* Background Gradient - EXTENDS BEYOND ALL SAFE AREAS */}
       <div 
         className="fixed pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, hsl(280 90% 8%) 0%, hsl(280 80% 12%) 25%, hsl(280 70% 18%) 50%, hsl(280 60% 15%) 75%, hsl(280 80% 10%) 100%)',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100vw',
-          height: '100dvh',
-          minHeight: '-webkit-fill-available',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         }}
       />
       

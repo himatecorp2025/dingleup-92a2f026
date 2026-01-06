@@ -328,7 +328,7 @@ const Dashboard = () => {
     <div className="h-dvh w-screen overflow-x-hidden relative flex flex-col" style={{
       background: 'transparent',
       maxWidth: '100vw',
-      maxHeight: '100vh'
+      maxHeight: '100dvh'
     }}>
       {/* Pull-to-refresh indicator */}
       {isPulling && (
@@ -343,21 +343,20 @@ const Dashboard = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
         </div>
       )}
-      {/* Background image - EXTENDS BEYOND safe-area to cover status bar */}
+      {/* Background image - EXTENDS BEYOND safe-area to cover status bar AND home indicator */}
       <div 
-        className="fixed z-0" 
+        className="fixed z-0 pointer-events-none" 
         style={{
           backgroundImage: `url(${gameBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: '50% 50%',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100vw',
-          height: '100dvh',
-          minHeight: '-webkit-fill-available',
-          pointerEvents: 'none'
+          /* Extend beyond all safe areas */
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
         }}
       />
     {/* Age-gate modal (ABSOLUTE PRIORITY - blocks ALL popups until completed) */}
