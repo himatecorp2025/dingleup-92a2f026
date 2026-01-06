@@ -141,12 +141,15 @@ const BottomNav = () => {
   }
 
   return (
-    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-[9999]"
+    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
       style={{ 
         /* Dark gradient background to cover safe-area-inset-bottom */
         background: 'linear-gradient(180deg, rgba(10, 10, 46, 0.98) 0%, rgba(10, 10, 46, 1) 100%)',
-        padding: 'clamp(0.08rem, 0.4vh, 0.2rem)',
-        paddingBottom: 'calc(clamp(0.08rem, 0.4vh, 0.2rem) + env(safe-area-inset-bottom, 0px))'
+        paddingTop: 'clamp(0.08rem, 0.4vh, 0.2rem)',
+        paddingLeft: 'clamp(0.08rem, 0.4vh, 0.2rem)',
+        paddingRight: 'clamp(0.08rem, 0.4vh, 0.2rem)',
+        /* Explicit safe-area padding for home indicator */
+        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))'
       }}
     >
       <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-60"

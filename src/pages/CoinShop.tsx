@@ -96,7 +96,7 @@ const CoinShop = () => {
       paddingBottom: 'env(safe-area-inset-bottom)',
       width: '100vw',
       maxWidth: '100vw',
-      maxHeight: '100vh',
+      maxHeight: '100dvh',
       touchAction: 'pan-y',
       overscrollBehaviorX: 'none'
     }}>
