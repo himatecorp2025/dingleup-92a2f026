@@ -69,8 +69,13 @@ export const QuestionCard = ({
   const correctAnswerKey = answers.find(a => a.correct)?.key || "";
 
   return (
-    <div className={`relative w-full min-h-screen`}>
-      <div className={`relative w-full h-full flex flex-col pt-0 px-2 sm:px-3 md:px-4 pb-2 gap-0 ${className}`}>
+    <div className={`relative w-full h-dvh flex flex-col`} style={{
+      /* Safe area padding for status bar / notch at top */
+      paddingTop: 'max(calc(env(safe-area-inset-top, 0px) + 8px), env(safe-area-inset-top, 0px) + 8px)',
+      /* Safe area padding for home indicator at bottom */
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+    }}>
+      <div className={`relative w-full flex-1 flex flex-col px-2 sm:px-3 md:px-4 pb-2 gap-0 ${className}`}>
       {/* Top section: Exit button, Lives, Coins */}
       <GameHeader
         lives={lives}
@@ -80,15 +85,15 @@ export const QuestionCard = ({
       />
 
       {/* Coin animation - positioned below header at 75% horizontal width */}
-      <div className="absolute z-20" style={{ top: '12%', left: '75%', transform: 'translateX(-50%)' }}>
+      <div className="absolute z-20" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12%)', left: '75%', transform: 'translateX(-50%)' }}>
         <CoinRewardAnimation 
           amount={coinRewardAmount} 
           trigger={coinRewardTrigger}
         />
       </div>
 
-    {/* Wrapper for Timer + Question + Answers + Help - Vertically centered */}
-    <div className="flex-grow flex flex-col justify-center space-y-3 sm:space-y-4">
+    {/* Wrapper for Timer + Question + Answers + Help - Vertically centered in remaining space */}
+    <div className="flex-1 flex flex-col justify-center space-y-3 sm:space-y-4">
       {/* Timer */}
       <GameTimer timeLeft={timeLeft} maxTime={10} />
 
@@ -198,7 +203,7 @@ export const QuestionCard = ({
       </div>
 
       {/* Bottom section: Help buttons - below answers with spacing */}
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center mt-4 mb-2 flex-shrink-0">
         <GameLifelines
           help5050UsageCount={help5050UsageCount}
           help2xAnswerUsageCount={help2xAnswerUsageCount}
