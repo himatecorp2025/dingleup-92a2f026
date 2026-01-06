@@ -81,7 +81,7 @@ body::before {
   margin-bottom: calc(-1 * var(--safe-bottom));
   margin-left: calc(-1 * var(--safe-left));
   margin-right: calc(-1 * var(--safe-right));
-  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--primary-dark)) 50%, hsl(var(--background)) 100%);
+  background: hsl(var(--background));
   pointer-events: none;
 }
 
@@ -360,8 +360,7 @@ button, a {
 }
 
 body {
-  @apply text-foreground font-poppins;
-  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--primary-dark)) 50%, hsl(var(--background)) 100%);
+  @apply bg-background text-foreground font-poppins;
 }
 
 /* Text stroke for better readability */
