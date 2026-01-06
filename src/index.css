@@ -155,17 +155,8 @@ body::before {
 /* ========================================
    GPU ACCELERATION FOR HEAVY BACKGROUNDS
    ======================================== */
-/* NOTE: Avoid applying `transform` to broad selectors (it breaks `position: fixed` on iOS).
-   Keep GPU hints only for elements that actually paint large backgrounds. */
-[style*="background-image"],
-.bg-cover,
-.bg-contain,
-.bg-center,
-.bg-fixed {
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
+/* REMOVED: will-change: transform breaks position: fixed on iOS.
+   Do NOT apply will-change or backface-visibility to broad selectors. */
 
 *, *::before, *::after {
   box-sizing: border-box;
