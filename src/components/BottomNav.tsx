@@ -151,16 +151,14 @@ const BottomNav = () => {
       ref={containerRef}
       className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
       style={{
-        // iOS: some modes position `bottom: 0` at the top edge of the safe-area.
-        // Pull the container down so its background truly reaches the screen bottom.
-        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-        /* Dark gradient background to cover safe-area-inset-bottom */
+        bottom: 0,
+        /* Background that visually fills into the home-indicator safe-area */
         background:
-          'linear-gradient(180deg, rgba(10, 10, 46, 0.98) 0%, rgba(10, 10, 46, 1) 100%)',
+          'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
         paddingTop: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         paddingLeft: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         paddingRight: 'clamp(0.08rem, 0.4vh, 0.2rem)',
-        /* Explicit safe-area padding for home indicator */
+        /* Safe-area padding for home indicator */
         paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
       }}
     >
