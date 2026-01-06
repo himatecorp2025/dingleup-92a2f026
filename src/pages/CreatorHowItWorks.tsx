@@ -95,7 +95,20 @@ const CreatorHowItWorks = () => {
   ];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-[#0a0a2e] via-[#16213e] to-[#0f0f3d]">
+    <div className="fixed inset-0 flex flex-col">
+      {/* Full-screen background that extends behind safe areas */}
+      <div 
+        className="fixed z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
       {/* Content */}
       <div 
         className="flex-1 flex flex-col relative z-10 overflow-y-auto overflow-x-hidden"

@@ -134,7 +134,20 @@ const CreatorsLanding = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a2e] via-[#16213e] to-[#0f0f3d]">
+    <div className="min-h-screen relative">
+      {/* Full-screen background that extends behind safe areas */}
+      <div 
+        className="fixed z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
       {/* Language Selector */}
       <div className="absolute top-4 right-4 z-50">
         <LanguageSelector />

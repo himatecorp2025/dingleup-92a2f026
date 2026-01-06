@@ -14,17 +14,28 @@ const RegistrationSuccess = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-accent/10"></div>
+      {/* Full-screen background that extends behind safe areas */}
+      <div 
+        className="fixed z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
 
       {/* Floating elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
         <div className="absolute top-20 left-10 w-20 h-20 bg-accent rounded-full opacity-20 animate-float"></div>
         <div className="absolute bottom-20 right-10 w-32 h-32 bg-secondary rounded-full opacity-20 animate-float" style={{ animationDelay: '1s' }}></div>
       </div>
 
       <div className="max-w-md w-full relative z-10">
-        <div className="bg-gradient-card border border-border/50 rounded-2xl p-8 shadow-glow text-center animate-fade-in">
+        <div className="bg-gradient-card border border-border/50 rounded-2xl p-8 shadow-glow text-center animate-fade-in relative z-20">
           <div className="mb-6">
             <svg
               xmlns="http://www.w3.org/2000/svg"

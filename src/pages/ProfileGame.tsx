@@ -62,8 +62,21 @@ export default function ProfileGame() {
   const questionsRemaining = Math.max(0, 1000 - profile.totalAnswered);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a0033] via-[#2d1b69] to-[#0f0033] p-6">
-      <div className="container mx-auto max-w-6xl">
+    <div className="min-h-screen p-6 relative">
+      {/* Full-screen background that extends behind safe areas */}
+      <div 
+        className="fixed z-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(135deg, #1a0033 0%, #2d1b69 50%, #0f0033 100%)',
+          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
+          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+        }}
+      />
+      <div className="container mx-auto max-w-6xl relative z-10">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button
