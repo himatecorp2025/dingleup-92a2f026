@@ -138,16 +138,17 @@ const LoginNew = () => {
       }}
     >
       {/* Full-screen gradient */}
-      <div 
+      <div
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(135deg, #1a0033 0%, #2d1b69 50%, #0f0033 100%)',
+          background:
+            'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--primary-dark)) 50%, hsl(var(--background)) 100%)',
         }}
       />
 
       {/* Background image with 75% opacity */}
-      <div 
-        className="fixed inset-0 z-0 pointer-events-none" 
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
         style={{
           backgroundImage: `url(${gameBackground})`,
           backgroundSize: 'cover',

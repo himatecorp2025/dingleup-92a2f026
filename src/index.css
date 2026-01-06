@@ -132,7 +132,7 @@ body::before {
 }
 
 /* Bottom nav/footer/tabbar safe-area support */
-.bottom-nav, .footer, .tabbar, .app-bottom-nav {
+.footer, .tabbar, .app-bottom-nav {
   padding-bottom: calc(12px + var(--safe-bottom));
 }
 
