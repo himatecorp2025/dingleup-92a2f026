@@ -141,8 +141,10 @@ const BottomNav = () => {
   }
 
   return (
-    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#0f0a1f] border-t border-white/10 z-[9999]"
+    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 border-t border-white/10 z-[9999]"
       style={{ 
+        /* Transparent background - page background shows through */
+        background: 'transparent',
         padding: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         paddingBottom: 'calc(clamp(0.08rem, 0.4vh, 0.2rem) + env(safe-area-inset-bottom, 0px))'
       }}

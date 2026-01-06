@@ -63,10 +63,9 @@ const Game = () => {
 
   return (
     <GameErrorBoundary>
-      <div className="h-dvh overflow-hidden relative" style={{
-        paddingTop: 'max(calc(env(safe-area-inset-top) + 2%), env(safe-area-inset-top) + 8px)'
-      }}>
-        {/* Fixed background layer - extends beyond safe-area, does NOT scroll */}
+      {/* No paddingTop - content flows from top, background covers full screen */}
+      <div className="h-dvh overflow-hidden relative">
+        {/* Fixed background layer - extends beyond safe-area to cover entire screen including status bar */}
         <div 
           className="fixed bg-cover bg-no-repeat"
           style={{ 
@@ -76,11 +75,13 @@ const Game = () => {
             right: 'calc(-1 * env(safe-area-inset-right, 0px))',
             top: 'calc(-1 * env(safe-area-inset-top, 0px))',
             bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+            width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
+            height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
             pointerEvents: 'none',
             zIndex: 0
           }}
         />
-        <div className="relative z-10">
+        <div className="relative z-10 h-full">
           <GamePreview />
         </div>
       </div>
