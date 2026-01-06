@@ -84,17 +84,16 @@ html, body {
 }
 
 /* ========================================
-   GPU ACCELERATION FOR ALL BACKGROUNDS
+   GPU ACCELERATION FOR HEAVY BACKGROUNDS
    ======================================== */
-/* Automatically GPU-accelerate all background images for faster rendering on mobile */
+/* NOTE: Avoid applying `transform` to broad selectors (it breaks `position: fixed` on iOS).
+   Keep GPU hints only for elements that actually paint large backgrounds. */
 [style*="background-image"],
-[class*="bg-"],
 .bg-cover,
 .bg-contain,
 .bg-center,
 .bg-fixed {
   will-change: transform;
-  transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
