@@ -41,8 +41,7 @@ serve(async (req) => {
       .select(`
         id,
         platform,
-        video_url,
-        embed_url,
+        channel_url,
         thumbnail_url,
         title,
         first_activated_at,
@@ -53,7 +52,8 @@ serve(async (req) => {
         total_video_completions,
         total_relevant_hits,
         total_clickthrough,
-        created_at
+        created_at,
+        video_file_path
       `)
       .eq('user_id', userId);
 
@@ -70,9 +70,9 @@ serve(async (req) => {
       query = query.or(`is_active.eq.false,expires_at.lt.${now}`);
     }
 
-    // Search filter (video_url or platform)
+    // Search filter (channel_url or platform or title)
     if (search) {
-      query = query.or(`video_url.ilike.%${search}%,platform.ilike.%${search}%`);
+      query = query.or(`channel_url.ilike.%${search}%,platform.ilike.%${search}%,title.ilike.%${search}%`);
     }
 
     const { data: videos, error: videosError } = await query;
