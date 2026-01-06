@@ -350,13 +350,13 @@ const Dashboard = () => {
           backgroundImage: `url(${gameBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: '50% 50%',
-          backgroundAttachment: 'fixed',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100vh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100dvh',
+          minHeight: '-webkit-fill-available',
           pointerEvents: 'none'
         }}
       />
