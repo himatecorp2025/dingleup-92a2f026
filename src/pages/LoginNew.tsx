@@ -137,17 +137,15 @@ const LoginNew = () => {
         height: '100dvh',
       }}
     >
-      {/* Full-screen gradient that extends behind ALL safe areas */}
+      {/* Full-screen gradient */}
       <div 
         className="fixed inset-0 z-0 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #1a0033 0%, #2d1b69 50%, #0f0033 100%)',
-          // Extend beyond safe areas using negative margins
-          margin: 'calc(-1 * env(safe-area-inset-top, 0px)) calc(-1 * env(safe-area-inset-right, 0px)) calc(-1 * env(safe-area-inset-bottom, 0px)) calc(-1 * env(safe-area-inset-left, 0px))',
         }}
       />
 
-      {/* Background image with 75% opacity - extends behind ALL safe areas */}
+      {/* Background image with 75% opacity */}
       <div 
         className="fixed inset-0 z-0 pointer-events-none" 
         style={{
@@ -155,8 +153,6 @@ const LoginNew = () => {
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           opacity: 0.75,
-          // Extend beyond safe areas using negative margins
-          margin: 'calc(-1 * env(safe-area-inset-top, 0px)) calc(-1 * env(safe-area-inset-right, 0px)) calc(-1 * env(safe-area-inset-bottom, 0px)) calc(-1 * env(safe-area-inset-left, 0px))',
         }}
       />
 
