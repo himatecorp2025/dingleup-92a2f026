@@ -607,11 +607,11 @@ const GamePreview = memo(() => {
             <FullscreenRewardVideoView
               videos={videoAdFlow.videos.map(v => ({
                 id: v.id,
-                embedUrl: v.embedUrl,
+                videoUrl: v.videoUrl,
+                channelUrl: v.channelUrl,
                 platform: v.platform as 'tiktok' | 'youtube' | 'instagram' | 'facebook',
                 durationSeconds: 15,
                 creatorName: v.creatorName,
-                videoUrl: v.videoUrl,
               }))}
               durationSecondsPerVideo={15}
               onCompleted={(watchedIds) => videoAdFlow.onVideoComplete()}
@@ -745,11 +745,11 @@ const GamePreview = memo(() => {
           <FullscreenRewardVideoView
             videos={videoAdFlow.videos.map(v => ({
               id: v.id,
-              embedUrl: v.embedUrl,
+              videoUrl: v.videoUrl,
+              channelUrl: v.channelUrl,
               platform: v.platform as 'tiktok' | 'youtube' | 'instagram' | 'facebook',
               durationSeconds: 15,
               creatorName: v.creatorName,
-              videoUrl: v.videoUrl,
             }))}
             durationSecondsPerVideo={15}
             onCompleted={(watchedIds) => videoAdFlow.onVideoComplete()}
@@ -780,21 +780,21 @@ const GamePreview = memo(() => {
 
       {/* Video Ad Modal for doubling reward */}
       {videoAdFlow.showVideo && videoAdFlow.videos.length > 0 && (
-        <FullscreenRewardVideoView
-          videos={videoAdFlow.videos.map(v => ({
-            id: v.id,
-            embedUrl: v.embedUrl,
-            platform: v.platform as 'tiktok' | 'youtube' | 'instagram' | 'facebook',
-            durationSeconds: 15,
-            creatorName: v.creatorName,
-            videoUrl: v.videoUrl,
-          }))}
-          durationSecondsPerVideo={15}
-          onCompleted={(watchedIds) => videoAdFlow.onVideoComplete()}
-          onClose={videoAdFlow.cancelVideo}
-          context="game_end"
-          rewardAmount={coinsEarned}
-        />
+          <FullscreenRewardVideoView
+            videos={videoAdFlow.videos.map(v => ({
+              id: v.id,
+              videoUrl: v.videoUrl,
+              channelUrl: v.channelUrl,
+              platform: v.platform as 'tiktok' | 'youtube' | 'instagram' | 'facebook',
+              durationSeconds: 15,
+              creatorName: v.creatorName,
+            }))}
+            durationSecondsPerVideo={15}
+            onCompleted={(watchedIds) => videoAdFlow.onVideoComplete()}
+            onClose={videoAdFlow.cancelVideo}
+            context="game_end"
+            rewardAmount={coinsEarned}
+          />
       )}
     </>
   );
