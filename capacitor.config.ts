@@ -9,13 +9,14 @@ const config: CapacitorConfig = {
     cleartext: true
   },
   ios: {
-    // iOS Full Screen Immersive Mode
-    contentInset: 'never',
+    // iOS Full Screen Immersive Mode - EDGE TO EDGE
+    contentInset: 'automatic',
     allowsLinkPreview: false,
     scrollEnabled: false,
-    // Hide status bar completely
-    preferredStatusBarStyle: 'dark',
-    // Extend content under status bar for fullscreen effect
+    // Use light content on dark backgrounds
+    preferredContentMode: 'mobile',
+    // CRITICAL: Enable edge-to-edge layout with safe area handling
+    limitsNavigationsToAppBoundDomains: false,
     webContentsDebuggingEnabled: true
   },
   android: {

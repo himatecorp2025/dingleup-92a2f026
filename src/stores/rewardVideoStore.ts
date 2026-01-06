@@ -5,8 +5,8 @@ import { logger } from '@/lib/logger';
 
 export interface RewardVideo {
   id: string;
-  embedUrl: string;
-  videoUrl?: string | null;
+  videoUrl: string;           // Full storage URL for native video playback
+  channelUrl: string;         // Redirect URL for "Go to creator"
   platform: 'tiktok' | 'youtube' | 'instagram' | 'facebook';
   creatorName?: string | null;
 }
