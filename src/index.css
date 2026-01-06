@@ -55,8 +55,26 @@ html, body {
 
   /* Ensure no bar can appear behind safe areas */
   background-color: hsl(var(--background));
+  color-scheme: dark;
 
   /* CRITICAL: Do NOT apply transform on html/body (breaks position: fixed on iOS) */
+}
+
+/* Single source of truth for safe-area background fill (kills bottom black bar) */
+body {
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  left: calc(-1 * env(safe-area-inset-left, 0px));
+  right: calc(-1 * env(safe-area-inset-right, 0px));
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  background: hsl(var(--background));
+  pointer-events: none;
 }
 
 #root {
@@ -72,7 +90,7 @@ html, body {
   }
 }
 
-/* iOS specific status bar hiding */
+/* iOS specific viewport fill */
 @supports (-webkit-touch-callout: none) {
   html {
     height: -webkit-fill-available;
@@ -81,6 +99,7 @@ html, body {
     min-height: -webkit-fill-available;
   }
 }
+
 
 /* Extra layer for chat pages to prevent white background on keyboard */
 .chat-container {
@@ -126,11 +145,10 @@ html, body {
   padding-bottom: calc(var(--bottom-nav-h) + 16px);
   scroll-padding-bottom: calc(var(--bottom-nav-h) + 16px);
   scroll-behavior: smooth;
-  /* GPU acceleration */
+  /* Keep scrolling responsive; DO NOT use transform here (iOS fullscreen/fixed bugs) */
   will-change: scroll-position;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
+
 
 .page-scroll > :last-child {
   margin-bottom: 24px;
