@@ -132,39 +132,31 @@ const LoginNew = () => {
 
   return (
     <div 
-      className="w-screen fixed inset-0 overflow-hidden bg-gradient-to-br from-[#1a0033] via-[#2d1b69] to-[#0f0033] animate-fade-in flex items-center justify-center"
+      className="w-screen fixed inset-0 overflow-hidden animate-fade-in flex items-center justify-center"
       style={{
         height: '100dvh',
       }}
     >
       {/* Full-screen gradient that extends behind ALL safe areas */}
       <div 
-        className="fixed z-0 pointer-events-none"
+        className="fixed inset-0 z-0 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #1a0033 0%, #2d1b69 50%, #0f0033 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          // Extend beyond safe areas using negative margins
+          margin: 'calc(-1 * env(safe-area-inset-top, 0px)) calc(-1 * env(safe-area-inset-right, 0px)) calc(-1 * env(safe-area-inset-bottom, 0px)) calc(-1 * env(safe-area-inset-left, 0px))',
         }}
       />
 
       {/* Background image with 75% opacity - extends behind ALL safe areas */}
       <div 
-        className="fixed z-0 pointer-events-none" 
+        className="fixed inset-0 z-0 pointer-events-none" 
         style={{
           backgroundImage: `url(${gameBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           opacity: 0.75,
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          // Extend beyond safe areas using negative margins
+          margin: 'calc(-1 * env(safe-area-inset-top, 0px)) calc(-1 * env(safe-area-inset-right, 0px)) calc(-1 * env(safe-area-inset-bottom, 0px)) calc(-1 * env(safe-area-inset-left, 0px))',
         }}
       />
 
