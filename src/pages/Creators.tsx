@@ -253,7 +253,7 @@ const Creators = () => {
 
       {/* Header */}
       <header 
-        className="px-4 py-1"
+        className="px-4 py-1 relative z-10"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 4px)' }}
       >
         {/* Top row: Back button + Menu */}
@@ -355,7 +355,7 @@ const Creators = () => {
 
       {/* Scrollable Content */}
       <div 
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className="flex-1 overflow-y-auto overflow-x-hidden relative z-10"
         style={{ paddingBottom: 'calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 24px)' }}
       >
         <div className="max-w-4xl mx-auto px-4 py-6">
