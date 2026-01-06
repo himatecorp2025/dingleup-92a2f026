@@ -106,75 +106,8 @@
     <link rel="prefetch" href="/src/assets/DingleUP.mp3" as="audio" type="audio/mpeg">
   </head>
 
-  <style>
-    /* TELJES IMMERSIVE MÓD - Safe-area kiterjesztéssel */
-    html, body {
-      min-height: 100dvh;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-      overscroll-behavior: none;
-      -webkit-overflow-scrolling: touch;
-      width: 100%;
-      /* Prevent "white bar" in PWA safe areas */
-      background: linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%);
-      color-scheme: dark;
-    }
+  <!-- NOTE: Fullscreen/safe-area styling lives in src/index.css (single source of truth). -->
 
-    #root {
-      min-height: 100dvh;
-      height: 100%;
-      width: 100%;
-      background: transparent;
-    }
-
-    /* Safe-area változók */
-    :root {
-      --sat: env(safe-area-inset-top, 0px);
-      --sab: env(safe-area-inset-bottom, 0px);
-      --sal: env(safe-area-inset-left, 0px);
-      --sar: env(safe-area-inset-right, 0px);
-    }
-
-    /* Háttér kiterjesztése a safe-area MÖGÉ (státuszsáv alá) */
-    body {
-      position: relative;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      z-index: -1;
-      /* Safe-area-t is fedni kell - negatív margin */
-      left: calc(-1 * var(--sal));
-      right: calc(-1 * var(--sar));
-      top: calc(-1 * var(--sat));
-      bottom: calc(-1 * var(--sab));
-      /* Dark blue-purple gradient background (from Invitation/Share page) */
-      background: linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%);
-      pointer-events: none;
-    }
-
-    /* PWA standalone mód - extra full-screen */
-    @media all and (display-mode: standalone) {
-      html, body {
-        height: 100vh;
-        height: 100dvh;
-      }
-    }
-
-    /* iOS Safari specific - teljes kijelző kitöltés */
-    @supports (-webkit-touch-callout: none) {
-      html, body {
-        height: -webkit-fill-available;
-      }
-    }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-  </style>
 
   <body>
     <div id="root"></div>
