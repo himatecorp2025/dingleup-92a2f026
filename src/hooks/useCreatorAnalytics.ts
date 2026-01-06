@@ -19,13 +19,13 @@ interface AnalyticsOverview {
 interface AnalyticsVideo {
   id: string;
   platform: string;
-  video_url: string;
-  embed_url: string | null;
+  channel_url: string;
   thumbnail_url: string | null;
   title: string | null;
   first_activated_at: string | null;
   expires_at: string | null;
   is_active: boolean;
+  video_file_path: string | null;
   impressions: number;
   completions: number;
   relevant_hits: number;
