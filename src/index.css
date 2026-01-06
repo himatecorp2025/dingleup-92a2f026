@@ -75,13 +75,17 @@ body::before {
   content: "";
   position: fixed;
   z-index: -1;
-  inset: 0;
   /* Extend beyond safe-areas to fill entire screen including notch/home indicator */
-  margin-top: calc(-1 * var(--safe-top));
-  margin-bottom: calc(-1 * var(--safe-bottom));
-  margin-left: calc(-1 * var(--safe-left));
-  margin-right: calc(-1 * var(--safe-right));
-  background: hsl(var(--background));
+  top: calc(-1 * var(--safe-top));
+  left: calc(-1 * var(--safe-left));
+  right: calc(-1 * var(--safe-right));
+  bottom: calc(-1 * var(--safe-bottom));
+  width: calc(100vw + var(--safe-left) + var(--safe-right));
+  height: calc(100dvh + var(--safe-top) + var(--safe-bottom));
+  /* Global stadium background - gradient + image overlay */
+  background: 
+    url('/src/assets/game-background.png') center center / cover no-repeat,
+    linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--primary-dark)) 50%, hsl(var(--background)) 100%);
   pointer-events: none;
 }
 

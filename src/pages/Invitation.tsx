@@ -134,20 +134,7 @@ const Invitation = () => {
       paddingTop: 'max(calc(env(safe-area-inset-top) + 2%), env(safe-area-inset-top) + 8px)',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
-      {/* Full-screen background that extends behind ALL safe areas */}
-      <div 
-        className="fixed pointer-events-none"
-        style={{
-          background: 'linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-          zIndex: 0
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
       {/* Back Button - 3D Round Style */}
       <div className="fixed left-4 z-50 pt-safe" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
         <button

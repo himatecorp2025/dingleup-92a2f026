@@ -11,7 +11,7 @@ import { useI18n } from "@/i18n";
 import { getCountryFromTimezone } from "@/lib/utils";
 import type { LangCode } from "@/i18n/types";
 import loadingLogo from '@/assets/dingleup-loading-logo.png';
-import gameBackground from '@/assets/game-background.png';
+
 
 const createLoginSchema = (t: (key: string) => string) => z.object({
   username: z.string().trim().min(1, t('auth.login.validationUsernameRequired')).regex(/^[^\s]+$/, t('auth.login.validationUsernameNoSpaces')),
@@ -137,25 +137,7 @@ const LoginNew = () => {
         height: '100dvh',
       }}
     >
-      {/* Full-screen gradient */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--primary-dark)) 50%, hsl(var(--background)) 100%)',
-        }}
-      />
-
-      {/* Background image with 75% opacity */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage: `url(${gameBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          opacity: 0.75,
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
 
       <div className="w-[90vw] max-w-md relative z-10">
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 relative w-full">

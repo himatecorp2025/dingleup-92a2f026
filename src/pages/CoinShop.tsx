@@ -100,19 +100,7 @@ const CoinShop = () => {
       touchAction: 'pan-y',
       overscrollBehaviorX: 'none'
     }}>
-      {/* Full-screen background that extends behind ALL safe areas */}
-      <div 
-        className="fixed pointer-events-none"
-        style={{
-          background: 'linear-gradient(to bottom, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
 
       <div className="flex-1 flex flex-col relative z-10 overflow-y-auto overflow-x-hidden" style={{ 
         width: '100%',

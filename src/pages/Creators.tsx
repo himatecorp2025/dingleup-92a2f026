@@ -200,19 +200,7 @@ const Creators = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col">
-      {/* Full-screen background that extends behind ALL safe areas */}
-      <div 
-        className="fixed z-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 md:hidden" onClick={() => setMobileMenuOpen(false)}>

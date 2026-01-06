@@ -212,19 +212,7 @@ const CreatorAnalytics: React.FC = () => {
 
   return (
     <div className="min-h-screen text-white relative">
-      {/* Full-screen background that extends behind safe areas */}
-      <div 
-        className="fixed z-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100vw + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
-        }}
-      />
+      {/* Background handled globally by body::before in index.css */}
       <div className="max-w-6xl mx-auto px-4 py-6 relative z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)' }}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
