@@ -136,15 +136,16 @@ const Invitation = () => {
     }}>
       {/* Full-screen background that extends behind safe areas */}
       <div 
-        className="fixed inset-0 pointer-events-none"
+        className="fixed pointer-events-none"
         style={{
           background: 'linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%)',
-          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
-          left: 'calc(-1 * env(safe-area-inset-left, 0px))',
-          right: 'calc(-1 * env(safe-area-inset-right, 0px))',
-          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
-          width: 'calc(100% + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))',
-          height: 'calc(100% + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px))',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100dvh',
+          minHeight: '-webkit-fill-available',
           zIndex: 0
         }}
       />
