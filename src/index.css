@@ -36,6 +36,7 @@
 /* Mobile & touch optimizations + Status bar hiding */
 html, body {
   height: 100%;
+  min-height: 100dvh;
   width: 100%;
   max-width: 100%;
   margin: 0;
@@ -46,9 +47,16 @@ html, body {
   touch-action: manipulation;
   box-sizing: border-box;
   scroll-behavior: smooth;
+  /* Ensure no "white bar" can appear behind safe areas in PWA */
+  background-color: hsl(var(--background));
   /* Hardware acceleration for all scrolling */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+}
+
+#root {
+  min-height: 100dvh;
+  background-color: hsl(var(--background));
 }
 
 /* PWA fullscreen - hide status bar */

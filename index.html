@@ -117,12 +117,16 @@
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
       width: 100%;
+      /* Prevent "white bar" in PWA safe areas */
+      background: linear-gradient(180deg, #0a0a2e 0%, #16213e 50%, #0f0f3d 100%);
+      color-scheme: dark;
     }
 
     #root {
       min-height: 100dvh;
       height: 100%;
       width: 100%;
+      background: transparent;
     }
 
     /* Safe-area változók */
@@ -135,9 +139,7 @@
 
     /* Háttér kiterjesztése a safe-area MÖGÉ (státuszsáv alá) */
     body {
-      background: transparent;
       position: relative;
-      color-scheme: dark;
     }
 
     body::before {
