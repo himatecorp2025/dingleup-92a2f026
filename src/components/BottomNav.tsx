@@ -152,14 +152,15 @@ const BottomNav = () => {
       className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
       style={{
         bottom: 0,
-        /* Background that visually fills into the home-indicator safe-area */
+        /* Background extends fully to the absolute bottom of the screen */
         background:
           'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
+        /* Extend background into safe-area by using negative margin + equivalent padding */
         paddingTop: 'clamp(0.08rem, 0.4vh, 0.2rem)',
-        paddingLeft: 'clamp(0.08rem, 0.4vh, 0.2rem)',
-        paddingRight: 'clamp(0.08rem, 0.4vh, 0.2rem)',
-        /* Safe-area padding for home indicator */
-        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(env(safe-area-inset-left, 0px), clamp(0.08rem, 0.4vh, 0.2rem))',
+        paddingRight: 'max(env(safe-area-inset-right, 0px), clamp(0.08rem, 0.4vh, 0.2rem))',
+        /* Safe-area padding for home indicator - content stays above home bar */
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
       }}
     >
       <div
