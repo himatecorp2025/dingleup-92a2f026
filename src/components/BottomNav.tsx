@@ -149,7 +149,7 @@ const BottomNav = () => {
   const nav = (
     <div
       ref={containerRef}
-      className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
+      className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav relative overflow-visible"
       style={{
         /* Touch screen edge exactly — env(safe-area) already accounts for home indicator offset */
         bottom: 0,

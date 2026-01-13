@@ -37,6 +37,23 @@
   left: 0; right: 0; bottom: 0;
 }
 
+/* Ensure the BottomNav background extends into the iOS home-indicator safe-area
+   without pushing the actual buttons below the visible viewport. */
+.bottom-nav {
+  position: relative;
+  overflow: visible;
+}
+
+.bottom-nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--safe-bottom));
+  height: var(--safe-bottom);
+  background: inherit;
+  pointer-events: none;
+}
 /* Mobile & touch optimizations + Status bar hiding */
 html, body {
   width: 100%;
