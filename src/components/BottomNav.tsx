@@ -152,15 +152,15 @@ const BottomNav = () => {
       className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
       style={{
         /* In iOS PWA / native WebView the visual viewport bottom can sit ABOVE the real screen bottom.
-           We shift the whole bar DOWN beyond the safe-area a tiny bit so the background touches the screen edge.
-           (Some WebViews still leave a few pixels gap even after safe-area compensation.) */
-        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px) - 10px)',
+           Push the whole bar DOWN so its background hits the physical screen edge (even in stubborn WebViews). */
+        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px) - 28px)',
         background:
           'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
-        paddingTop: 'clamp(0.08rem, 0.4vh, 0.2rem)',
-        paddingLeft: 'max(env(safe-area-inset-left, 0px), clamp(0.08rem, 0.4vh, 0.2rem))',
-        paddingRight: 'max(env(safe-area-inset-right, 0px), clamp(0.08rem, 0.4vh, 0.2rem))',
-        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        paddingTop: 'clamp(0.06rem, 0.3vh, 0.14rem)',
+        paddingLeft: 'max(env(safe-area-inset-left, 0px), clamp(0.06rem, 0.3vh, 0.14rem))',
+        paddingRight: 'max(env(safe-area-inset-right, 0px), clamp(0.06rem, 0.3vh, 0.14rem))',
+        /* Reduce visual height; keep taps safely above home indicator */
+        paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
       }}
     >
       <div
@@ -204,8 +204,8 @@ const BottomNav = () => {
               `}
               style={{
                 padding:
-                  'clamp(0.2rem, 0.7vh, 0.35rem) clamp(0.2rem, 0.7vh, 0.35rem)',
-                minHeight: 'clamp(32px, 5vh, 42px)',
+                  'clamp(0.12rem, 0.45vh, 0.22rem) clamp(0.12rem, 0.45vh, 0.22rem)',
+                minHeight: 'clamp(22px, 3.2vh, 30px)',
               }}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
