@@ -151,15 +151,14 @@ const BottomNav = () => {
       ref={containerRef}
       className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
       style={{
-        /* In iOS PWA / native WebView the visual viewport bottom can sit ABOVE the real screen bottom.
-           Push the whole bar DOWN so its background hits the physical screen edge (even in stubborn WebViews). */
-        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px) - 28px)',
+        /* Touch screen edge exactly — env(safe-area) already accounts for home indicator offset */
+        bottom: 0,
         background:
           'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
         paddingTop: 'clamp(0.06rem, 0.3vh, 0.14rem)',
         paddingLeft: 'max(env(safe-area-inset-left, 0px), clamp(0.06rem, 0.3vh, 0.14rem))',
         paddingRight: 'max(env(safe-area-inset-right, 0px), clamp(0.06rem, 0.3vh, 0.14rem))',
-        /* Reduce visual height; keep taps safely above home indicator */
+        /* Safe-area keeps buttons above home indicator */
         paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
       }}
     >
