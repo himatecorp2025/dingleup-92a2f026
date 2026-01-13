@@ -151,16 +151,16 @@ const BottomNav = () => {
       ref={containerRef}
       className="fixed left-0 right-0 border-t border-white/10 z-[9999] bottom-nav"
       style={{
-        bottom: 0,
-        /* Background extends fully to the absolute bottom of the screen */
+        /* In iOS PWA / native WebView the visual viewport bottom can sit ABOVE the real screen bottom.
+           We shift the whole bar DOWN by the safe-area inset so the background touches the screen edge,
+           while padding keeps the interactive content above the home indicator. */
+        bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
         background:
           'linear-gradient(180deg, hsl(var(--background) / 0.92) 0%, hsl(var(--background) / 0.98) 100%)',
-        /* Extend background into safe-area by using negative margin + equivalent padding */
         paddingTop: 'clamp(0.08rem, 0.4vh, 0.2rem)',
         paddingLeft: 'max(env(safe-area-inset-left, 0px), clamp(0.08rem, 0.4vh, 0.2rem))',
         paddingRight: 'max(env(safe-area-inset-right, 0px), clamp(0.08rem, 0.4vh, 0.2rem))',
-        /* Safe-area padding for home indicator - content stays above home bar */
-        paddingBottom: 'max(12px, env(safe-area-inset-bottom, 12px))',
+        paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
       }}
     >
       <div
