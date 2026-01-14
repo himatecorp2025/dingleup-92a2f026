@@ -131,11 +131,8 @@ const LoginNew = () => {
   // Removed i18n loading screen - translations load instantly with static import
 
   return (
-    <div 
-      className="w-screen fixed inset-0 overflow-hidden animate-fade-in flex items-center justify-center"
-      style={{
-        height: '100dvh',
-      }}
+    <div
+      className="fullscreen-bleed w-screen overflow-hidden animate-fade-in flex items-center justify-center"
     >
       {/* Background handled globally by body::before in index.css */}
 
