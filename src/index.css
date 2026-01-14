@@ -37,10 +37,9 @@
   left: 0; right: 0; bottom: 0;
 }
 
-/* Ensure the BottomNav background extends into the iOS home-indicator safe-area
-   without pushing the actual buttons below the visible viewport. */
+/* Ensure BottomNav can extend its background into the iOS home-indicator safe-area
+   without changing its fixed positioning. */
 .bottom-nav {
-  position: relative;
   overflow: visible;
 }
 
